@@ -1,0 +1,5 @@
+*.pyc
+*.sublime-workspace
+*.DS_Store
+*.swp
+local_settings.py
