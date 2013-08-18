@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>General</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Location</th>
+                <th>Last analyzed</th>
+                <th>Age</th>
+                <th>Revisions</th>
+                <th>Authors</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ repo.url }}</td>
+                <td>{{ repo.analyzed_date }}</td>
+                <td>{{ repo.age }}</td>
+                <td>{{ repo.revision_count }}</td>
+                <td>{{ repo.author_count }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Contributors</h2>
+    <table class='table'>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Revisions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for author in repo.authors %}
+                <tr>
+                    <td><a href='#'>{{ author.name }}</a></td>
+                    <td>{{ author.revision_count }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

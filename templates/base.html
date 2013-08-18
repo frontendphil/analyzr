@@ -1,15 +1,34 @@
-<html>
+<!DOCTYPE html>
+<html land="en">
 <head>
     <title>Analyzr</title>
 
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/font-awesome.min.css" />
+
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/css/analyzr.css" />
 </head>
 <body>
-    {% block content %}
-    {% endblock %}
+    <div class="container">
+        <ul class='nav nav-pills'>
+            <li>
+                <a href='{% url "parsr.views.index" %}'>
+                    <i class='icon-code'></i>
+                    Analyzr
+                </a>
+            </li>
+        </ul>
+
+        <hr />
+
+        {% block content %}
+        {% endblock %}
+    </div>
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery.cookie.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/bootstrap.min.js"></script>
+
+    <script type="text/javascript" src="{{ STATIC_URL }}js/analyzr.js"></script>
 </body>
 </html>

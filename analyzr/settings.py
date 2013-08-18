@@ -11,6 +11,7 @@ ADMINS = (
 MANAGERS = ADMINS
 
 PROJECT_PATH = '%s/..' % dirname(abspath(__file__))
+CHECKOUT_PATH = '%s/repos/' % PROJECT_PATH
 
 DATABASES = {
     'default': {
@@ -125,10 +126,9 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
     'south',
     'parsr',
-    # Uncomment the next line to enable the admin:
-    # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 )

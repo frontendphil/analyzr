@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class='repos'>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Revisions</th>
+                    <th>Authors</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for repo in repositories %}
+                    <tr>
+                        <td class='status'>
+                            {% if repo.analyzing %}
+                                <i class='icon-refresh icon-spin'></i>
+                            {% else %}
+                                {% if repo.analyzed %}
+                                    <i class='icon-ok'></i>
+                                {% else %}
+                                    <i class='icon-question'></i>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ repo.kind }}</td>
+                        <td>
+                            <a href='{% url "parsr.views.repo" id=repo.pk %}'>
+                                {{ repo.url }}
+                            </a>
+                        </td>
+                        <td>{{ repo.revision_count }}</td>
+                        <td>{{ repo.author_count }}</td>
+                        <td>
+                            {% if repo.analyzing %}
+                                Analyzing...
+                            {% else %}
+                                {% if not repo.analyzed %}
+                                    <a href='#' rel='{% url "parsr.views.analyze" id=repo.pk %}' class='btn btn-primary btn-sm analyze'>
+                                        Analyze
+                                    </a>
+                                {% else %}
+                                    <a href='#' rel="{% url 'parsr.views.analyze' id=repo.pk %}" class="btn btn-default btn-sm analyze">Re-Analyze</a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

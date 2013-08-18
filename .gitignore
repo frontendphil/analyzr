@@ -2,4 +2,7 @@
 *.sublime-workspace
 *.DS_Store
 *.swp
+*.db
 local_settings.py
+repos
+css
