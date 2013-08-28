@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST
 from django.template import RequestContext
 from django.http import HttpResponse
 
-from parsr.models import Repo
+from parsr.models import Repo, Author
 
 
 def index(request):
@@ -21,6 +21,14 @@ def repo(request, id):
         {
             "repo": repo
         }, context_instance=RequestContext(request))
+
+
+def punchcard(request, repo_id, author_id=None):
+    repo = get_object_or_404(Repo, pk=repo_id)
+    author = get_object_or_404(Author, pk=author_id) if author_id else None
+
+    return HttpResponse(json.dumps(repo.punchcard(author)), mimetype="application/json")
+
 
 
 @require_POST

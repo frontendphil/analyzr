@@ -61,22 +61,9 @@ class Git(Connector):
             revision.set_date(self.parse_date(commit.committed_date))
             revision.save()
 
-    def process(self, commit):
-        # self.parse(commit)
-        print commit.count()
-
-
-        if not commit.parents:
-            return
-
-        parent = commit.parents[0]
-        # for parent in commit.parents:
-        self.process(parent)
-
     def analyze(self):
-        current = self.repo.head.commit
-
-        self.process(current)
+        for commit in self.repo.iter_commits():
+            self.parse(commit)
 
 
 class SVN(Connector):
@@ -112,7 +99,7 @@ class SVN(Connector):
         for filename, info in files:
             last_changed = info["last_changed_rev"]
 
-            if(not last_changed or not last_changed.number == identifier):
+            if not last_changed or not last_changed.number == identifier:
                 continue
 
             revision = self.info.create_revision(identifier, filename)

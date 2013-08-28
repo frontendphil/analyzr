@@ -14,5 +14,24 @@
 
             return false;
         });
+
+        $(".punchard").each(function() {
+            var punchard = $(this);
+
+            var repo = punchard.attr("repo");
+            var author = punchard.attr("author");
+
+            var url = "/punchcard/repo/" + repo;
+
+            if(author) {
+                url = url + "/author/" + author;
+            }
+
+            $.ajax(url, {
+                success: function(data) {
+                    console.log(data);
+                }
+            })
+        });
     });
 }());

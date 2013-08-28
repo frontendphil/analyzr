@@ -1,8 +1,10 @@
 from datetime import datetime
 
 from django.db import models
+from django.db.models import Count
 
 from parsr.connectors import Connector
+
 
 class Repo(models.Model):
 
@@ -60,23 +62,53 @@ class Repo(models.Model):
         if not self.analyzed or self.revision_set.count() == 0:
             return "n/a"
 
-        start = self.revision_set.order_by("date")[0:1][0]
-        end = self.revision_set.order_by("-date")[0:1][0]
+        start = self.revision_set.order_by("revision_date__date")[0:1][0]
+        end = self.revision_set.order_by("-revision_date__date")[0:1][0]
 
-        return end.date - start.date
+        return end.date() - start.date()
 
     def authors(self):
         authors = Author.objects.filter(repo=self)
 
         return sorted(authors, key=lambda author: author.revision_count())[::-1]
 
+    def punchcard(self, author):
+        revisions = Revision.objects.filter(repo=self)
+
+        if author:
+            revisions = revisions.filter(author=author)
+
+        response = {}
+
+        result = revisions.values("revision_date__weekday", "revision_date__hour")\
+                          .annotate(count=Count("revision_date__hour"))
+
+        hour_max = 0
+
+        for revision in result:
+            weekday = revision["revision_date__weekday"]
+            hour = revision["revision_date__hour"]
+            count = revision["count"]
+
+            hour_max = max(hour, hour_max)
+
+            if not weekday in response:
+                response[weekday] = {}
+
+            response[weekday][hour] = count
+
+        response["max"] = hour_max
+
+        return response
+
+
 class Revision(models.Model):
 
-    repo = models.ForeignKey("Repo")
-
     identifier = models.CharField(max_length=255)
+
+    repo = models.ForeignKey("Repo")
     author = models.ForeignKey("Author", null=True, blank=True)
-    date = models.DateTimeField(null=True, blank=True)
+    revision_date = models.ForeignKey("RevisionDate", null=True, blank=True)
 
     def __unicode__(self):
         return "%s created by %s in %s" % (self.identifier, self.author, self.repo)
@@ -93,7 +125,49 @@ class Revision(models.Model):
         self.author = author
 
     def set_date(self, date):
-        self.date = date
+        self.revision_date = RevisionDate.from_date(date)
+
+    def date(self):
+        return self.revision_date.date
+
+
+class RevisionDate(models.Model):
+
+    date = models.DateTimeField()
+
+    year = models.IntegerField()
+    month = models.IntegerField()
+    day = models.IntegerField()
+    hour = models.IntegerField()
+    minute = models.IntegerField()
+
+    weekday = models.IntegerField()
+
+    @classmethod
+    def normalize(cls, date):
+        return datetime(
+            year=date.year,
+            month=date.month,
+            day=date.day,
+            hour=date.hour,
+            minute=date.minute
+        )
+
+    @classmethod
+    def from_date(cls, date):
+        date = cls.normalize(date)
+
+        revision_date, created = cls.objects.get_or_create(
+            date=date,
+            year=date.year,
+            month=date.month,
+            day=date.day,
+            weekday=date.weekday(),
+            hour=date.hour,
+            minute=date.minute
+        )
+
+        return revision_date
 
 
 class File(models.Model):
