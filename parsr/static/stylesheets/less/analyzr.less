@@ -15,3 +15,37 @@
 .nav {
     margin-top: 20px;
 }
+
+.center {
+    text-align: center;
+}
+
+.punchcard {
+
+    table {
+        thead {
+            th {
+                .center;
+
+                &:first-child {
+                    text-align: left;
+                }
+            }
+        }
+
+        tbody {
+            .hour {
+                .center;
+                vertical-align: middle;
+            }
+
+            .circle {
+                display: inline-block;
+
+                border-radius: 50%;
+
+                background-color: black;
+            }
+        }
+    }
+}

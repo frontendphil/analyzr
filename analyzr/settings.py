@@ -127,10 +127,10 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'south',
     'parsr',
-    # Uncomment the next line to enable admin documentation:
-    'django.contrib.admindocs',
+    'timezone_field',
 )
 
 # A sample logging configuration. The only tangible logging

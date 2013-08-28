@@ -3,7 +3,11 @@ from datetime import datetime
 from django.db import models
 from django.db.models import Count
 
+from timezone_field import TimeZoneField
+
 from parsr.connectors import Connector
+
+from analyzr.settings import TIME_ZONE
 
 
 class Repo(models.Model):
@@ -23,6 +27,8 @@ class Repo(models.Model):
     analyzing = models.BooleanField(default=False)
     analyzed_date = models.DateTimeField(null=True, blank=True)
 
+    timezone = TimeZoneField(default=TIME_ZONE)
+
     user = models.CharField(max_length=255, null=True, blank=True)
     password = models.CharField(max_length=255, null=True, blank=True)
 
@@ -39,7 +45,13 @@ class Repo(models.Model):
 
         self.analyzing = False
         self.analyzed = True
-        self.analyzed_date = datetime.now()
+        self.analyzed_date = datetime.now(self.timezone)
+        self.save()
+
+    def abort_analyze(self):
+        self.analyzed = False
+        self.analyzing = False
+
         self.save()
 
     def create_revision(self, identifier, filename):
@@ -72,7 +84,7 @@ class Repo(models.Model):
 
         return sorted(authors, key=lambda author: author.revision_count())[::-1]
 
-    def punchcard(self, author):
+    def punchcard(self, author=None):
         revisions = Revision.objects.filter(repo=self)
 
         if author:
@@ -90,7 +102,7 @@ class Repo(models.Model):
             hour = revision["revision_date__hour"]
             count = revision["count"]
 
-            hour_max = max(hour, hour_max)
+            hour_max = max(count, hour_max)
 
             if not weekday in response:
                 response[weekday] = {}
@@ -125,7 +137,7 @@ class Revision(models.Model):
         self.author = author
 
     def set_date(self, date):
-        self.revision_date = RevisionDate.from_date(date)
+        self.revision_date = RevisionDate.from_date(date, self.repo.timezone)
 
     def date(self):
         return self.revision_date.date
@@ -144,18 +156,19 @@ class RevisionDate(models.Model):
     weekday = models.IntegerField()
 
     @classmethod
-    def normalize(cls, date):
+    def normalize(cls, date, tzinfo):
         return datetime(
             year=date.year,
             month=date.month,
             day=date.day,
             hour=date.hour,
-            minute=date.minute
+            minute=date.minute,
+            tzinfo=tzinfo
         )
 
     @classmethod
-    def from_date(cls, date):
-        date = cls.normalize(date)
+    def from_date(cls, date, tzinfo):
+        date = cls.normalize(date, tzinfo)
 
         revision_date, created = cls.objects.get_or_create(
             date=date,

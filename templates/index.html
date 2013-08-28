@@ -29,9 +29,13 @@
                         </td>
                         <td>{{ repo.kind }}</td>
                         <td>
-                            <a href='{% url "parsr.views.repo" id=repo.pk %}'>
+                            {% if repo.analyzing %}
                                 {{ repo.url }}
-                            </a>
+                            {% else %}
+                                <a href='{% url "parsr.views.repo" id=repo.pk %}'>
+                                    {{ repo.url }}
+                                </a>
+                            {% endif %}
                         </td>
                         <td>{{ repo.revision_count }}</td>
                         <td>{{ repo.author_count }}</td>

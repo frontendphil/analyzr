@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <a href='{% url "parsr.views.repo" id=author.repo.id %}'>
+        <i class='icon-angle-left'></i> Back to repo
+    </a>
+    <h1>{{ author.name }}</h1>
+
+    <h2>Punchcard</h2>
+    <div class='punchcard' repo="{{ author.repo.id }}" author="{{ author.id }}"></div>
+
+{% endblock %}

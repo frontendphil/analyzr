@@ -34,13 +34,13 @@
         <tbody>
             {% for author in repo.authors %}
                 <tr>
-                    <td><a href='#'>{{ author.name }}</a></td>
+                    <td><a href='{% url "parsr.views.author" id=author.id %}'>{{ author.name }}</a></td>
                     <td>{{ author.revision_count }}</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <h2>Punchard</h2>
-    <div class='punchard' repo='{{ repo.id }}'></div>
+    <h2>Punchcard</h2>
+    <div class='punchcard' repo='{{ repo.id }}'></div>
 {% endblock %}

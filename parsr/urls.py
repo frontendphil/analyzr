@@ -11,7 +11,8 @@ admin.site.register(File)
 urlpatterns = patterns('parsr.views',
     url(r"^$", "index"),
     url(r"^repo/(?P<id>\d+)/$", "repo"),
+    url(r'^author/(?P<id>\d+)/$', 'author'),
+    url(r'^punchcard/repo/(?P<repo_id>\d+)/author/(?P<author_id>\d+)', "punchcard"),
     url(r'^punchcard/repo/(?P<repo_id>\d+)', "punchcard"),
-    url(r'^punchcard/repo/(?P<repo_id>\d+)/(?P<author_id>\d+)', "punchcard"),
     url(r"^analyze/(?P<id>\d+)/$", "analyze")
 )

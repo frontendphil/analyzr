@@ -23,6 +23,15 @@ def repo(request, id):
         }, context_instance=RequestContext(request))
 
 
+def author(request, id):
+    author = get_object_or_404(Author, pk=id)
+
+    return render_to_response("author.html",
+        {
+            "author": author
+        }, context_instance=RequestContext(request))
+
+
 def punchcard(request, repo_id, author_id=None):
     repo = get_object_or_404(Repo, pk=repo_id)
     author = get_object_or_404(Author, pk=author_id) if author_id else None
@@ -34,6 +43,10 @@ def punchcard(request, repo_id, author_id=None):
 @require_POST
 def analyze(request, id):
     repo = get_object_or_404(Repo, pk=id)
-    repo.analyze()
+
+    try:
+        repo.analyze()
+    except:
+        repo.abort_analyze()
 
     return HttpResponse(json.dumps({ "status": "ok" }), mimetype="application/json")
