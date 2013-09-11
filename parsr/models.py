@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Sum
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from timezone_field import TimeZoneField
 
@@ -35,18 +37,24 @@ class Repo(models.Model):
     def __unicode__(self):
         return "%s repository at: %s" % (self.kind, self.url)
 
-    def analyze(self):
+    def analyze(self, branch):
         self.analyzed = False
         self.analyzing = True
         self.save()
 
+        self.cleanup()
+
         connector = Connector.get(self)
-        connector.analyze()
+        connector.analyze(branch)
+        connector.get_file_statistics()
 
         self.analyzing = False
         self.analyzed = True
         self.analyzed_date = datetime.now(self.timezone)
         self.save()
+
+    def cleanup(self):
+        FileInfo.objects.filter(repo=self).delete()
 
     def abort_analyze(self):
         self.analyzed = False
@@ -84,6 +92,28 @@ class Repo(models.Model):
 
         return sorted(authors, key=lambda author: author.revision_count())[::-1]
 
+    def add_mime_info(self, mimetype=None):
+        if not mimetype:
+            mimetype = "other/other"
+
+        info, created = FileInfo.objects.get_or_create(repo=self, mimetype=mimetype)
+        info.count = info.count + 1
+        info.save()
+
+    def file_statistics(self, author=None):
+        result = []
+
+        count = FileInfo.objects.filter(repo=self).aggregate(sum=Sum("count"))["sum"] * 1.0
+
+        for stat in FileInfo.objects.filter(repo=self):
+            result.append({
+                "mimetype": stat.mimetype,
+                "share": stat.count / count
+            })
+
+        return result
+
+
     def punchcard(self, author=None):
         revisions = Revision.objects.filter(repo=self)
 
@@ -113,6 +143,42 @@ class Repo(models.Model):
 
         return response
 
+
+@receiver(post_save, sender=Repo)
+def add_branches_to_repo(sender, **kwargs):
+    # TODO
+    return
+
+    instance = kwargs["instance"]
+
+    connector = Connector.get(instance)
+
+    for name, path in connector.get_branches():
+        branch, created = Branch.objects.get_or_create(
+            name=name,
+            path=path,
+            repo=instance
+        )
+
+
+class FileInfo(models.Model):
+
+    mimetype = models.CharField(max_length=50)
+    count = models.IntegerField(default=0)
+
+    repo = models.ForeignKey("Repo")
+
+
+class Branch(models.Model):
+
+    name = models.CharField(max_length=255)
+    path = models.CharField(max_length=255)
+
+    repo = models.ForeignKey("Repo", null=True)
+
+
+    def __unicode__(self):
+        return "Branch %s at %s" % (self.name, self.path)
 
 class Revision(models.Model):
 

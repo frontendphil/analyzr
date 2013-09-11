@@ -43,13 +43,21 @@
                             {% if repo.analyzing %}
                                 Analyzing...
                             {% else %}
-                                {% if not repo.analyzed %}
-                                    <a href='#' rel='{% url "parsr.views.analyze" id=repo.pk %}' class='btn btn-primary btn-sm analyze'>
-                                        Analyze
-                                    </a>
-                                {% else %}
-                                    <a href='#' rel="{% url 'parsr.views.analyze' id=repo.pk %}" class="btn btn-default btn-sm analyze">Re-Analyze</a>
-                                {% endif %}
+                                <div class="btn-group">
+                                    {% if not repo.analyzed %}
+                                        <button type="button" class='btn btn-primary btn-sm dropdown-toggle' data-toggle="dropdown">Analyze <span class="caret"></span></button>
+                                    {% else %}
+                                        <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Re-Analyze <span class="caret"></span></button>
+                                    {% endif %}
+
+                                    <ul class='dropdown-menu' role="menu">
+                                        {% for branch in repo.branch_set.all %}
+                                            <li>
+                                                <a href="#" rel="{% url 'parsr.views.analyze' repo_id=repo.pk branch_id=branch.pk %}" class="analyze">{{ branch.name }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
                             {% endif %}
                         </td>
                     </tr>
