@@ -149,7 +149,13 @@ var CommitHistory;
             var title = svg.append("text")
                 .attr("class", "title")
                 .attr("dx", this.getInnerWidth())
-                .attr("dy", -20);
+                .attr("dy", -(this.margins.top / 2));
+
+            svg.append("text")
+                .attr("class", "header")
+                .attr("dx", -this.margins.left)
+                .attr("dy", -(this.margins.top / 2))
+                .text("Commit History");
 
             var update = function(data, month, year, initial) {
                 title.text(month + " / " + year);

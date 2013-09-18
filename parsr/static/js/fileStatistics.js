@@ -2,6 +2,8 @@ var FileStatistics;
 
 (function() {
 
+    var LINE_COUNT = 5;
+
     FileStatistics = Class.extend({
 
         init: function(target) {
@@ -56,7 +58,15 @@ var FileStatistics;
 
                     that.dom.append(parts, legend);
 
-                    $.each(statistics, function() {
+                    var line;
+
+                    $.each(statistics, function(index) {
+                        if(index % LINE_COUNT === 0) {
+                            line = $("<div class='line' />");
+
+                            legend.append(line);
+                        }
+
                         var color = getColor(statistics.length);
 
                         var container = $("<div class='stat'>");
@@ -76,7 +86,7 @@ var FileStatistics;
                         });
 
                         entry.append(box, share, type);
-                        legend.append(entry);
+                        line.append(entry);
 
                         container.css({
                             width: 100 * this.share + "%",

@@ -1,6 +1,5 @@
 from datetime import datetime
 from hashlib import md5
-from os import walk
 
 import os
 import git
@@ -8,8 +7,6 @@ import hgapi as hg
 
 from pysvn import Client, Revision
 from pysvn import opt_revision_kind as revision_kind
-
-from mimetypes import guess_type
 
 from analyzr.settings import CHECKOUT_PATH
 
@@ -47,34 +44,8 @@ class Connector(object):
     def get_repo_path(self, repo):
         return "%s/%s" % (CHECKOUT_PATH, md5(repo.url).hexdigest())
 
-    def folder_is_valid(self, name):
-        return True
-
     def update(self, path):
         pass
-
-    def get_file_statistics(self, path=None, update=True):
-        if not path:
-            path = self.get_repo_path(self.info)
-
-        if update:
-            self.update(path)
-
-        for folder, folders, files in walk(path):
-            for folder in folders:
-                if not self.folder_is_valid(folder):
-                    continue
-
-                folder = "%s/%s" % (path, folder)
-
-                self.get_file_statistics(folder, False)
-
-            for name in files:
-                if name.startswith("."):
-                    continue
-
-                mimetype, encoding = guess_type(name)
-                self.info.add_mime_info(mimetype)
 
     def parse_date(self, timestamp):
         return datetime.fromtimestamp(int(timestamp))
@@ -110,9 +81,6 @@ class Git(Connector):
             result.append((info.name, info.ref.path))
 
         return result
-
-    def folder_is_valid(self, name):
-        return not name == ".git"
 
 
 class SVN(Connector):
@@ -192,9 +160,6 @@ class SVN(Connector):
             self.repo.checkout(self.info.url, path, revision=Revision(revision_kind.head), recurse=True)
         else:
             self.repo.update(path)
-
-    def folder_is_valid(self, name):
-        return not name == ".svn"
 
 
 class Mercurial(Connector):

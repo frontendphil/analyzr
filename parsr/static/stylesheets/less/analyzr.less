@@ -56,28 +56,51 @@
     overflow: hidden;
     white-space: nowrap;
 
+    @height: 15px;
+
+    height: 15px;
+
+    box-shadow: 0 2px 0px rgba(0, 0, 0, 0.2);
+
     .stat {
-        height: 15px;
+        height: @height;
 
         display: inline-block;
 
         border-left: 1px solid #fff;
         box-sizing: border-box;
+
+        &:first-child {
+            border-left: 0;
+        }
     }
 }
 
 .legend {
+    position: relative;
+
+    .line {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+        border-right: 1px solid rgba(0, 0, 0, 0.2);
+    }
+
     .entry {
         display: inline-block;
         position: relative;
 
-        height: 30px;
+        height: 45px;
+
+        min-width: 20%;
 
         font-size: 11px;
         text-overflow: ellipsis;
 
         white-space: nowrap;
         overflow: hidden;
+
+        padding: 10px;
+
+        border-left: 1px solid rgba(0, 0, 0, 0.2);
 
         .share, .type {
             display: inline;
@@ -88,10 +111,12 @@
 
         .share {
             opacity: 0.5;
-            top: 11px;
+            top: 21px;
         }
 
         .type {
+            position: relative;
+
             text-transform: uppercase;
             top: 0;
         }
@@ -109,6 +134,10 @@
 }
 
 .chart {
+    .header {
+        font-size: 24px;
+    }
+
     .title {
         font-size: 30px;
         opacity: 0.5;

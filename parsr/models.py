@@ -7,6 +7,8 @@ from django.dispatch import receiver
 
 from timezone_field import TimeZoneField
 
+from mimetypes import guess_type
+
 from parsr.connectors import Connector
 
 from analyzr.settings import TIME_ZONE
@@ -46,7 +48,6 @@ class Repo(models.Model):
 
         connector = Connector.get(self)
         connector.analyze(branch)
-        connector.get_file_statistics()
 
         self.analyzing = False
         self.analyzed = True
@@ -110,12 +111,12 @@ class Repo(models.Model):
     def file_statistics(self, author=None):
         result = []
 
-        count = FileInfo.objects.filter(repo=self).aggregate(sum=Sum("count"))["sum"] * 1.0
+        count = File.objects.filter(revision__repo=self, mimetype__isnull=False).values("mimetype").count()
 
-        for stat in FileInfo.objects.filter(repo=self):
+        for stat in File.objects.filter(revision__repo=self, mimetype__isnull=False).values("mimetype").annotate(count=Count("mimetype")):
             result.append({
-                "mimetype": stat.mimetype,
-                "share": stat.count / count
+                "mimetype": stat["mimetype"],
+                "share": stat["count"] / (1.0 * count)
             })
 
         return result
@@ -246,7 +247,13 @@ class Revision(models.Model):
         return "%s created by %s in %s" % (self.identifier, self.author, self.repo)
 
     def add_file(self, filename):
-        File.objects.get_or_create(revision=self, name=filename)
+        mimetype, encoding = guess_type(filename)
+
+        File.objects.get_or_create(
+            revision=self,
+            name=filename,
+            mimetype=mimetype
+        )
 
     def set_author(self, name):
         author, created = Author.objects.get_or_create(
@@ -308,6 +315,7 @@ class File(models.Model):
     revision = models.ForeignKey("Revision")
 
     name = models.CharField(max_length=255)
+    mimetype = models.CharField(max_length=255, null=True)
 
     def __unicode__(self):
         return self.name
