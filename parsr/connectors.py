@@ -57,7 +57,8 @@ class Connector(object):
         if not path:
             path = self.get_repo_path(self.info)
 
-        self.update(path)
+        if update:
+            self.update(path)
 
         for folder, folders, files in walk(path):
             for folder in folders:
@@ -188,7 +189,7 @@ class SVN(Connector):
 
     def update(self, path):
         if not os.path.exists(path):
-            self.repo.checkout(self.info.url, path)
+            self.repo.checkout(self.info.url, path, revision=Revision(revision_kind.head), recurse=True)
         else:
             self.repo.update(path)
 
