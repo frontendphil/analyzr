@@ -53,8 +53,15 @@ class Repo(models.Model):
         self.analyzed_date = datetime.now(self.timezone)
         self.save()
 
+    def remove_all(self, elements):
+        for element in elements:
+            element.delete()
+
     def cleanup(self):
-        FileInfo.objects.filter(repo=self).delete()
+        self.remove_all(FileInfo.objects.filter(repo=self))
+        self.remove_all(File.objects.filter(revision__repo=self))
+        self.remove_all(Revision.objects.filter(repo=self))
+        self.remove_all(Author.objects.filter(repo=self))
 
     def abort_analyze(self):
         self.analyzed = False

@@ -148,19 +148,23 @@ class SVN(Connector):
         return revision.number
 
     def parse(self, identifier):
-        files = self.repo.info2(self.info.url,
-            revision=Revision(revision_kind.number, identifier),
-            recurse=True)
+        log = self.repo.log(self.info.url,
+            revision_start=Revision(revision_kind.number, identifier),
+            revision_end=Revision(revision_kind.number, identifier),
+            discover_changed_paths=True,
+            limit=0)
 
-        for filename, info in files:
-            last_changed = info["last_changed_rev"]
+        if len(log) == 0:
+            # Revision does not affect current branch
 
-            if not last_changed or not last_changed.number == identifier:
-                continue
+            return
 
-            revision = self.info.create_revision(identifier, filename)
-            revision.set_author(info["last_changed_author"])
-            revision.set_date(self.parse_date(info["last_changed_date"]))
+        log = log[0]
+
+        for filename in log.changed_paths:
+            revision = self.info.create_revision(identifier, filename.path)
+            revision.set_author(log.author)
+            revision.set_date(self.parse_date(log.date))
             revision.save()
 
     def analyze(self, branch="trunk"):
