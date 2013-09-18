@@ -93,8 +93,8 @@ class Repo(models.Model):
         return sorted(authors, key=lambda author: author.revision_count())[::-1]
 
     def add_mime_info(self, mimetype=None):
-        if not mimetype:
-            mimetype = "other/other"
+        if not mimetype or not FileInfo.is_valid(mimetype):
+            return
 
         info, created = FileInfo.objects.get_or_create(repo=self, mimetype=mimetype)
         info.count = info.count + 1
@@ -113,6 +113,40 @@ class Repo(models.Model):
 
         return result
 
+    def commit_history(self, author=None):
+        revisions = Revision.objects.filter(repo=self)
+
+        if author:
+            revisions = revisions.filter(author=author)
+
+        response = {
+            "data": {}
+        }
+
+        result = revisions.values("revision_date__year", "revision_date__month", "revision_date__day")\
+                          .annotate(count=Count("revision_date__day"))
+
+        count_max = 0
+
+        for revision in result:
+            count_max = max(revision["count"], count_max)
+
+            year = revision["revision_date__year"]
+            month = revision["revision_date__month"]
+            day = revision["revision_date__day"]
+            count = revision["count"]
+
+            if not year in response["data"]:
+                response["data"][year] = {}
+
+            if not month in response["data"][year]:
+                response["data"][year][month] = {}
+
+            response["data"][year][month][day] = count
+
+        response["upper"] = count_max
+
+        return response
 
     def punchcard(self, author=None):
         revisions = Revision.objects.filter(repo=self)
@@ -146,9 +180,6 @@ class Repo(models.Model):
 
 @receiver(post_save, sender=Repo)
 def add_branches_to_repo(sender, **kwargs):
-    # TODO
-    return
-
     instance = kwargs["instance"]
 
     connector = Connector.get(instance)
@@ -162,6 +193,22 @@ def add_branches_to_repo(sender, **kwargs):
 
 
 class FileInfo(models.Model):
+
+    @classmethod
+    def is_valid(cls, mimetype):
+        if "audio" in mimetype:
+            return False
+
+        if "font" in mimetype:
+            return False
+
+        if mimetype.startswith("text/") or mimetype.startswith("application/"):
+            return True
+
+        if mimetype == "other/other":
+            return True
+
+        return False
 
     mimetype = models.CharField(max_length=50)
     count = models.IntegerField(default=0)

@@ -1,7 +1,8 @@
 from datetime import datetime
 from hashlib import md5
-from os import path, walk
+from os import walk
 
+import os
 import git
 import hgapi as hg
 
@@ -43,8 +44,36 @@ class Connector(object):
     def get_branches(self):
         raise NotImplementedError
 
-    def get_file_statistics(self):
-        raise NotImplementedError
+    def get_repo_path(self, repo):
+        return "%s/%s" % (CHECKOUT_PATH, md5(repo.url).hexdigest())
+
+    def folder_is_valid(self, name):
+        return True
+
+    def update(self, path):
+        pass
+
+    def get_file_statistics(self, path=None, update=True):
+        if not path:
+            path = self.get_repo_path(self.info)
+
+        self.update(path)
+
+        for folder, folders, files in walk(path):
+            for folder in folders:
+                if not self.folder_is_valid(folder):
+                    continue
+
+                folder = "%s/%s" % (path, folder)
+
+                self.get_file_statistics(folder, False)
+
+            for name in files:
+                if name.startswith("."):
+                    continue
+
+                mimetype, encoding = guess_type(name)
+                self.info.add_mime_info(mimetype)
 
     def parse_date(self, timestamp):
         return datetime.fromtimestamp(int(timestamp))
@@ -55,13 +84,10 @@ class Git(Connector):
     def create_repo(self, repo):
         folder = self.get_repo_path(repo)
 
-        if path.exists(folder):
+        if os.path.exists(folder):
             return git.Repo(folder)
 
         return git.Repo.clone_from(repo.url, folder)
-
-    def get_repo_path(self, repo):
-        return "%s/%s" % (CHECKOUT_PATH, md5(repo.url).hexdigest())
 
     def parse(self, commit):
         stats = commit.stats
@@ -84,23 +110,8 @@ class Git(Connector):
 
         return result
 
-    def get_file_statistics(self, path=None):
-        if not path:
-            path = self.get_repo_path(self.info)
-
-        for folder, folders, files in walk(path):
-            for folder in folders:
-                if folder == ".git":
-                    continue
-
-                self.get_file_statistics(folder)
-
-            for name in files:
-                if name.startswith("."):
-                    continue
-
-                mimetype, encoding = guess_type(name)
-                self.info.add_mime_info(mimetype)
+    def folder_is_valid(self, name):
+        return not name == ".git"
 
 
 class SVN(Connector):
@@ -110,15 +121,8 @@ class SVN(Connector):
 
         client.callback_get_login = self.get_login(repo)
         client.callback_ssl_server_trust_prompt = self.get_trust(repo)
-        client.callback_notify = self.get_notify()
 
         return client
-
-    def get_notify(self):
-        def callback_notify(events):
-            print events
-
-        return callback_notify
 
     def get_trust(self, repo):
         def callback_ssl_trust_prompt(trust_dict):
@@ -146,7 +150,7 @@ class SVN(Connector):
     def parse(self, identifier):
         files = self.repo.info2(self.info.url,
             revision=Revision(revision_kind.number, identifier),
-            recurse=False)
+            recurse=True)
 
         for filename, info in files:
             last_changed = info["last_changed_rev"]
@@ -167,15 +171,25 @@ class SVN(Connector):
 
             head = head - 1
 
-    # TODO: Not working on remote end
     def get_branches(self):
         result = [("Trunk", "/trunk")]
+
+        return result
 
         for branch, lock in self.repo.list("branches"):
             import pdb; pdb.set_trace()
             result.append(branch, branch.path)
 
         return result
+
+    def update(self, path):
+        if not os.path.exists(path):
+            self.repo.checkout(self.info.url, path)
+        else:
+            self.repo.update(path)
+
+    def folder_is_valid(self, name):
+        return not name == ".svn"
 
 
 class Mercurial(Connector):

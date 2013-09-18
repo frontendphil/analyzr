@@ -13,6 +13,9 @@ urlpatterns = patterns('parsr.views',
     url(r"^repo/(?P<id>\d+)/$", "repo"),
     url(r'^author/(?P<id>\d+)/$', 'author'),
 
+    url(r'^commits/repo/(?P<repo_id>\d+)/author/(?P<author_id>\d+)', "commits"),
+    url(r'^commits/repo/(?P<repo_id>\d+)', "commits"),
+
     url(r'^file_stats/repo/(?P<repo_id>\d+)/author/(?P<author_id>\d+)', "file_stats"),
     url(r'^file_stats/repo/(?P<repo_id>\d+)', "file_stats"),
 

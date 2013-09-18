@@ -52,37 +52,112 @@
     }
 }
 
-.stat {
-    height: 15px;
+.parts {
+    overflow: hidden;
+    white-space: nowrap;
 
-    display: inline-block;
+    .stat {
+        height: 15px;
 
-    border-left: 1px solid #fff;
-    box-sizing: border-box;
+        display: inline-block;
+
+        border-left: 1px solid #fff;
+        box-sizing: border-box;
+    }
 }
 
 .legend {
     .entry {
         display: inline-block;
+        position: relative;
+
+        height: 30px;
 
         font-size: 11px;
-        text-align: center;
+        text-overflow: ellipsis;
+
+        white-space: nowrap;
+        overflow: hidden;
 
         .share, .type {
             display: inline;
+            position: absolute;
 
             margin-left: 5px;
         }
 
+        .share {
+            opacity: 0.5;
+            top: 11px;
+        }
+
         .type {
             text-transform: uppercase;
+            top: 0;
         }
 
         .box {
             display: inline-block;
+            position: relative;
+
+            bottom: -1px;
 
             width: 10px;
             height: 10px;
         }
+    }
+}
+
+.chart {
+    .title {
+        font-size: 30px;
+        opacity: 0.5;
+
+        text-anchor: end;
+    }
+
+    .axis {
+        path, line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        &.x {
+            .tick {
+                text {
+                    font-size: 11px;
+                }
+            }
+        }
+
+        &.y {
+            path {
+                display: none;
+            }
+
+            .tick {
+                line {
+                    stroke: #fff;
+                    stroke-opacity: 0.2;
+                }
+
+                text {
+                    font-size: 11px;
+                }
+            }
+        }
+    }
+
+    .bar {
+        fill: rgb(107, 162, 199);
+    }
+
+    .day {
+        text-anchor: middle;
+
+        font-size: 11px;
+
+        fill: #fff;
     }
 }

@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>General</h2>
     <div class='stats' repo="{{ repo.id }}"></div>
+
+    <hr />
+
     <table class="table">
         <thead>
             <tr>
@@ -24,6 +26,10 @@
         </tbody>
     </table>
 
+    <div class='commits' repo="{{ repo.id }}"></div>
+
+    <hr />
+
     <h2>Contributors</h2>
     <table class='table'>
         <thead>
@@ -42,6 +48,19 @@
         </tbody>
     </table>
 
-    <h2>Punchcard</h2>
     <div class='punchcard' repo='{{ repo.id }}'></div>
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            CommitHistory.auto(".commits", {
+                margins: {
+                    top: 50,
+                    left: 40,
+                    bottom: 20
+                }
+            });
+        })
+    </script>
 {% endblock %}

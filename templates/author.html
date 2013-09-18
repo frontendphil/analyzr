@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "repo.html" %}
 
 {% block content %}
 
@@ -7,7 +7,10 @@
     </a>
     <h1>{{ author.name }}</h1>
 
-    <h2>Punchcard</h2>
+    <div class="commits" repo="{{ author.repo.id }}" author="{{ author.id }}"></div>
+
+    <hr />
+
     <div class='punchcard' repo="{{ author.repo.id }}" author="{{ author.id }}"></div>
 
 {% endblock %}

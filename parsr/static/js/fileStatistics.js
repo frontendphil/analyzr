@@ -52,8 +52,9 @@ var FileStatistics;
             $.ajax(url, {
                 success: function(statistics) {
                     var legend = $("<div class='legend' />");
+                    var parts = $("<div class='parts' />");
 
-                    that.dom.append(legend);
+                    that.dom.append(parts, legend);
 
                     $.each(statistics, function() {
                         var color = getColor(statistics.length);
@@ -82,7 +83,7 @@ var FileStatistics;
                             background: color
                         });
 
-                        that.dom.append(container);
+                        parts.append(container);
                     });
                 }
             });

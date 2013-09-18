@@ -28,10 +28,15 @@
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery-2.0.3.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery.cookie.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/bootstrap.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/lib/d3.v3.js"></script>
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/class.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/punchcard.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/fileStatistics.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/commits.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/analyzr.js"></script>
+
+    {% block script %}
+    {% endblock %}
 </body>
 </html>

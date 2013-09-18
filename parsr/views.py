@@ -48,6 +48,13 @@ def file_stats(request, repo_id, author_id=None):
     return HttpResponse(json.dumps(repo.file_statistics(author)), mimetype="application/json")
 
 
+def commits(request, repo_id, author_id=None):
+    repo = get_object_or_404(Repo, pk=repo_id)
+    author = get_object_or_404(Author, pk=author_id) if author_id else None
+
+    return HttpResponse(json.dumps(repo.commit_history(author)), mimetype="application/json")
+
+
 @require_POST
 def analyze(request, repo_id, branch_id):
     repo = get_object_or_404(Repo, pk=repo_id)
