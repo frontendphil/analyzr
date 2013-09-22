@@ -8,12 +8,27 @@ from django.template import RequestContext
 from django.http import HttpResponse
 
 from parsr.models import Repo, Author, Branch
+from parsr.forms import RepoForm
 
 
 def index(request):
     repositories = Repo.objects.all()
 
     return render_to_response("index.html", { "repositories": repositories }, context_instance=RequestContext(request))
+
+
+def create(request):
+    form = RepoForm()
+
+    return render_to_response("create.html", 
+        {
+            "form": form
+        }, context_instance=RequestContext(request))
+
+
+@require_POST
+def save(request):
+    pass
 
 
 def repo(request, id):

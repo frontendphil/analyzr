@@ -59,7 +59,6 @@ class Repo(models.Model):
             element.delete()
 
     def cleanup(self):
-        self.remove_all(FileInfo.objects.filter(repo=self))
         self.remove_all(File.objects.filter(revision__repo=self))
         self.remove_all(Revision.objects.filter(repo=self))
         self.remove_all(Author.objects.filter(repo=self))
@@ -100,20 +99,17 @@ class Repo(models.Model):
 
         return sorted(authors, key=lambda author: author.revision_count())[::-1]
 
-    def add_mime_info(self, mimetype=None):
-        if not mimetype or not FileInfo.is_valid(mimetype):
-            return
-
-        info, created = FileInfo.objects.get_or_create(repo=self, mimetype=mimetype)
-        info.count = info.count + 1
-        info.save()
-
     def file_statistics(self, author=None):
         result = []
 
-        count = File.objects.filter(revision__repo=self, mimetype__isnull=False).values("mimetype").count()
+        files = File.objects.filter(revision__repo=self, mimetype__isnull=False)
 
-        for stat in File.objects.filter(revision__repo=self, mimetype__isnull=False).values("mimetype").annotate(count=Count("mimetype")):
+        if author:
+            files = files.filter(revision__author=author)
+
+        count = files.values("mimetype").count()
+
+        for stat in files.values("mimetype").annotate(count=Count("mimetype")):
             result.append({
                 "mimetype": stat["mimetype"],
                 "share": stat["count"] / (1.0 * count)
@@ -200,37 +196,12 @@ def add_branches_to_repo(sender, **kwargs):
         )
 
 
-class FileInfo(models.Model):
-
-    @classmethod
-    def is_valid(cls, mimetype):
-        if "audio" in mimetype:
-            return False
-
-        if "font" in mimetype:
-            return False
-
-        if mimetype.startswith("text/") or mimetype.startswith("application/"):
-            return True
-
-        if mimetype == "other/other":
-            return True
-
-        return False
-
-    mimetype = models.CharField(max_length=50)
-    count = models.IntegerField(default=0)
-
-    repo = models.ForeignKey("Repo")
-
-
 class Branch(models.Model):
 
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
 
     repo = models.ForeignKey("Repo", null=True)
-
 
     def __unicode__(self):
         return "Branch %s at %s" % (self.name, self.path)
@@ -246,13 +217,14 @@ class Revision(models.Model):
     def __unicode__(self):
         return "%s created by %s in %s" % (self.identifier, self.author, self.repo)
 
-    def add_file(self, filename):
+    def add_file(self, filename, action):
         mimetype, encoding = guess_type(filename)
 
         File.objects.get_or_create(
             revision=self,
             name=filename,
-            mimetype=mimetype
+            mimetype=mimetype,
+            change_type=action
         )
 
     def set_author(self, name):
@@ -312,10 +284,19 @@ class RevisionDate(models.Model):
 
 class File(models.Model):
 
+    CHANGE_TYPES = (
+        ("A", "Added"),
+        ("M", "Modified"),
+        ("C", "Copied"),
+        ("D", "Deleted")
+    )
+
     revision = models.ForeignKey("Revision")
 
     name = models.CharField(max_length=255)
     mimetype = models.CharField(max_length=255, null=True)
+
+    change_type = models.CharField(max_length=1, null=True, choices=CHANGE_TYPES)
 
     def __unicode__(self):
         return self.name

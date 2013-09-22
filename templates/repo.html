@@ -33,9 +33,10 @@
     <hr />
 
     <h2>Contributors</h2>
-    <table class='table'>
+    <table class='table table-hover'>
         <thead>
             <tr>
+                <th>#</td>
                 <th>Name</th>
                 <th>Revisions</th>
             </tr>
@@ -43,6 +44,7 @@
         <tbody>
             {% for author in repo.authors %}
                 <tr>
+                    <td>{{ forloop.counter }}</td>
                     <td><a href='{% url "parsr.views.author" id=author.id %}'>{{ author.name }}</a></td>
                     <td>{{ author.revision_count }}</td>
                 </tr>

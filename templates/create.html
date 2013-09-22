@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% load filters %}
+
+{% block content %}
+	<form class='add-repo form-horizontal' method='post' action='{% url "parsr.views.save" %}'>
+		{% csrf_token %}
+		{% for field in form %}
+			<div class='form-group'>
+				{% if field|is_checkbox %}
+					<div class='col-lg-offset-2 col-lg-10'>
+						<div class='checkbox'>
+							<label>
+								{{ field }} {{ field.label }}
+							</label>
+						</div>
+					</div>
+				{% else %}
+					<label class='col-lg-2 control-label' for='{{ field.id }}'>{{ field.label }}</label>
+					<div class='col-lg-10'>
+						{{ field }}
+					</div>
+				{% endif %}
+			</div>
+		{% endfor %}
+		<div class='form-group'>
+			<div class='col-lg-offset-2 col-lg-10'>
+				<input type='submit' class='btn btn-primary' value='Add repoistory' />
+			</div>
+		</div>
+	</form>
+{% endblock %}
+
+{% block script %}
+	<script type="text/javascript">
+		$(document).ready(function() {
+			var form = new AddRepoForm(".add-repo", "#id_anonymous");
+			form.update();
+		});
+	</script>
+{% endblock %}

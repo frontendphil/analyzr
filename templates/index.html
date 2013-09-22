@@ -62,6 +62,11 @@
                         </td>
                     </tr>
                 {% endfor %}
+                <tr>
+                    <td colspan='6'>
+                        <a href='{% url "parsr.views.create" %}' class='btn btn-default'>Add another repository...</a>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>

@@ -10,7 +10,7 @@ var FileStatistics;
             this.dom = $(target);
 
             var repo = this.dom.attr("repo");
-            var author = this.dom.attr("url");
+            var author = this.dom.attr("author");
 
             var url = "/file_stats/repo/" + repo;
 

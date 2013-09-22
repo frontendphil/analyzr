@@ -61,18 +61,25 @@ class Git(Connector):
 
         return git.Repo.clone_from(repo.url, folder)
 
-    def parse(self, commit):
+    def parse(self, commit, child=None):
         stats = commit.stats
 
-        for filename in stats.files.keys():
-            revision = self.info.create_revision(commit.hexsha, filename)
-            revision.set_author(commit.author)
-            revision.set_date(self.parse_date(commit.committed_date))
-            revision.save()
+        import pdb; pdb.set_trace()
+
+        for filename, stat in stats.files.iteritems():
+            pass
+            # revision = self.info.create_revision(commit.hexsha, filename)
+            # revision.set_author(commit.author)
+            # revision.set_date(self.parse_date(commit.committed_date))
+            # revision.save()
 
     def analyze(self, branch="master"):
+        last_commit = None
+
         for commit in self.repo.iter_commits():
-            self.parse(commit)
+            self.parse(commit, last_commit)
+
+            last_commit = commit
 
     def get_branches(self):
         result = []
@@ -105,8 +112,8 @@ class SVN(Connector):
 
         return callback_get_login
 
-    def get_head_revision(self):
-        head = self.repo.info2(self.info.url,
+    def get_head_revision(self, branch):
+        head = self.repo.info2("%s%s" % (self.info.url, branch.path),
             revision=Revision(revision_kind.head),
             recurse=False)
 
@@ -116,8 +123,8 @@ class SVN(Connector):
 
         return revision.number
 
-    def parse(self, identifier):
-        log = self.repo.log(self.info.url,
+    def parse(self, branch, identifier):
+        log = self.repo.log("%s%s" % (self.info.url, branch.path),
             revision_start=Revision(revision_kind.number, identifier),
             revision_end=Revision(revision_kind.number, identifier),
             discover_changed_paths=True,
@@ -131,29 +138,39 @@ class SVN(Connector):
         log = log[0]
 
         for filename in log.changed_paths:
-            revision = self.info.create_revision(identifier, filename.path)
+            revision = self.info.create_revision(identifier, filename.path, filename.action)
             revision.set_author(log.author)
             revision.set_date(self.parse_date(log.date))
             revision.save()
 
-    def analyze(self, branch="trunk"):
-        head = self.get_head_revision()
+    def analyze(self, branch):
+        head = self.get_head_revision(branch)
 
         while head > 0:
-            self.parse(head)
+            self.parse(branch, head)
 
             head = head - 1
 
     def get_branches(self):
-        result = [("Trunk", "/trunk")]
+        branches = []
 
-        return result
+        for folder, lock in self.repo.list(self.info.url, recurse=False, revision=Revision(revision_kind.head)):
+            folder_name = folder.path.replace(self.info.url, "")
 
-        for branch, lock in self.repo.list("branches"):
-            import pdb; pdb.set_trace()
-            result.append(branch, branch.path)
+            if folder_name == "/branches":
+                for branch, lock in self.repo.list(folder.path, recurse=False, revision=Revision(revision_kind.head)):
+                    directory = branch.path.replace(self.info.url, "")
+                    name = directory.replace("/branches/", "")
 
-        return result
+                    branches.append((name, directory))
+
+            if folder_name == "/trunk":
+                branches.append(("Trunk", folder_name))
+
+        if not branches:
+            branches.append(("Root", "/"))
+
+        return branches
 
     def update(self, path):
         if not os.path.exists(path):

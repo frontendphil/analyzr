@@ -22,5 +22,8 @@ urlpatterns = patterns('parsr.views',
     url(r'^punchcard/repo/(?P<repo_id>\d+)/author/(?P<author_id>\d+)', "punchcard"),
     url(r'^punchcard/repo/(?P<repo_id>\d+)', "punchcard"),
 
-    url(r"^analyze/repo/(?P<repo_id>\d+)/branch/(?P<branch_id>\d+)/$", "analyze")
+    url(r"^analyze/repo/(?P<repo_id>\d+)/branch/(?P<branch_id>\d+)/$", "analyze"),
+
+    url(r"^create/$", "create"),
+    url(r"^create/save/$", "save"),
 )
