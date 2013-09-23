@@ -9,7 +9,7 @@ from timezone_field import TimeZoneField
 
 from mimetypes import guess_type
 
-from parsr.connectors import Connector
+from parsr.connectors import Connector, Action
 
 from analyzr.settings import TIME_ZONE
 
@@ -69,13 +69,13 @@ class Repo(models.Model):
 
         self.save()
 
-    def create_revision(self, identifier, filename):
+    def create_revision(self, identifier, filename, action):
         revision, created = Revision.objects.get_or_create(
             repo=self,
             identifier=identifier
         )
 
-        revision.add_file(filename)
+        revision.add_file(filename, action)
 
         return revision
 
@@ -281,14 +281,17 @@ class RevisionDate(models.Model):
 
         return revision_date
 
+    def __unicode__(self):
+        return self.date.strftime("%d/%m/%Y - %H:%M")
+
 
 class File(models.Model):
 
     CHANGE_TYPES = (
-        ("A", "Added"),
-        ("M", "Modified"),
-        ("C", "Copied"),
-        ("D", "Deleted")
+        (Action.ADD, "Added"),
+        (Action.MODIFY, "Modified"),
+        (Action.MOVE, "Copied"),
+        (Action.DELETE, "Deleted")
     )
 
     revision = models.ForeignKey("Revision")

@@ -11,6 +11,13 @@ from pysvn import opt_revision_kind as revision_kind
 from analyzr.settings import CHECKOUT_PATH
 
 
+class Action(object):
+    ADD = "A"
+    MODIFY = "M"
+    MOVE = "C"
+    DELETE = "D"
+
+
 class Connector(object):
 
     @classmethod
@@ -61,18 +68,46 @@ class Git(Connector):
 
         return git.Repo.clone_from(repo.url, folder)
 
-    def parse(self, commit, child=None):
+    def create_revision(self, commit, filename, action):
+        revision = self.info.create_revision(commit.hexsha, filename, action)
+        revision.set_author(commit.author)
+        revision.set_date(self.parse_date(commit.committed_date))
+        revision.save()
+
+    def parse(self, parent, commit=None):
+        if not commit:
+            return
+
         stats = commit.stats
 
-        if child:
-            import pdb; pdb.set_trace()
+        if not parent:
+            for filename, info in stats.files.iteritems():
+                self.create_revision(commit, filename, Action.ADD)
 
-        for filename, stat in stats.files.iteritems():
-            pass
-            # revision = self.info.create_revision(commit.hexsha, filename)
-            # revision.set_author(commit.author)
-            # revision.set_date(self.parse_date(commit.committed_date))
-            # revision.save()
+            return
+
+        diffs = parent.diff(commit)
+
+        for diff in diffs:
+            action = Action.MODIFY
+            filename = None
+
+            if diff.new_file:
+                action = Action.ADD
+                filename = diff.b_blob.path
+
+            if diff.deleted_file:
+                action = Action.DELETE
+
+            if diff.renamed:
+                action = Action.MOVE
+                filename = diff.b_blob.path
+
+            if not filename:
+                filename = diff.a_blob.path
+
+            self.create_revision(commit, filename, action)
+
 
     def analyze(self, branch="master"):
         last_commit = None
@@ -81,6 +116,9 @@ class Git(Connector):
             self.parse(commit, last_commit)
 
             last_commit = commit
+
+        # create initial commit
+        self.parse(None, last_commit)
 
     def get_branches(self):
         result = []
