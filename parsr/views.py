@@ -28,7 +28,17 @@ def create(request):
 
 @require_POST
 def save(request):
-    pass
+    form = RepoForm(request.POST)
+
+    if not form.is_valid():
+        return HttpResponse(json.dumps(form.errors), status=403, mimetype="application/json")
+
+    try:
+        form.save()
+    except:
+        return HttpResponse(json.dumps({"repo": True}), status=500, mimetype="application/json")
+
+    return HttpResponse(status=200)
 
 
 def repo(request, id):

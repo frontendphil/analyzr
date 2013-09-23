@@ -64,7 +64,8 @@ class Git(Connector):
     def parse(self, commit, child=None):
         stats = commit.stats
 
-        import pdb; pdb.set_trace()
+        if child:
+            import pdb; pdb.set_trace()
 
         for filename, stat in stats.files.iteritems():
             pass

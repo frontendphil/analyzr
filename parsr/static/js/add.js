@@ -4,7 +4,7 @@ var AddRepoForm;
 
 	AddRepoForm = Class.extend({
 		init: function(target, toggle) {
-			this.dom = $(target);
+			this.form = $(target);
 
 			this.toggle = $(toggle);
 
@@ -13,6 +13,66 @@ var AddRepoForm;
 			this.toggle.click(function() {
 				that.update();
 			});
+
+			this.form.on("submit", function(e) {
+				return that.handleSubmit(e);
+			});
+		},
+
+		getData: function() {
+			var data = {};
+
+			var gather = function() {
+				var name = $(this).attr("name");
+				var value;
+
+				if($(this).attr("type") === "checkbox") {
+					value = $(this).prop("checked");
+				} else {
+					value = $(this).prop("value");
+				}
+
+				data[name] = value;
+			};
+
+			this.form.find("input").each(gather);
+			this.form.find("select").each(gather);
+
+			return data;
+		},
+
+		handleSubmit: function(event) {
+			event.preventDefault();
+
+			var that = this;
+			var mask = new Mask("body", "Creating repository. Please wait...");
+
+			$.ajax(this.form.attr("action"), {
+				method: "POST",
+				data: this.getData(),
+				beforeSend: function() {
+					mask.show();
+				},
+				success: function() {
+					window.location.href = "/";
+				},
+				error: function(data) {
+					that.form.find(".form-group").removeClass("has-error");
+
+					$.each(data.responseJSON, function(key) {
+						that.form.find("*[name=" + key + "]").parents(".form-group").addClass("has-error");
+					});
+
+					mask.remove();
+
+					if(data.responseJSON.repo) {
+						var dialog = new Dialog("There seems to be an error with the repo properties. Please check the URL, kind, and the credentials.");
+						dialog.show();
+					}
+				}
+			})
+
+			return false;
 		},
 
 		getStatus: function() {
@@ -20,7 +80,7 @@ var AddRepoForm;
 		},
 
 		update: function() {
-			var el = this.dom.find(".optional").parents(".form-group");
+			var el = this.form.find(".optional").parents(".form-group");
 
 			if(this.getStatus()) {
 				el.slideUp();
