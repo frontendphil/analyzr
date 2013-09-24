@@ -20,7 +20,7 @@ def index(request):
 def create(request):
     form = RepoForm()
 
-    return render_to_response("create.html", 
+    return render_to_response("create.html",
         {
             "form": form
         }, context_instance=RequestContext(request))
@@ -39,6 +39,25 @@ def save(request):
         return HttpResponse(json.dumps({"repo": True}), status=500, mimetype="application/json")
 
     return HttpResponse(status=200)
+
+
+@require_POST
+def remove(request, repo_id):
+    repo = get_object_or_404(Repo, pk=repo_id)
+
+    repo.delete()
+
+    return HttpResponse(status=200)
+
+
+def edit(request, repo_id):
+    repo = get_object_or_404(Repo, pk=repo_id)
+    form = RepoForm(instance=repo)
+
+    return render_to_response("edit.html",
+        {
+            "form": form
+        }, context_instance=RequestContext(request))
 
 
 def repo(request, id):

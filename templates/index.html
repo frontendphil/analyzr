@@ -11,6 +11,8 @@
                     <th>Revisions</th>
                     <th>Authors</th>
                     <th></th>
+                    <th></th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -60,10 +62,20 @@
                                 </div>
                             {% endif %}
                         </td>
+                        <td>
+                            <a href='{% url "parsr.views.edit" repo_id=repo.id %}'>
+                                <i class='icon-edit'></i>
+                            </a>
+                        </td>
+                        <td>
+                            <a href='{% url "parsr.views.remove" repo_id=repo.id %}'>
+                                <i class='icon-remove'></i>
+                            </a>
+                        </td>
                     </tr>
                 {% endfor %}
                 <tr>
-                    <td colspan='6'>
+                    <td colspan='8'>
                         <a href='{% url "parsr.views.create" %}' class='btn btn-default'>Add another repository...</a>
                     </td>
                 </tr>

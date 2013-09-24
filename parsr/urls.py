@@ -26,4 +26,8 @@ urlpatterns = patterns('parsr.views',
 
     url(r"^create/$", "create"),
     url(r"^create/save/$", "save"),
+
+    url(r"^edit/(?P<repo_id>\d+)/$", "edit"),
+
+    url(r"^remove/(?P<repo_id>\d+)/$", "remove"),
 )

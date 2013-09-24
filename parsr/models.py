@@ -300,6 +300,7 @@ class File(models.Model):
     mimetype = models.CharField(max_length=255, null=True)
 
     change_type = models.CharField(max_length=1, null=True, choices=CHANGE_TYPES)
+    copy_of = models.ForeignKey("File", null=True)
 
     def __unicode__(self):
         return self.name

@@ -16,7 +16,7 @@ class RepoForm(forms.ModelForm):
 			"kind": get_widget(forms.Select),
 			"timezone": get_widget(forms.Select),
 			"user": get_widget(forms.TextInput, "optional"),
-			"password": get_widget(forms.TextInput, "optional")
+			"password": get_widget(forms.PasswordInput, "optional")
 		}
 
 	def is_valid(self):
