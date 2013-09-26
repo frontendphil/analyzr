@@ -10,6 +10,7 @@ from timezone_field import TimeZoneField
 from mimetypes import guess_type
 
 from parsr.connectors import Connector, Action
+from parsr import sql
 
 from analyzr.settings import TIME_ZONE
 
@@ -69,13 +70,13 @@ class Repo(models.Model):
 
         self.save()
 
-    def create_revision(self, identifier, filename, action):
+    def create_revision(self, identifier, filename, action, original=None):
         revision, created = Revision.objects.get_or_create(
             repo=self,
             identifier=identifier
         )
 
-        revision.add_file(filename, action)
+        revision.add_file(filename, action, original)
 
         return revision
 
@@ -107,12 +108,13 @@ class Repo(models.Model):
         if author:
             files = files.filter(revision__author=author)
 
-        count = files.values("mimetype").count()
+        query = sql.newest_files(str(files.query))
+        count = File.objects.raw(sql.count_entries(query))[0].count
 
-        for stat in files.values("mimetype").annotate(count=Count("mimetype")):
+        for stat in File.objects.raw(sql.mimetype_count(query)):
             result.append({
-                "mimetype": stat["mimetype"],
-                "share": stat["count"] / (1.0 * count)
+                "mimetype": stat.mimetype,
+                "share": stat.count / (1.0 * count)
             })
 
         return result
@@ -217,14 +219,20 @@ class Revision(models.Model):
     def __unicode__(self):
         return "%s created by %s in %s" % (self.identifier, self.author, self.repo)
 
-    def add_file(self, filename, action):
+    def add_file(self, filename, action, original=None):
         mimetype, encoding = guess_type(filename)
+
+        if original:
+            original = File.objects\
+                           .filter(name=original, revision__repo=self.repo)\
+                           .order_by("-revision__revision_date__date")[0:1]
 
         File.objects.get_or_create(
             revision=self,
             name=filename,
             mimetype=mimetype,
-            change_type=action
+            change_type=action,
+            original=original[0] if original else None
         )
 
     def set_author(self, name):

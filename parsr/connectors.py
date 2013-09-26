@@ -7,6 +7,7 @@ import hgapi as hg
 
 from pysvn import Client, Revision
 from pysvn import opt_revision_kind as revision_kind
+from pysvn import wc_status_kind as svn_status
 
 from analyzr.settings import CHECKOUT_PATH
 
@@ -91,6 +92,7 @@ class Git(Connector):
         for diff in diffs:
             action = Action.MODIFY
             filename = None
+            original = None
 
             if diff.new_file:
                 action = Action.ADD
@@ -101,12 +103,14 @@ class Git(Connector):
 
             if diff.renamed:
                 action = Action.MOVE
+
                 filename = diff.b_blob.path
+                original = diff.a_blob.path
 
             if not filename:
                 filename = diff.a_blob.path
 
-            self.create_revision(commit, filename, action)
+            self.create_revision(commit, filename, action, original)
 
 
     def analyze(self, branch="master"):
@@ -162,6 +166,10 @@ class SVN(Connector):
 
         return revision.number
 
+    def get_action(self, status):
+        if status == svn_status.added:
+            return Action.ADD
+
     def parse(self, branch, identifier):
         log = self.repo.log("%s%s" % (self.info.url, branch.path),
             revision_start=Revision(revision_kind.number, identifier),
@@ -171,13 +179,19 @@ class SVN(Connector):
 
         if len(log) == 0:
             # Revision does not affect current branch
-
             return
 
         log = log[0]
 
         for filename in log.changed_paths:
-            revision = self.info.create_revision(identifier, filename.path, filename.action)
+            original = None
+
+            action = self.get_action(filename.action)
+
+            if action == Action.MOVE:
+                original = filename.copyfrom_path
+
+            revision = self.info.create_revision(identifier, filename.path, action, original)
             revision.set_author(log.author)
             revision.set_date(self.parse_date(log.date))
             revision.save()
