@@ -69,8 +69,8 @@ class Git(Connector):
 
         return git.Repo.clone_from(repo.url, folder)
 
-    def create_revision(self, commit, filename, action):
-        revision = self.info.create_revision(commit.hexsha, filename, action)
+    def create_revision(self, commit, filename, action, original=None):
+        revision = self.info.create_revision(commit.hexsha, filename, action, original)
         revision.set_author(commit.author)
         revision.set_date(self.parse_date(commit.committed_date))
         revision.save()
@@ -186,12 +186,10 @@ class SVN(Connector):
         for filename in log.changed_paths:
             original = None
 
-            action = self.get_action(filename.action)
-
-            if action == Action.MOVE:
+            if filename.action == Action.MOVE:
                 original = filename.copyfrom_path
 
-            revision = self.info.create_revision(identifier, filename.path, action, original)
+            revision = self.info.create_revision(identifier, filename.path, filename.action, original)
             revision.set_author(log.author)
             revision.set_date(self.parse_date(log.date))
             revision.save()

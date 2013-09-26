@@ -63,14 +63,18 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href='{% url "parsr.views.edit" repo_id=repo.id %}'>
-                                <i class='icon-edit'></i>
-                            </a>
+                            {% if not repo.analyzing %}
+                                <a href='{% url "parsr.views.edit" repo_id=repo.id %}'>
+                                    <i class='icon-edit'></i>
+                                </a>
+                            {% endif %}
                         </td>
                         <td>
-                            <a href='{% url "parsr.views.remove" repo_id=repo.id %}'>
-                                <i class='icon-remove'></i>
-                            </a>
+                            {% if not repo.analyzing %}
+                                <a href='{% url "parsr.views.remove" repo_id=repo.id %}'>
+                                    <i class='icon-remove'></i>
+                                </a>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

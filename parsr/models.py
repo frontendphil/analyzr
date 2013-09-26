@@ -108,6 +108,16 @@ class Repo(models.Model):
         if author:
             files = files.filter(revision__author=author)
 
+            count = files.values("mimetype").count()
+
+            for stat in files.values("mimetype").annotate(count=Count("mimetype")):
+                result.append({
+                    "mimetype": stat["mimetype"],
+                    "share": stat["count"] / (1.0 * count)
+                })
+
+            return result
+
         query = sql.newest_files(str(files.query))
         count = File.objects.raw(sql.count_entries(query))[0].count
 
@@ -232,7 +242,7 @@ class Revision(models.Model):
             name=filename,
             mimetype=mimetype,
             change_type=action,
-            original=original[0] if original else None
+            copy_of=original[0] if original else None
         )
 
     def set_author(self, name):
