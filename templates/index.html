@@ -71,7 +71,7 @@
                         </td>
                         <td>
                             {% if not repo.analyzing %}
-                                <a href='{% url "parsr.views.remove" repo_id=repo.id %}'>
+                                <a href='#' trigger='delete' action='{% url "parsr.views.remove" repo_id=repo.id %}'>
                                     <i class='icon-remove'></i>
                                 </a>
                             {% endif %}

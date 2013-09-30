@@ -3,7 +3,8 @@ from hashlib import md5
 
 import os
 import git
-import hgapi as hg
+
+from mercurial import ui, hg, node
 
 from pysvn import Client, Revision
 from pysvn import opt_revision_kind as revision_kind
@@ -47,7 +48,7 @@ class Connector(object):
         raise NotImplementedError
 
     def get_branches(self):
-        raise NotImplementedError
+        return [("Root", "/")]
 
     def get_repo_path(self, repo):
         return "%s/%s" % (CHECKOUT_PATH, md5(repo.url).hexdigest())
@@ -219,7 +220,7 @@ class SVN(Connector):
                 branches.append(("Trunk", folder_name))
 
         if not branches:
-            branches.append(("Root", "/"))
+            return super(SVN, self).get_branches()
 
         return branches
 
@@ -233,4 +234,63 @@ class SVN(Connector):
 class Mercurial(Connector):
 
     def create_repo(self, repo):
-        return hg.Repo(repo)
+        self.ui = ui.ui()
+
+        folder = self.get_repo_path(repo)
+
+        if os.path.exists(folder):
+            return hg.repository(self.ui, folder)
+
+        try:
+            hg.clone(self.ui, dict(), str(repo.url), folder, pull=True)
+        except ValueError:
+            repo = hg.repository(self.ui, folder)
+
+            hg.update(repo, node.hex(node.nullid))
+
+        return self.create_repo()
+
+    def get_action(self, filectx):
+        if filectx.renamed():
+            return Action.MOVE
+
+        try:
+            filectx.p1()
+        except IndexError:
+            return Action.ADD
+
+        try:
+            filectx.p2()
+        except IndexError:
+            return Action.DELETE
+
+        return Action.MODIFY
+
+    def get_original(self, filectx):
+        peer = filectx.p1()
+
+        return peer.path()
+
+    def parse(self, commit):
+        for filename in commit.files():
+            filectx = commit.filectx(filename)
+            action = self.get_action(filectx)
+            original = None
+
+            if action == Action.MOVE:
+                original = self.get_original(filectx)
+
+            revision = self.info.create_revision(commit.hex(), filename, action, original)
+            revision.set_author(commit.user())
+
+            timestamp, foo = commit.date()
+
+            revision.set_date(self.parse_date(timestamp))
+            revision.save()
+
+
+    def analyze(self, branch):
+        for id in self.repo:
+            commit = self.repo[id]
+
+            self.parse(commit)

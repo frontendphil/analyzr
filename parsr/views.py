@@ -33,9 +33,16 @@ def save(request):
     if not form.is_valid():
         return HttpResponse(json.dumps(form.errors), status=403, mimetype="application/json")
 
+    instance = None
+
     try:
-        form.save()
-    except:
+        instance = form.save()
+    except Exception:
+        traceback.print_exc(file=sys.stdout)
+
+        if instance:
+            instance.delete()
+
         return HttpResponse(json.dumps({"repo": True}), status=500, mimetype="application/json")
 
     return HttpResponse(status=200)
