@@ -33,6 +33,9 @@ class Repo(models.Model):
     analyzing = models.BooleanField(default=False)
     analyzed_date = models.DateTimeField(null=True, blank=True)
 
+    measured = models.BooleanField(default=False)
+    measuring = models.BooleanField(default=False)
+
     timezone = TimeZoneField(default=TIME_ZONE)
 
     user = models.CharField(max_length=255, null=True, blank=True)
@@ -46,6 +49,7 @@ class Repo(models.Model):
         self.analyzing = True
         self.save()
 
+        # TODO: cleanup for branch
         self.cleanup()
 
         connector = Connector.get(self)
@@ -66,9 +70,32 @@ class Repo(models.Model):
         self.remove_all(Revision, Revision.objects.filter(repo=self))
         self.remove_all(Author, Author.objects.filter(repo=self))
 
-    def measure(self):
-        analyzer = Analyzer(self)
+    def busy(self):
+        return self.analyzing or self.measuring
+
+    def get_status(self):
+        if self.analyzing:
+            return "Analyzing"
+
+        return "Measuring"
+
+    def measure(self, branch):
+        self.measured = False
+        self.measuring = True
+        self.save()
+
+        analyzer = Analyzer(self, branch)
         analyzer.start()
+
+        self.measuring = False
+        self.measured = True
+        self.save()
+
+    def abort_measure(self):
+        self.measured = False
+        self.measuring = False
+
+        self.save()
 
     def abort_analyze(self):
         self.analyzed = False
@@ -76,19 +103,28 @@ class Repo(models.Model):
 
         self.save()
 
-    def create_revision(self, identifier):
+    def create_revision(self, branch, identifier):
         revision, created = Revision.objects.get_or_create(
             repo=self,
+            branch=branch,
             identifier=identifier
         )
 
         return revision
 
-    def revision_count(self):
-        return self.revision_set.count()
+    def branch_count(self):
+        return self.branch_set.count()
 
     def author_count(self):
         return self.author_set.count()
+
+    def default_branch(self):
+        default = Branch.objects.filter(repo=self)[0:1]
+
+        if default:
+            return default[0]
+
+        return None
 
     def age(self):
         if not self.analyzed or self.revision_set.count() == 0:
@@ -108,10 +144,10 @@ class Repo(models.Model):
         return Revision.objects.filter(repo=self)\
                                .order_by("revision_date__date")
 
-    def file_statistics(self, author=None):
+    def file_statistics(self, branch, author=None):
         result = []
 
-        files = File.objects.filter(revision__repo=self, mimetype__isnull=False)
+        files = File.objects.filter(revision__repo=self, revision__branch=branch, mimetype__isnull=False)
 
         if author:
             files = files.filter(revision__author=author)
@@ -207,7 +243,7 @@ class Repo(models.Model):
 def add_branches_to_repo(sender, **kwargs):
     instance = kwargs["instance"]
 
-    if instance.branch.count() > 0:
+    if instance.branch_set.count() > 0:
         return
 
     connector = Connector.get(instance)
@@ -230,11 +266,15 @@ class Branch(models.Model):
     def __unicode__(self):
         return "Branch %s at %s" % (self.name, self.path)
 
+    def analyzed(self):
+        return Revision.objects.filter(branch=self).count() > 0
+
 class Revision(models.Model):
 
     identifier = models.CharField(max_length=255)
 
     repo = models.ForeignKey("Repo")
+    branch = models.ForeignKey("Branch", null=True)
     author = models.ForeignKey("Author", null=True, blank=True)
     revision_date = models.ForeignKey("RevisionDate", null=True, blank=True)
 

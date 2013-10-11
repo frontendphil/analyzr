@@ -1,7 +1,7 @@
 (function() {
 
     $(document).ready(function() {
-        $(".analyze").click(function() {
+        var asyncAction = function() {
             var rel = $(this).attr("rel");
 
             $.ajax(rel, {
@@ -17,6 +17,16 @@
             });
 
             return false;
+        };
+
+        $(".analyze").click(asyncAction);
+        $(".measure").click(asyncAction);
+
+        $("select.branch").change(function() {
+            var branch = $(this).find("option:selected").attr("value");
+            var repo = $(this).data("repo");
+
+            window.location.href = "/repo/" + repo + "/branch/" + branch;
         });
 
         $("a[trigger=delete]").click(function() {

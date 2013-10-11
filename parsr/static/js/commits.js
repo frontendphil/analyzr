@@ -14,8 +14,8 @@ var CommitHistory;
             this.width = attrs.width || this.dom.width();
             this.height = attrs.height || 400;
 
-            var repo = this.dom.attr("repo");
-            var author = this.dom.attr("author");
+            var repo = this.dom.data("repo");
+            var author = this.dom.data("author");
 
             var url = "/commits/repo/" + repo;
 

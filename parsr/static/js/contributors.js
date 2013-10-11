@@ -8,7 +8,7 @@ var Contributors;
         init: function(target) {
             this.dom = $(target);
 
-            var repo = this.dom.attr("repo");
+            var repo = this.dom.data("repo");
 
             this.setup(this.getUrl(repo), repo);
         },

@@ -9,14 +9,26 @@
 
     <hr />
 
-    <div class='stats' repo="{{ author.repo.id }}" author="{{ author.id }}"></div>
+    <div
+        class='stats'
+        data-repo="{{ author.repo.id }}"
+        data-author="{{ author.id }}"
+        data-branch="{{ branch.id }}"></div>
 
     <hr />
 
-    <div class="commits" repo="{{ author.repo.id }}" author="{{ author.id }}"></div>
+    <div
+        class="commits"
+        data-repo="{{ author.repo.id }}"
+        data-author="{{ author.id }}"
+        data-branch="{{ branch.id }}"></div>
 
     <hr />
 
-    <div class='punchcard' repo="{{ author.repo.id }}" author="{{ author.id }}"></div>
+    <div
+        class='punchcard'
+        data-repo="{{ author.repo.id }}"
+        data-author="{{ author.id }}"
+        data-branch="{{ branch.id }}"></div>
 
 {% endblock %}

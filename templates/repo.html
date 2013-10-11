@@ -1,6 +1,40 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Location</th>
+                <th>Last analyzed</th>
+                <th>Age</th>
+                <th>Branches</th>
+                <th>Authors</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ repo.url }}</td>
+                <td>{{ repo.analyzed_date }}</td>
+                <td>{{ repo.age }}</td>
+                <td>{{ repo.branch_count }}</td>
+                <td>{{ repo.author_count }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    Current Branch:
+    <select data-repo="{{ repo.id }}" class='branch' value="{{ branch.id }}">
+        {% for b in repo.branch_set.all %}
+            {% if b.analyzed %}
+                {% if b.id == branch.id %}
+                    <option value='{{ b.id }}' selected='selected'>{{ b.name }}</option>
+                {% else %}
+                    <option value='{{ b.id }}'>{{ b.name }}</option>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    </select>
+
     <ul class='nav nav-tabs nav-justified'>
         <li class='active'>
             <a href='#' data-target='.overview'>Overview</a>
@@ -11,42 +45,31 @@
     </ul>
 
     <div class='overview'>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Location</th>
-                    <th>Last analyzed</th>
-                    <th>Age</th>
-                    <th>Revisions</th>
-                    <th>Authors</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ repo.url }}</td>
-                    <td>{{ repo.analyzed_date }}</td>
-                    <td>{{ repo.age }}</td>
-                    <td>{{ repo.revision_count }}</td>
-                    <td>{{ repo.author_count }}</td>
-                </tr>
-            </tbody>
-        </table>
+        <div
+            class='stats'
+            data-repo="{{ repo.id }}"
+            data-branch="{{ branch.id }}"></div>
 
         <hr />
 
-        <div class='stats' repo="{{ repo.id }}"></div>
-
-        <hr />
-
-        <div class='commits' repo="{{ repo.id }}"></div>
+        <div
+            class='commits'
+            data-repo="{{ repo.id }}"
+            data-branch="{{ branch.id }}"></div>
     </div>
 
     <div class='contrib'>
-        <div class='contributors' repo='{{ repo.id }}'></div>
+        <div
+            class='contributors'
+            data-repo='{{ repo.id }}'
+            data-branch="{{ branch.id }}"></div>
 
         <hr />
 
-        <div class='punchcard' repo='{{ repo.id }}'></div>
+        <div
+            class='punchcard'
+            data-repo='{{ repo.id }}'
+            data-branch="{{ branch.id }}"></div>
     </div>
 {% endblock %}
 

@@ -17,8 +17,8 @@ var Punchcard;
         init: function(attrs) {
             this.dom = $(attrs.renderTo);
 
-            var repo = this.dom.attr("repo");
-            var author = this.dom.attr("author");
+            var repo = this.dom.data("repo");
+            var author = this.dom.data("author");
 
             var url = "/punchcard/repo/" + repo;
 

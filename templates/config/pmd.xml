@@ -1,27 +1,25 @@
 <project
     name="PMD">
 
-    <path id="pmd.classpath">
-        <fileset dir="/Users/phil/Workspace/analyzr/lib">
+    <path id="classpath">
+        <fileset dir="{{ project_path }}/lib">
             <include name="*.jar" />
         </fileset>
     </path>
 
-    <taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath" />
+    <taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="classpath" />
 
     <target name="pmd">
-        <pmd rulesetfiles="/Users/phil/Workspace/analyzr/templates/config/pmd.ruleset.xml">
-            <!-- {% for language in languages %}
+        <pmd rulesetfiles="{{ ruleset }}">
+            <sourceLanguage name="{{ language }}" version="{{ version }}" />
 
-            {% endfor %} -->
-            <sourceLanguage name="java" version="1.6" />
+            <formatter type="xml" toFile="{{ target }}" />
 
-            <formatter type="xml" toFile="/Users/phil/Workspace/analyzr/signavio.xml" />
-
-            <fileset dir="/Users/phil/Workspace/Signavio/Trunk/signavio/platform/src">
-                <include name="**/*.java" />
+            <fileset dir="{{ base_path }}">
+                {% for file in files %}
+                    <include name="{{ file }}" />
+                {% endfor %}
             </fileset>
-
         </pmd>
     </target>
 

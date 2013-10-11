@@ -1,5 +1,6 @@
 from datetime import datetime
 from hashlib import md5
+from shutil import rmtree
 
 import os
 import git
@@ -38,8 +39,8 @@ class Connector(object):
         return None
 
     def __init__(self, repo):
-        self.repo = self.create_repo(repo)
         self.info = repo
+        self.repo = self.create_repo(repo)
 
     def create_repo(self, repo):
         raise NotImplementedError
@@ -47,11 +48,17 @@ class Connector(object):
     def analyze(self, branch):
         raise NotImplementedError
 
+    def checkout(self, revision):
+        raise NotImplementedError
+
+    def switch_to(self, branch):
+        raise NotImplementedError
+
     def get_branches(self):
         return [("Root", "/")]
 
-    def get_repo_path(self, repo):
-        return "%s/%s" % (CHECKOUT_PATH, md5(repo.url).hexdigest())
+    def get_repo_path(self):
+        return "%s/%s" % (CHECKOUT_PATH, md5(self.info.url).hexdigest())
 
     def update(self, path):
         pass
@@ -59,24 +66,56 @@ class Connector(object):
     def parse_date(self, timestamp):
         return datetime.fromtimestamp(int(timestamp))
 
+    def clear(self):
+        path = self.get_repo_path()
+
+        if not os.path.exists(path):
+            return
+
+        rmtree(path)
+
 
 class Git(Connector):
 
+    def get_branch_name(self, branch):
+        return branch.name.replace("origin/", "")
+
+    def switch_to(self, branch):
+        self.repo.remotes.origin.fetch()
+
+        branch_name = self.get_branch_name(branch)
+
+        for head in self.repo.heads:
+            if not head.name == branch_name:
+                continue
+
+            self.repo.head.reference = head
+            self.repo.head.reset(index=True, working_tree=True)
+
+            return
+
+        self.repo.git.checkout(branch.name, b=self.get_branch_name(branch))
+
+        self.switch_to(branch)
+
+    def checkout(self, revision):
+        pass
+
     def create_repo(self, repo):
-        folder = self.get_repo_path(repo)
+        folder = self.get_repo_path()
 
         if os.path.exists(folder):
             return git.Repo(folder)
 
         return git.Repo.clone_from(repo.url, folder)
 
-    def parse(self, parent, commit=None):
+    def parse(self, branch, parent, commit=None):
         if not commit:
             return
 
         stats = commit.stats
 
-        revision = self.info.create_revision(commit.hexsha)
+        revision = self.info.create_revision(branch, commit.hexsha)
         revision.set_author(commit.author)
         revision.set_date(self.parse_date(commit.committed_date))
 
@@ -115,11 +154,11 @@ class Git(Connector):
         revision.save()
 
 
-    def analyze(self, branch="master"):
+    def analyze(self, branch):
         last_commit = None
 
         for commit in self.repo.iter_commits():
-            self.parse(commit, last_commit)
+            self.parse(branch, commit, last_commit)
 
             last_commit = commit
 
@@ -136,6 +175,22 @@ class Git(Connector):
 
 
 class SVN(Connector):
+
+    def is_checked_out(self):
+        return os.path.exists(self.get_repo_path())
+
+    def switch_to(self, branch):
+        path = "%s%s" % (self.info.url, branch.path)
+
+        if not self.is_checked_out():
+            self.repo.checkout(path, self.get_repo_path())
+        else:
+            self.repo.switch(self.get_repo_path, path)
+
+    def checkout(self, revision):
+        self.repo.update(self.get_repo_path(),
+            recurse=True,
+            revision=Revision(revision_kind.number, revision.identifier))
 
     def create_repo(self, repo):
         client = Client()
@@ -185,7 +240,7 @@ class SVN(Connector):
 
         log = log[0]
 
-        revision = self.info.create_revision(identifier)
+        revision = self.info.create_revision(branch, identifier)
         revision.set_author(log.author)
         revision.set_date(self.parse_date(log.date))
 
@@ -240,7 +295,7 @@ class Mercurial(Connector):
     def create_repo(self, repo):
         self.ui = ui.ui()
 
-        folder = self.get_repo_path(repo)
+        folder = self.get_repo_path()
 
         if os.path.exists(folder):
             return hg.repository(self.ui, folder)
@@ -275,8 +330,8 @@ class Mercurial(Connector):
 
         return peer.path()
 
-    def parse(self, commit):
-        revision = self.info.create_revision(commit.hex())
+    def parse(self, branch, commit):
+        revision = self.info.create_revision(branch, commit.hex())
         revision.set_author(commit.user())
 
         timestamp, foo = commit.date()
@@ -306,4 +361,4 @@ class Mercurial(Connector):
         for id in self.repo:
             commit = self.repo[id]
 
-            self.parse(commit)
+            self.parse(branch, commit)
