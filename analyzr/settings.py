@@ -11,7 +11,7 @@ ADMINS = (
 MANAGERS = ADMINS
 
 PROJECT_PATH = '%s/..' % dirname(abspath(__file__))
-CHECKOUT_PATH = '%s/repos/' % PROJECT_PATH
+CHECKOUT_PATH = '%s/repos' % PROJECT_PATH
 RESULT_PATH = '%s/results' % PROJECT_PATH
 CONFIG_PATH = '%s/templates/config' % PROJECT_PATH
 

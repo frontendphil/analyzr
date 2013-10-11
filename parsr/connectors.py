@@ -99,7 +99,7 @@ class Git(Connector):
         self.switch_to(branch)
 
     def checkout(self, revision):
-        pass
+        self.repo.head.reset(commit=revision.identifier, index=True, working_tree=True)
 
     def create_repo(self, repo):
         folder = self.get_repo_path()

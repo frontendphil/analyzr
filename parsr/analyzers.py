@@ -1,3 +1,5 @@
+import os
+
 from jinja2 import Environment, FileSystemLoader
 
 from parsr.connectors import Connector
@@ -49,8 +51,6 @@ class Analyzer(object):
                 analyzer.measure(revision, self.connector)
 
     def start(self):
-        import pdb; pdb.set_trace()
-
         self.connector.switch_to(self.branch)
 
         for revision in self.repo.revisions():
@@ -67,7 +67,14 @@ class BaseAnalyzer(object):
     def add_file(self, f):
         self.files.append(f)
 
+    def setup_paths(self):
+        if not os.path.exists(RESULT_PATH):
+            os.makedirs("%s/configs" % RESULT_PATH)
+            os.makedirs("%s/results" % RESULT_PATH)
+
     def measure(self, revision, connector):
+        self.setup_paths()
+
         self.create_configuration(revision, connector)
         self.run()
         self.parse_measures()
@@ -93,9 +100,9 @@ class Java(BaseAnalyzer):
         base_path = connector.get_repo_path()
 
         template = self.env.get_template("pmd.xml")
-        ruleset = "%s/pmd.ruleset.xml"
-        filename = "%s/%s.xml" % (CONFIG_PATH, revision.identifier)
-        target = "%s/%s.xml" % (RESULT_PATH, revision.identifier)
+        ruleset = "%s/pmd.ruleset.xml" % CONFIG_PATH
+        filename = "%s/configs/%s.xml" % (RESULT_PATH, revision.identifier)
+        target = "%s/results/%s.xml" % (RESULT_PATH, revision.identifier)
 
         with open(filename, "wb") as f:
             f.write(template.render({
