@@ -12,11 +12,13 @@ MANAGERS = ADMINS
 
 PROJECT_PATH = '%s/..' % dirname(abspath(__file__))
 CHECKOUT_PATH = '%s/repos/' % PROJECT_PATH
+RESULT_PATH = '%s/results' % PROJECT_PATH
+CONFIG_PATH = '%s/templates/config' % PROJECT_PATH
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'analyzr.db',                      # Or path to database file if using sqlite3.
+        'NAME': '%s/analyzr.db' % PROJECT_PATH,                      # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': '',
         'PASSWORD': '',
@@ -24,9 +26,6 @@ DATABASES = {
         'PORT': '',                      # Set to empty string for default.
     }
 }
-
-SVN_USER_NAME = ""
-SVN_PASSWORD = ""
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts

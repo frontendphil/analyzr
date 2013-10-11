@@ -6,8 +6,8 @@
             <thead>
                 <tr>
                     <th></th>
-                    <th>Type</th>
                     <th>Location</th>
+                    <th>Type</th>
                     <th>Revisions</th>
                     <th>Authors</th>
                     <th></th>
@@ -29,7 +29,6 @@
                                 {% endif %}
                             {% endif %}
                         </td>
-                        <td>{{ repo.kind }}</td>
                         <td>
                             {% if repo.analyzing or not repo.analyzed %}
                                 {{ repo.url }}
@@ -39,6 +38,7 @@
                                 </a>
                             {% endif %}
                         </td>
+                        <td>{{ repo.kind }}</td>
                         <td>{{ repo.revision_count }}</td>
                         <td>{{ repo.author_count }}</td>
                         <td>

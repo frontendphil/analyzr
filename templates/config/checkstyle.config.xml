@@ -1,0 +1,8 @@
+<module name="Checker">
+    <property name="basedir" value="{{ BASE_DIR }}" />
+
+    <moduel name="TreeWalker">
+        <module name="ClassFanOutComplexity" />
+        <module name="CyclomaticComplexity" />
+    </module>
+</module>

@@ -6,6 +6,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.template import RequestContext
 from django.http import HttpResponse
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 from parsr.models import Repo, Author, Branch
 from parsr.forms import RepoForm
@@ -67,6 +68,35 @@ def edit(request, repo_id):
         }, context_instance=RequestContext(request))
 
 
+def contributors(request, repo_id):
+    repo = get_object_or_404(Repo, pk=repo_id)
+
+    PER_PAGE = 10
+
+    paginator = Paginator(repo.authors(), PER_PAGE)
+    page = request.GET.get("page")
+
+    try:
+        authors = paginator.page(page)
+    except PageNotAnInteger:
+        page = 1
+        authors = paginator.page(1)
+    except EmptyPage:
+        page = paginator.num_pages
+        authors = paginator.page(paginator.num_pages)
+
+    response = {
+        "hasNext": not page == paginator.num_pages,
+        "hasPrevious": not page == 1,
+        "page": int(page),
+        "pages": paginator.num_pages,
+        "perPage": PER_PAGE,
+        "authors": [author.json() for author in authors]
+    }
+
+    return HttpResponse(json.dumps(response), mimetype="application/json")
+
+
 def repo(request, id):
     repo = get_object_or_404(Repo, pk=id)
 
@@ -117,5 +147,13 @@ def analyze(request, repo_id, branch_id):
         traceback.print_exc(file=sys.stdout)
 
         repo.abort_analyze()
+
+    return HttpResponse(json.dumps({ "status": "ok" }), mimetype="application/json")
+
+
+@require_POST
+def measure(request, repo_id):
+    repo = get_object_or_404(Repo, pk=repo_id)
+    repo.measure()
 
     return HttpResponse(json.dumps({ "status": "ok" }), mimetype="application/json")

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from django.db import models
-from django.db.models import Count, Sum
+from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -10,6 +10,7 @@ from timezone_field import TimeZoneField
 from mimetypes import guess_type
 
 from parsr.connectors import Connector, Action
+from parsr.analyzers import Analyzer
 from parsr import sql
 
 from analyzr.settings import TIME_ZONE
@@ -55,14 +56,19 @@ class Repo(models.Model):
         self.analyzed_date = datetime.now(self.timezone)
         self.save()
 
-    def remove_all(self, elements):
-        for element in elements:
-            element.delete()
+    def remove_all(self, cls, elements):
+        query = sql.delete(cls, str(elements.values("id").query))
+
+        cls.objects.raw(query)
 
     def cleanup(self):
-        self.remove_all(File.objects.filter(revision__repo=self))
-        self.remove_all(Revision.objects.filter(repo=self))
-        self.remove_all(Author.objects.filter(repo=self))
+        self.remove_all(File, File.objects.filter(revision__repo=self))
+        self.remove_all(Revision, Revision.objects.filter(repo=self))
+        self.remove_all(Author, Author.objects.filter(repo=self))
+
+    def measure(self):
+        analyzer = Analyzer(self)
+        analyzer.start()
 
     def abort_analyze(self):
         self.analyzed = False
@@ -70,13 +76,11 @@ class Repo(models.Model):
 
         self.save()
 
-    def create_revision(self, identifier, filename, action, original=None):
+    def create_revision(self, identifier):
         revision, created = Revision.objects.get_or_create(
             repo=self,
             identifier=identifier
         )
-
-        revision.add_file(filename, action, original)
 
         return revision
 
@@ -96,9 +100,13 @@ class Repo(models.Model):
         return end.date() - start.date()
 
     def authors(self):
-        authors = Author.objects.filter(repo=self)
+        return Author.objects.filter(repo=self)\
+                             .annotate(revision_count=Count("revision"))\
+                             .order_by("-revision_count")
 
-        return sorted(authors, key=lambda author: author.revision_count())[::-1]
+    def revisions(self):
+        return Revision.objects.filter(repo=self)\
+                               .order_by("revision_date__date")
 
     def file_statistics(self, author=None):
         result = []
@@ -110,7 +118,7 @@ class Repo(models.Model):
 
             count = files.values("mimetype").count()
 
-            for stat in files.values("mimetype").annotate(count=Count("mimetype")):
+            for stat in files.values("mimetype").annotate(count=Count("mimetype")).order_by("-count"):
                 result.append({
                     "mimetype": stat["mimetype"],
                     "share": stat["count"] / (1.0 * count)
@@ -121,6 +129,7 @@ class Repo(models.Model):
         query = sql.newest_files(str(files.query))
         count = File.objects.raw(sql.count_entries(query))[0].count
 
+        # Order by
         for stat in File.objects.raw(sql.mimetype_count(query)):
             result.append({
                 "mimetype": stat.mimetype,
@@ -198,6 +207,9 @@ class Repo(models.Model):
 def add_branches_to_repo(sender, **kwargs):
     instance = kwargs["instance"]
 
+    if instance.branch.count() > 0:
+        return
+
     connector = Connector.get(instance)
 
     for name, path in connector.get_branches():
@@ -258,6 +270,9 @@ class Revision(models.Model):
 
     def date(self):
         return self.revision_date.date
+
+    def modified_files(self):
+        return self.file_set.filter(change_type__in=[Action.ADD, Action.MODIFY])
 
 
 class RevisionDate(models.Model):
@@ -335,3 +350,10 @@ class Author(models.Model):
 
     def revision_count(self):
         return Revision.objects.filter(author=self, repo=self.repo).count()
+
+    def json(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "count": self.revision_count
+        }

@@ -70,21 +70,20 @@ class Git(Connector):
 
         return git.Repo.clone_from(repo.url, folder)
 
-    def create_revision(self, commit, filename, action, original=None):
-        revision = self.info.create_revision(commit.hexsha, filename, action, original)
-        revision.set_author(commit.author)
-        revision.set_date(self.parse_date(commit.committed_date))
-        revision.save()
-
     def parse(self, parent, commit=None):
         if not commit:
             return
 
         stats = commit.stats
 
+        revision = self.info.create_revision(commit.hexsha)
+        revision.set_author(commit.author)
+        revision.set_date(self.parse_date(commit.committed_date))
+
         if not parent:
             for filename, info in stats.files.iteritems():
-                self.create_revision(commit, filename, Action.ADD)
+                revision.add_file(filename, Action.ADD)
+                revision.save()
 
             return
 
@@ -111,7 +110,9 @@ class Git(Connector):
             if not filename:
                 filename = diff.a_blob.path
 
-            self.create_revision(commit, filename, action, original)
+            revision.add_file(filename, action, original)
+
+        revision.save()
 
 
     def analyze(self, branch="master"):
@@ -184,16 +185,19 @@ class SVN(Connector):
 
         log = log[0]
 
+        revision = self.info.create_revision(identifier)
+        revision.set_author(log.author)
+        revision.set_date(self.parse_date(log.date))
+
         for filename in log.changed_paths:
             original = None
 
             if filename.action == Action.MOVE:
                 original = filename.copyfrom_path
 
-            revision = self.info.create_revision(identifier, filename.path, filename.action, original)
-            revision.set_author(log.author)
-            revision.set_date(self.parse_date(log.date))
-            revision.save()
+            revision.add_file(filename.path, filename.action, original)
+
+        revision.save()
 
     def analyze(self, branch):
         head = self.get_head_revision(branch)
@@ -272,21 +276,30 @@ class Mercurial(Connector):
         return peer.path()
 
     def parse(self, commit):
+        revision = self.info.create_revision(commit.hex())
+        revision.set_author(commit.user())
+
+        timestamp, foo = commit.date()
+
+        revision.set_date(self.parse_date(timestamp))
+
         for filename in commit.files():
-            filectx = commit.filectx(filename)
-            action = self.get_action(filectx)
+            action = None
+
+            try:
+                filectx = commit.filectx(filename)
+                action = self.get_action(filectx)
+            except:
+                action = Action.DELETE
+
             original = None
 
             if action == Action.MOVE:
                 original = self.get_original(filectx)
 
-            revision = self.info.create_revision(commit.hex(), filename, action, original)
-            revision.set_author(commit.user())
+            revision.add_file(filename, action, original)
 
-            timestamp, foo = commit.date()
-
-            revision.set_date(self.parse_date(timestamp))
-            revision.save()
+        revision.save()
 
 
     def analyze(self, branch):

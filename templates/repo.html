@@ -1,60 +1,53 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class='stats' repo="{{ repo.id }}"></div>
+    <ul class='nav nav-tabs nav-justified'>
+        <li class='active'>
+            <a href='#' data-target='.overview'>Overview</a>
+        </li>
+        <li>
+            <a href='#' data-target='.contrib'>Contributors</a>
+        </li>
+    </ul>
 
-    <hr />
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Location</th>
-                <th>Last analyzed</th>
-                <th>Age</th>
-                <th>Revisions</th>
-                <th>Authors</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>{{ repo.url }}</td>
-                <td>{{ repo.analyzed_date }}</td>
-                <td>{{ repo.age }}</td>
-                <td>{{ repo.revision_count }}</td>
-                <td>{{ repo.author_count }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <hr />
-
-    <div class='commits' repo="{{ repo.id }}"></div>
-
-    <hr />
-
-    <h2>Contributors</h2>
-    <table class='table table-hover'>
-        <thead>
-            <tr>
-                <th>#</td>
-                <th>Name</th>
-                <th>Revisions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for author in repo.authors %}
+    <div class='overview'>
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td><a href='{% url "parsr.views.author" id=author.id %}'>{{ author.name }}</a></td>
-                    <td>{{ author.revision_count }}</td>
+                    <th>Location</th>
+                    <th>Last analyzed</th>
+                    <th>Age</th>
+                    <th>Revisions</th>
+                    <th>Authors</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ repo.url }}</td>
+                    <td>{{ repo.analyzed_date }}</td>
+                    <td>{{ repo.age }}</td>
+                    <td>{{ repo.revision_count }}</td>
+                    <td>{{ repo.author_count }}</td>
+                </tr>
+            </tbody>
+        </table>
 
-    <hr />
+        <hr />
 
-    <div class='punchcard' repo='{{ repo.id }}'></div>
+        <div class='stats' repo="{{ repo.id }}"></div>
+
+        <hr />
+
+        <div class='commits' repo="{{ repo.id }}"></div>
+    </div>
+
+    <div class='contrib'>
+        <div class='contributors' repo='{{ repo.id }}'></div>
+
+        <hr />
+
+        <div class='punchcard' repo='{{ repo.id }}'></div>
+    </div>
 {% endblock %}
 
 {% block script %}
@@ -67,6 +60,8 @@
                     bottom: 20
                 }
             });
+
+            Contributors.auto(".contributors");
         })
     </script>
 {% endblock %}

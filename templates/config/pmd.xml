@@ -1,0 +1,28 @@
+<project
+    name="PMD">
+
+    <path id="pmd.classpath">
+        <fileset dir="/Users/phil/Workspace/analyzr/lib">
+            <include name="*.jar" />
+        </fileset>
+    </path>
+
+    <taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath" />
+
+    <target name="pmd">
+        <pmd rulesetfiles="/Users/phil/Workspace/analyzr/templates/config/pmd.ruleset.xml">
+            <!-- {% for language in languages %}
+
+            {% endfor %} -->
+            <sourceLanguage name="java" version="1.6" />
+
+            <formatter type="xml" toFile="/Users/phil/Workspace/analyzr/signavio.xml" />
+
+            <fileset dir="/Users/phil/Workspace/Signavio/Trunk/signavio/platform/src">
+                <include name="**/*.java" />
+            </fileset>
+
+        </pmd>
+    </target>
+
+</project>

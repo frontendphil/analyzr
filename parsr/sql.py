@@ -52,3 +52,8 @@ def count_entries(query):
         FROM
             ( %s )
     """ % query
+
+def delete(cls, query):
+    return """
+        DELETE FROM %s WHERE id IN ( %s )
+    """ % (cls._meta.db_table, query)

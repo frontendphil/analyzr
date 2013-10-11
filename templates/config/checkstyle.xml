@@ -1,0 +1,13 @@
+<project
+    name="Checkstyle">
+
+    <taskdef
+        resource="checkstyletask.properties"
+        classpath="{{ TOOL_ROOT }}/checkstyle-5.7-SNAPSHOT-all.jar">
+
+        <checkstyle
+            config="{{ TEMPlATE_DIR }}/configs/checkstyle.config.xml">
+
+        </checkstyle>
+    </taskdef>
+</project>
