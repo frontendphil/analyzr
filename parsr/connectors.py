@@ -116,7 +116,7 @@ class Git(Connector):
         stats = commit.stats
 
         revision = self.info.create_revision(branch, commit.hexsha)
-        revision.set_author(commit.author)
+        revision.set_author(commit.author.name)
         revision.set_date(self.parse_date(commit.committed_date))
 
         if not parent:
@@ -272,6 +272,9 @@ class SVN(Connector):
                 for branch, lock in self.repo.list(folder.path, recurse=False, revision=Revision(revision_kind.head)):
                     directory = branch.path.replace(self.info.url, "")
                     name = directory.replace("/branches/", "")
+
+                    if name == "/branches":
+                        continue
 
                     branches.append((name, directory))
 

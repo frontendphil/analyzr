@@ -79,23 +79,25 @@
                                     </ul>
                                 </div>
 
-                                <div class="btn-group">
-                                    {% if not repo.measured %}
-                                        <button type="button" class='btn btn-primary btn-sm dropdown-toggle' data-toggle="dropdown">Measure <span class="caret"></span></button>
-                                    {% else %}
-                                        <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Re-Measure <span class="caret"></span></button>
-                                    {% endif %}
+                                {% if repo.measurable %}
+                                    <div class="btn-group">
+                                        {% if not repo.measured %}
+                                            <button type="button" class='btn btn-primary btn-sm dropdown-toggle' data-toggle="dropdown">Measure <span class="caret"></span></button>
+                                        {% else %}
+                                            <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Re-Measure <span class="caret"></span></button>
+                                        {% endif %}
 
-                                    <ul class='dropdown-menu' role="menu">
-                                        {% for branch in repo.branch_set.all %}
-                                            {% if branch.analyzed %}
-                                                <li>
-                                                    <a href="#" rel="{% url 'parsr.views.measure' repo_id=repo.pk branch_id=branch.pk %}" class="measure">{{ branch.name }}</a>
-                                                </li>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </ul>
-                                </div>
+                                        <ul class='dropdown-menu' role="menu">
+                                            {% for branch in repo.branch_set.all %}
+                                                {% if branch.analyzed %}
+                                                    <li>
+                                                        <a href="#" rel="{% url 'parsr.views.measure' repo_id=repo.pk branch_id=branch.pk %}" class="measure">{{ branch.name }}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         </td>
                         <td>

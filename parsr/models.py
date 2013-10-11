@@ -103,6 +103,13 @@ class Repo(models.Model):
 
         self.save()
 
+    def measurable(self):
+        for branch in self.branch_set.all():
+            if branch.analyzed():
+                return True
+
+        return False
+
     def create_revision(self, branch, identifier):
         revision, created = Revision.objects.get_or_create(
             repo=self,
