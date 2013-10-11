@@ -1,13 +1,14 @@
-<project
-    name="Checkstyle">
+{% extends "base.xml" %}
 
+{% block content %}
     <taskdef
-        resource="checkstyletask.properties"
-        classpath="{{ TOOL_ROOT }}/checkstyle-5.7-SNAPSHOT-all.jar">
+        name="checkstyle"
+        resource="checkstyletask.properties" />
 
+    <target name="checkstyle">
         <checkstyle
             config="{{ TEMPlATE_DIR }}/configs/checkstyle.config.xml">
 
         </checkstyle>
-    </taskdef>
-</project>
+    </target>
+{% endblock %}

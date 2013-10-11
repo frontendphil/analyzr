@@ -1,14 +1,6 @@
-<project
-    name="PMD">
+{% extends "base.xml" %}
 
-    <path id="classpath">
-        <fileset dir="{{ project_path }}/lib">
-            <include name="*.jar" />
-        </fileset>
-    </path>
-
-    <taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="classpath" />
-
+{% block content %}
     <target name="pmd">
         <pmd rulesetfiles="{{ ruleset }}">
             <sourceLanguage name="{{ language }}" version="{{ version }}" />
@@ -22,5 +14,4 @@
             </fileset>
         </pmd>
     </target>
-
-</project>
+{% endblock %}

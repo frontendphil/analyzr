@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -75,8 +76,8 @@ class BaseAnalyzer(object):
     def measure(self, revision, connector):
         self.setup_paths()
 
-        self.create_configuration(revision, connector)
-        self.run()
+        config = self.create_configuration(revision, connector)
+        self.run(config)
         self.parse_measures()
 
         self.files = []
@@ -90,7 +91,7 @@ class BaseAnalyzer(object):
     def parse_measures(self):
         raise NotImplementedError
 
-    def run(self):
+    def run(self, filename):
         raise NotImplementedError
 
 
@@ -114,6 +115,14 @@ class Java(BaseAnalyzer):
                 "language": "java",
                 "version": "1.6"
             }))
+
+        return filename
+
+    def run(self, filename):
+        subprocess.call(["ant", "-f", filename, "pmd"])
+
+    def parse_measures(self):
+        pass
 
 Analyzer.register("text/x-java-source", Java)
 
