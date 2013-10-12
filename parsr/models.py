@@ -49,8 +49,7 @@ class Repo(models.Model):
         self.analyzing = True
         self.save()
 
-        # TODO: cleanup for branch
-        self.cleanup()
+        self.cleanup(branch)
 
         connector = Connector.get(self)
         connector.analyze(branch)
@@ -65,10 +64,10 @@ class Repo(models.Model):
 
         cls.objects.raw(query)
 
-    def cleanup(self):
-        self.remove_all(File, File.objects.filter(revision__repo=self))
-        self.remove_all(Revision, Revision.objects.filter(repo=self))
-        self.remove_all(Author, Author.objects.filter(repo=self))
+    def cleanup(self, branch):
+        self.remove_all(File, File.objects.filter(revision__repo=self, revision__branch=branch))
+        self.remove_all(Revision, Revision.objects.filter(repo=self, branch=branch))
+        self.remove_all(Author, Author.objects.filter(repo=self, revision__branch=branch))
 
     def busy(self):
         return self.analyzing or self.measuring
@@ -111,13 +110,11 @@ class Repo(models.Model):
         return False
 
     def create_revision(self, branch, identifier):
-        revision, created = Revision.objects.get_or_create(
+        return Revision.objects.create(
             repo=self,
             branch=branch,
             identifier=identifier
         )
-
-        return revision
 
     def branch_count(self):
         return self.branch_set.count()
@@ -142,8 +139,8 @@ class Repo(models.Model):
 
         return end.date() - start.date()
 
-    def authors(self):
-        return Author.objects.filter(repo=self)\
+    def authors(self, branch):
+        return Author.objects.filter(repo=self, revision__branch=branch)\
                              .annotate(revision_count=Count("revision"))\
                              .order_by("-revision_count")
 
@@ -181,8 +178,8 @@ class Repo(models.Model):
 
         return result
 
-    def commit_history(self, author=None):
-        revisions = Revision.objects.filter(repo=self)
+    def commit_history(self, branch, author=None):
+        revisions = Revision.objects.filter(repo=self, branch=branch)
 
         if author:
             revisions = revisions.filter(author=author)
@@ -216,8 +213,8 @@ class Repo(models.Model):
 
         return response
 
-    def punchcard(self, author=None):
-        revisions = Revision.objects.filter(repo=self)
+    def punchcard(self, branch, author=None):
+        revisions = Revision.objects.filter(repo=self, branch=branch)
 
         if author:
             revisions = revisions.filter(author=author)

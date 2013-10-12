@@ -23,18 +23,21 @@ class Action(object):
 
 class Connector(object):
 
+    connectors = {}
+
+    @classmethod
+    def register(cls, kind, connector):
+        if kind in cls.connectors:
+            raise "Connector already registered"
+
+        cls.connectors[kind] = connector
+
     @classmethod
     def get(cls, repo):
         kind = repo.kind
 
-        if kind == "svn":
-            return SVN(repo)
-
-        if kind == "git":
-            return Git(repo)
-
-        if kind == "mercurial":
-            return Mercurial(repo)
+        if kind in cls.connectors:
+            return cls.connectors[kind](repo)
 
         return None
 
@@ -57,8 +60,11 @@ class Connector(object):
     def get_branches(self):
         return [("Root", "/")]
 
+    def repo_id(self):
+        return md5(self.info.url).hexdigest()
+
     def get_repo_path(self):
-        return "%s/%s" % (CHECKOUT_PATH, md5(self.info.url).hexdigest())
+        return "%s/%s" % (CHECKOUT_PATH, self.repo_id())
 
     def update(self, path):
         pass
@@ -172,6 +178,9 @@ class Git(Connector):
             result.append((info.name, info.ref.path))
 
         return result
+
+
+Connector.register("git", Git)
 
 
 class SVN(Connector):
@@ -293,6 +302,9 @@ class SVN(Connector):
             self.repo.update(path)
 
 
+Connector.register("svn", SVN)
+
+
 class Mercurial(Connector):
 
     def create_repo(self, repo):
@@ -310,7 +322,7 @@ class Mercurial(Connector):
 
             hg.update(repo, node.hex(node.nullid))
 
-        return self.create_repo()
+        return self.create_repo(repo)
 
     def get_action(self, filectx):
         if filectx.renamed():
@@ -365,3 +377,6 @@ class Mercurial(Connector):
             commit = self.repo[id]
 
             self.parse(branch, commit)
+
+
+Connector.register("mercurial", Mercurial)

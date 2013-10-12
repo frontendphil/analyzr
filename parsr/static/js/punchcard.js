@@ -18,9 +18,10 @@ var Punchcard;
             this.dom = $(attrs.renderTo);
 
             var repo = this.dom.data("repo");
+            var branch = this.dom.data("branch");
             var author = this.dom.data("author");
 
-            var url = "/punchcard/repo/" + repo;
+            var url = "/punchcard/repo/" + repo + "/branch/" + branch;
 
             if(author) {
                 url = url + "/author/" + author;
@@ -73,11 +74,22 @@ var Punchcard;
                 return container;
             }
 
+            var start = {
+                h: 50,
+                s: 45,
+                l: 60
+            };
+
+            var end = 360;
+
             value = value / max;
+
+            var color = start.h + ((end-start.h) * value);
 
             return container.css({
                 width: 20 * value,
-                height: 20 * value
+                height: 20 * value,
+                background: "hsl(" + color + "," + start.s + "%," + start.l + "%)"
             });
         },
 

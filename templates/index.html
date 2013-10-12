@@ -5,9 +5,16 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th class='status'>A</th>
-                    <th class='status'>M</th>
+                    <th class='status'>
+                        <abbr title='At least one branch analyzed'>A</abbr>
+                    </th>
+                    <th class='status'>
+                        <abbr title='At least one branch measured'>M</abbr>
+                    </th>
                     <th>Location</th>
+                    <th class='status'>
+                        <abbr title='Anonymous repo access'>S</abbr>
+                    </th>
                     <th>Type</th>
                     <th>Branches</th>
                     <th>Authors</th>
@@ -50,6 +57,13 @@
                                 </a>
                             {% endif %}
                         </td>
+                        <td class='status'>
+                            {% if repo.anonymous %}
+                                <i class='icon-unlock-alt'></i>
+                            {% else %}
+                                <i class='icon-lock'></i>
+                            {% endif %}
+                        </td>
                         <td>{{ repo.kind }}</td>
                         <td>{{ repo.branch_count }}</td>
                         <td>{{ repo.author_count }}</td>
@@ -58,11 +72,7 @@
                                 {{ repo.get_status }}...
                             {% else %}
                                 <div class="btn-group">
-                                    {% if not repo.analyzed %}
-                                        <button type="button" class='btn btn-primary btn-sm dropdown-toggle' data-toggle="dropdown">Analyze <span class="caret"></span></button>
-                                    {% else %}
-                                        <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Re-Analyze <span class="caret"></span></button>
-                                    {% endif %}
+                                    <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Analyze <span class="caret"></span></button>
 
                                     <ul class='dropdown-menu' role="menu">
                                         {% for branch in repo.branch_set.all %}
@@ -81,17 +91,18 @@
 
                                 {% if repo.measurable %}
                                     <div class="btn-group">
-                                        {% if not repo.measured %}
-                                            <button type="button" class='btn btn-primary btn-sm dropdown-toggle' data-toggle="dropdown">Measure <span class="caret"></span></button>
-                                        {% else %}
-                                            <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Re-Measure <span class="caret"></span></button>
-                                        {% endif %}
+                                        <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Measure <span class="caret"></span></button>
 
                                         <ul class='dropdown-menu' role="menu">
                                             {% for branch in repo.branch_set.all %}
                                                 {% if branch.analyzed %}
                                                     <li>
-                                                        <a href="#" rel="{% url 'parsr.views.measure' repo_id=repo.pk branch_id=branch.pk %}" class="measure">{{ branch.name }}</a>
+                                                        <a href="#" rel="{% url 'parsr.views.measure' repo_id=repo.pk branch_id=branch.pk %}" class="measure">
+                                                            {{ branch.name }}
+                                                            {% if branch.measured %}
+                                                                <i class='icon-ok'></i>
+                                                            {% endif %}
+                                                        </a>
                                                     </li>
                                                 {% endif %}
                                             {% endfor %}
@@ -117,7 +128,7 @@
                     </tr>
                 {% endfor %}
                 <tr>
-                    <td colspan='8'>
+                    <td colspan='10'>
                         <a href='{% url "parsr.views.create" %}' class='btn btn-default'>Add another repository...</a>
                     </td>
                 </tr>

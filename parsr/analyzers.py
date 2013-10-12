@@ -82,11 +82,29 @@ class BaseAnalyzer(object):
 
         self.files = []
 
+    def config_file(self, revision, connector):
+        return "%s/%s/configs/%s.xml" % (RESULT_PATH, connector.repo_id(), revision.identifier)
+
+    def result_file(self, revision, connector):
+        return "%s/%s/results/%s.xml" % (RESULT_PATH, connector.repo_id(), revision.identifier)
+
     def empty(self):
         return len(self.files) == 0
 
-    def create_configuration(self, revision, connector):
-        raise NotImplementedError
+    def create_configuration(self, revision, connector, options={}):
+        template = self.env.get_template(self.template)
+
+        filename = self.config_file(revision, connector)
+
+        options["project_path"] = PROJECT_PATH
+        options["base_path"] = connector.get_repo_path()
+        options["target"] = self.result_file(revision, connector)
+        options["files"] = self.files
+
+        with open(filename, "wb") as f:
+            f.write(template.render(options))
+
+        return filename
 
     def parse_measures(self):
         raise NotImplementedError
@@ -97,26 +115,19 @@ class BaseAnalyzer(object):
 
 class Java(BaseAnalyzer):
 
+    def __init__(self):
+        self.template = "pmd.xml"
+
+        super(Java, self).__init__()
+
     def create_configuration(self, revision, connector):
-        base_path = connector.get_repo_path()
-
-        template = self.env.get_template("pmd.xml")
         ruleset = "%s/pmd.ruleset.xml" % CONFIG_PATH
-        filename = "%s/configs/%s.xml" % (RESULT_PATH, revision.identifier)
-        target = "%s/results/%s.xml" % (RESULT_PATH, revision.identifier)
 
-        with open(filename, "wb") as f:
-            f.write(template.render({
-                "project_path": PROJECT_PATH,
-                "base_path": base_path,
-                "target": target,
-                "ruleset": ruleset,
-                "files": self.files,
-                "language": "java",
-                "version": "1.6"
-            }))
-
-        return filename
+        return super(Java, self).create_configuration(revision, connector, {
+            "ruleset": ruleset,
+            "language": "java",
+            "version": "1.6"
+        })
 
     def run(self, filename):
         subprocess.call(["ant", "-f", filename, "pmd"])

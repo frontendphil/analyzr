@@ -68,12 +68,13 @@ def edit(request, repo_id):
         }, context_instance=RequestContext(request))
 
 
-def contributors(request, repo_id):
+def contributors(request, repo_id, branch_id):
     repo = get_object_or_404(Repo, pk=repo_id)
+    branch = get_object_or_404(Branch, pk=branch_id)
 
     PER_PAGE = 10
 
-    paginator = Paginator(repo.authors(), PER_PAGE)
+    paginator = Paginator(repo.authors(branch), PER_PAGE)
     page = request.GET.get("page")
 
     try:
@@ -117,11 +118,12 @@ def author(request, id):
         }, context_instance=RequestContext(request))
 
 
-def punchcard(request, repo_id, author_id=None):
+def punchcard(request, repo_id, branch_id, author_id=None):
     repo = get_object_or_404(Repo, pk=repo_id)
+    branch = get_object_or_404(Branch, pk=branch_id)
     author = get_object_or_404(Author, pk=author_id) if author_id else None
 
-    return HttpResponse(json.dumps(repo.punchcard(author)), mimetype="application/json")
+    return HttpResponse(json.dumps(repo.punchcard(branch, author)), mimetype="application/json")
 
 
 def file_stats(request, repo_id, branch_id, author_id=None):
@@ -132,11 +134,12 @@ def file_stats(request, repo_id, branch_id, author_id=None):
     return HttpResponse(json.dumps(repo.file_statistics(branch, author)), mimetype="application/json")
 
 
-def commits(request, repo_id, author_id=None):
+def commits(request, repo_id, branch_id, author_id=None):
     repo = get_object_or_404(Repo, pk=repo_id)
+    branch = get_object_or_404(Branch, pk=branch_id)
     author = get_object_or_404(Author, pk=author_id) if author_id else None
 
-    return HttpResponse(json.dumps(repo.commit_history(author)), mimetype="application/json")
+    return HttpResponse(json.dumps(repo.commit_history(branch, author)), mimetype="application/json")
 
 
 @require_POST

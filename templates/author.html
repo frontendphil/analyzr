@@ -2,7 +2,7 @@
 
 {% block content %}
 
-    <a href='{% url "parsr.views.repo" id=author.repo.id %}'>
+    <a href='{% url "parsr.views.repo" repo_id=author.repo.id %}'>
         <i class='icon-angle-left'></i> Back to repo
     </a>
     <h1>{{ author.name }}</h1>

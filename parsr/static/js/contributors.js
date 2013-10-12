@@ -9,12 +9,13 @@ var Contributors;
             this.dom = $(target);
 
             var repo = this.dom.data("repo");
+            var branch = this.dom.data("branch");
 
-            this.setup(this.getUrl(repo), repo);
+            this.setup(this.getUrl(repo, branch), repo, branch);
         },
 
-        getUrl: function(repo, page) {
-            var url = "/contributors/repo/" + repo;
+        getUrl: function(repo, branch, page) {
+            var url = "/contributors/repo/" + repo + "/branch/" + branch;
 
             if(!page) {
                 return url;
@@ -31,13 +32,13 @@ var Contributors;
             );
         },
 
-        createClickHandler: function(element, repo, page) {
+        createClickHandler: function(element, repo, branch, page) {
             var that = this;
 
             element.find("a").click(function() {
-                var url = that.getUrl(repo, page);
+                var url = that.getUrl(repo, branch, page);
 
-                that.setup(url, repo);
+                that.setup(url, repo, branch);
 
                 return false;
             });
@@ -57,6 +58,8 @@ var Contributors;
         getLookAhead: function(page, pages, threshold) {
             var i = 0;
 
+            threshold = Math.min(pages - page, threshold);
+
             while(page < pages, i < threshold) {
                 page = page + 1;
                 i = i + 1;
@@ -65,11 +68,11 @@ var Contributors;
             return i;
         },
 
-        createPages: function(pagination, data, repo) {
+        createPages: function(pagination, data, repo, branch) {
             var back = this.getLookBehind(data.page, LOOK_AROUND);
             var forward = this.getLookAhead(data.page, data.pages, back < 3 ? LOOK_AROUND + (LOOK_AROUND - back) : LOOK_AROUND);
 
-            var i, page;
+            var i, page, length;
             for(i = data.page - back, length = data.page + forward; i < length; i = i + 1) {
                 page = this.createListEntry(i + 1, i + 1);
 
@@ -79,15 +82,15 @@ var Contributors;
 
                 pagination.append(page);
 
-                this.createClickHandler(page, repo, i + 1);
+                this.createClickHandler(page, repo, branch, i + 1);
             }
         },
 
-        createPagination: function(data, repo) {
+        createPagination: function(data, repo, branch) {
             var pagination = $("<ul class='pagination' />");
 
-            var first = this.createListEntry(0, "&laquo;");
-            var previous = this.createListEntry(data.page - 1, "&lsaquo;");
+            var first = this.createListEntry(0, "<i class='icon-double-angle-left'></i>");
+            var previous = this.createListEntry(data.page - 1, "<i class='icon-angle-left'></i>");
 
             if(!data.hasPrevious) {
                 previous.addClass("disabled");
@@ -98,10 +101,10 @@ var Contributors;
 
             pagination.append(first, previous);
 
-            this.createPages(pagination, data, repo);
+            this.createPages(pagination, data, repo, branch);
 
-            var next = this.createListEntry(data.page + 1, "&rsaquo;");
-            var last = this.createListEntry(data.pages, "&raquo;");
+            var next = this.createListEntry(data.page + 1, "<i class='icon-angle-right'></i>");
+            var last = this.createListEntry(data.pages, "<i class='icon-double-angle-right'></i>");
 
             if(!data.hasNext) {
                 next.addClass("disabled");
@@ -119,7 +122,7 @@ var Contributors;
             this.dom.html("");
         },
 
-        createTable: function(data) {
+        createTable: function(data, branch) {
             var table = $(
                 "<table class='table table-hover'>" +
                     "<thead>" +
@@ -140,7 +143,7 @@ var Contributors;
                     "<tr>" +
                         "<td>" + ((data.perPage * (data.page - 1)) + index + 1) + "</td>" +
                         "<td>" +
-                            "<a href='/author/" + this.id + "'>" + this.name + "</a>" +
+                            "<a href='/author/" + this.id + "/branch/" + branch + "'>" + this.name + "</a>" +
                         "</td>" +
                         "<td>" + this.count + "</td>" +
                     "</tr>"
@@ -152,15 +155,15 @@ var Contributors;
             return table;
         },
 
-        setup: function(url, repo) {
+        setup: function(url, repo, branch) {
             var that = this;
 
             $.ajax(url, {
                 success: function(data) {
                     that.clear();
 
-                    var table = that.createTable(data);
-                    var pagination = that.createPagination(data, repo);
+                    var table = that.createTable(data, branch);
+                    var pagination = that.createPagination(data, repo,  branch);
 
                     that.dom.append(table, pagination);
                 }
