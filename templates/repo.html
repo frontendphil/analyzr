@@ -5,8 +5,6 @@
         <thead>
             <tr>
                 <th>Location</th>
-                <th>Last analyzed</th>
-                <th>Age</th>
                 <th>Branches</th>
                 <th>Authors</th>
             </tr>
@@ -14,8 +12,6 @@
         <tbody>
             <tr>
                 <td>{{ repo.url }}</td>
-                <td>{{ repo.analyzed_date }}</td>
-                <td>{{ repo.age }}</td>
                 <td>{{ repo.branch_count }}</td>
                 <td>{{ repo.author_count }}</td>
             </tr>
@@ -34,6 +30,25 @@
             {% endif %}
         {% endfor %}
     </select>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Last analyzed</th>
+                <th>Age</th>
+                <th>Authors</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ branch.name }}</td>
+                <td>{{ branch.analyzed_date }}</td>
+                <td>{{ branch.age }}</td>
+                <td>{{ branch.author_count }}</td>
+            </tr>
+        </tbody>
+    </table>
 
     <ul class='nav nav-tabs nav-justified'>
         <li class='active'>

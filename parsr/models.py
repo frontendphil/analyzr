@@ -271,6 +271,9 @@ class Branch(models.Model):
                              .annotate(rev_count=Count("revision"))\
                              .order_by("-rev_count")
 
+    def author_count(self):
+        return Author.objects.filter(revision__branch=self).distinct().count()
+
     def revisions(self):
         return Revision.objects.filter(branch=self).order_by("revision_date__date")
 
