@@ -8,14 +8,13 @@ var Contributors;
         init: function(target) {
             this.dom = $(target);
 
-            var repo = this.dom.data("repo");
             var branch = this.dom.data("branch");
 
-            this.setup(this.getUrl(repo, branch), repo, branch);
+            this.setup(this.getUrl(branch), branch);
         },
 
-        getUrl: function(repo, branch, page) {
-            var url = "/contributors/repo/" + repo + "/branch/" + branch;
+        getUrl: function(branch, page) {
+            var url = "/contributors/branch/" + branch;
 
             if(!page) {
                 return url;
@@ -32,13 +31,13 @@ var Contributors;
             );
         },
 
-        createClickHandler: function(element, repo, branch, page) {
+        createClickHandler: function(element, branch, page) {
             var that = this;
 
             element.find("a").click(function() {
-                var url = that.getUrl(repo, branch, page);
+                var url = that.getUrl(branch, page);
 
-                that.setup(url, repo, branch);
+                that.setup(url, branch);
 
                 return false;
             });
@@ -68,7 +67,7 @@ var Contributors;
             return i;
         },
 
-        createPages: function(pagination, data, repo, branch) {
+        createPages: function(pagination, data, branch) {
             var back = this.getLookBehind(data.page, LOOK_AROUND);
             var forward = this.getLookAhead(data.page, data.pages, back < 3 ? LOOK_AROUND + (LOOK_AROUND - back) : LOOK_AROUND);
 
@@ -82,11 +81,11 @@ var Contributors;
 
                 pagination.append(page);
 
-                this.createClickHandler(page, repo, branch, i + 1);
+                this.createClickHandler(page, branch, i + 1);
             }
         },
 
-        createPagination: function(data, repo, branch) {
+        createPagination: function(data, branch) {
             var pagination = $("<ul class='pagination' />");
 
             var first = this.createListEntry(0, "<i class='icon-double-angle-left'></i>");
@@ -97,11 +96,11 @@ var Contributors;
                 first.addClass("disabled");
             }
 
-            this.createClickHandler(previous, repo, data.page - 1);
+            this.createClickHandler(previous, data.page - 1);
 
             pagination.append(first, previous);
 
-            this.createPages(pagination, data, repo, branch);
+            this.createPages(pagination, data, branch);
 
             var next = this.createListEntry(data.page + 1, "<i class='icon-angle-right'></i>");
             var last = this.createListEntry(data.pages, "<i class='icon-double-angle-right'></i>");
@@ -111,7 +110,7 @@ var Contributors;
                 last.addClass("disabled");
             }
 
-            this.createClickHandler(next, repo, data.page + 1);
+            this.createClickHandler(next, branch, data.page + 1);
 
             pagination.append(next, last);
 
@@ -155,7 +154,7 @@ var Contributors;
             return table;
         },
 
-        setup: function(url, repo, branch) {
+        setup: function(url, branch) {
             var that = this;
 
             $.ajax(url, {
@@ -163,7 +162,7 @@ var Contributors;
                     that.clear();
 
                     var table = that.createTable(data, branch);
-                    var pagination = that.createPagination(data, repo,  branch);
+                    var pagination = that.createPagination(data, branch);
 
                     that.dom.append(table, pagination);
                 }

@@ -1,3 +1,13 @@
+from django.db import connection, transaction
+
+
+def execute(query):
+    cursor = connection.cursor()
+
+    cursor.execute(query)
+    transaction.commit_unless_managed()
+
+
 def newest_files(query):
     sql = """
         SELECT

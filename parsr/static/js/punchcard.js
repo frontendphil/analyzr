@@ -17,11 +17,10 @@ var Punchcard;
         init: function(attrs) {
             this.dom = $(attrs.renderTo);
 
-            var repo = this.dom.data("repo");
             var branch = this.dom.data("branch");
             var author = this.dom.data("author");
 
-            var url = "/punchcard/repo/" + repo + "/branch/" + branch;
+            var url = "/punchcard/branch/" + branch;
 
             if(author) {
                 url = url + "/author/" + author;

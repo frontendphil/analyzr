@@ -68,13 +68,12 @@ def edit(request, repo_id):
         }, context_instance=RequestContext(request))
 
 
-def contributors(request, repo_id, branch_id):
-    repo = get_object_or_404(Repo, pk=repo_id)
+def contributors(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
     PER_PAGE = 10
 
-    paginator = Paginator(repo.authors(branch), PER_PAGE)
+    paginator = Paginator(branch.authors(), PER_PAGE)
     page = request.GET.get("page")
 
     try:
@@ -92,7 +91,7 @@ def contributors(request, repo_id, branch_id):
         "page": int(page),
         "pages": paginator.num_pages,
         "perPage": PER_PAGE,
-        "authors": [author.json() for author in authors]
+        "authors": [author.json(branch) for author in authors]
     }
 
     return HttpResponse(json.dumps(response), mimetype="application/json")
@@ -109,64 +108,61 @@ def repo(request, repo_id, branch_id=None):
         }, context_instance=RequestContext(request))
 
 
-def author(request, id):
-    author = get_object_or_404(Author, pk=id)
+def author(request, author_id, branch_id):
+    author = get_object_or_404(Author, pk=author_id)
+    branch = get_object_or_404(Branch, pk=branch_id)
 
     return render_to_response("author.html",
         {
-            "author": author
+            "author": author,
+            "branch": branch
         }, context_instance=RequestContext(request))
 
 
-def punchcard(request, repo_id, branch_id, author_id=None):
-    repo = get_object_or_404(Repo, pk=repo_id)
+def punchcard(request, branch_id, author_id=None):
     branch = get_object_or_404(Branch, pk=branch_id)
     author = get_object_or_404(Author, pk=author_id) if author_id else None
 
-    return HttpResponse(json.dumps(repo.punchcard(branch, author)), mimetype="application/json")
+    return HttpResponse(json.dumps(branch.punchcard(author)), mimetype="application/json")
 
 
-def file_stats(request, repo_id, branch_id, author_id=None):
-    repo = get_object_or_404(Repo, pk=repo_id)
+def file_stats(request, branch_id, author_id=None):
     branch = get_object_or_404(Branch, pk=branch_id)
     author = get_object_or_404(Author, pk=author_id) if author_id else None
 
-    return HttpResponse(json.dumps(repo.file_statistics(branch, author)), mimetype="application/json")
+    return HttpResponse(json.dumps(branch.file_statistics(author)), mimetype="application/json")
 
 
-def commits(request, repo_id, branch_id, author_id=None):
-    repo = get_object_or_404(Repo, pk=repo_id)
+def commits(request, branch_id, author_id=None):
     branch = get_object_or_404(Branch, pk=branch_id)
     author = get_object_or_404(Author, pk=author_id) if author_id else None
 
-    return HttpResponse(json.dumps(repo.commit_history(branch, author)), mimetype="application/json")
+    return HttpResponse(json.dumps(branch.commit_history(author)), mimetype="application/json")
 
 
 @require_POST
-def analyze(request, repo_id, branch_id):
-    repo = get_object_or_404(Repo, pk=repo_id)
+def analyze(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
     try:
-        repo.analyze(branch)
+        branch.analyze()
     except Exception:
         traceback.print_exc(file=sys.stdout)
 
-        repo.abort_analyze()
+        branch.abort_analyze()
 
     return HttpResponse(json.dumps({ "status": "ok" }), mimetype="application/json")
 
 
 @require_POST
-def measure(request, repo_id, branch_id):
-    repo = get_object_or_404(Repo, pk=repo_id)
+def measure(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
     try:
-        repo.measure(branch)
+        branch.measure()
     except Exception:
         traceback.print_exc(file=sys.stdout)
 
-        repo.abort_measure()
+        branch.abort_measure()
 
     return HttpResponse(json.dumps({ "status": "ok" }), mimetype="application/json")

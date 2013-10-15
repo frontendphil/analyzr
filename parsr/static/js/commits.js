@@ -14,11 +14,10 @@ var CommitHistory;
             this.width = attrs.width || this.dom.width();
             this.height = attrs.height || 400;
 
-            var repo = this.dom.data("repo");
             var branch = this.dom.data("branch");
             var author = this.dom.data("author");
 
-            var url = "/commits/repo/" + repo + "/branch/" + branch;
+            var url = "/commits/branch/" + branch;
 
             if(author) {
                 url = url + "/author/" + author;

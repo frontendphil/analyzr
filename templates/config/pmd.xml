@@ -1,6 +1,8 @@
 {% extends "base.xml" %}
 
 {% block content %}
+    <taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="classpath" />
+
     <target name="pmd">
         <pmd rulesetfiles="{{ ruleset }}">
             <sourceLanguage name="{{ language }}" version="{{ version }}" />

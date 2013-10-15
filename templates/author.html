@@ -1,17 +1,27 @@
 {% extends "repo.html" %}
 
+{% block branch %}
+    <h4>{{ branch.name }}</h4>
+{% endblock %}
+
 {% block content %}
 
-    <a href='{% url "parsr.views.repo" repo_id=author.repo.id %}'>
+    <a href='{% url "parsr.views.repo" repo_id=branch.repo.id branch_id=branch.id %}'>
         <i class='icon-angle-left'></i> Back to repo
     </a>
-    <h1>{{ author.name }}</h1>
+
+    <h1>
+        {{ author.name }}
+
+        {% if author.email %}
+            <small>({{ author.email }})</small>
+        {% endif %}
+    </h1>
 
     <hr />
 
     <div
         class='stats'
-        data-repo="{{ author.repo.id }}"
         data-author="{{ author.id }}"
         data-branch="{{ branch.id }}"></div>
 
@@ -19,7 +29,6 @@
 
     <div
         class="commits"
-        data-repo="{{ author.repo.id }}"
         data-author="{{ author.id }}"
         data-branch="{{ branch.id }}"></div>
 
@@ -27,7 +36,6 @@
 
     <div
         class='punchcard'
-        data-repo="{{ author.repo.id }}"
         data-author="{{ author.id }}"
         data-branch="{{ branch.id }}"></div>
 

@@ -29,13 +29,6 @@ class Repo(models.Model):
 
     anonymous = models.BooleanField(default=True)
 
-    analyzed = models.BooleanField(default=False)
-    analyzing = models.BooleanField(default=False)
-    analyzed_date = models.DateTimeField(null=True, blank=True)
-
-    measured = models.BooleanField(default=False)
-    measuring = models.BooleanField(default=False)
-
     timezone = TimeZoneField(default=TIME_ZONE)
 
     user = models.CharField(max_length=255, null=True, blank=True)
@@ -44,46 +37,120 @@ class Repo(models.Model):
     def __unicode__(self):
         return "%s repository at: %s" % (self.kind, self.url)
 
-    def analyze(self, branch):
-        self.analyzed = False
-        self.analyzing = True
-        self.save()
+    def busy(self):
+        return self.analyzing() or self.measuring()
 
-        self.cleanup(branch)
+    def analyzing(self):
+        return Branch.objects.filter(repo=self, analyzing=True).count() > 0
 
-        connector = Connector.get(self)
-        connector.analyze(branch)
+    def analyzed(self):
+        return Branch.objects.filter(repo=self, analyzed=True).count() > 0
 
-        self.analyzing = False
-        self.analyzed = True
-        self.analyzed_date = datetime.now(self.timezone)
-        self.save()
+    def measuring(self):
+        return Branch.objects.filter(repo=self, measuring=True).count() > 0
+
+    def measurable(self):
+        return Branch.objects.filter(repo=self, analyzed=True).count() > 0
+
+    def get_status(self):
+        if self.analyzing():
+            branch = Branch.objects.get(repo=self, analyzing=True)
+
+            return "Analyzing %s" % branch.name
+
+        if self.measuring():
+            branch = Branch.objects.get(repo=self, measuring=True)
+
+            return "Measuring %s" % branch.name
+
+        return "Ready"
+
+    def branch_count(self):
+        return Branch.objects.filter(repo=self).count()
+
+    def author_count(self):
+        return Author.objects.filter(revision__branch__repo=self).distinct().count()
+
+    def default_branch(self):
+        default = Branch.objects.filter(repo=self)[0:1]
+
+        if default:
+            return default[0]
+
+        return None
+
+
+@receiver(post_save, sender=Repo)
+def add_branches_to_repo(sender, **kwargs):
+    instance = kwargs["instance"]
+
+    if instance.branch_count() > 0:
+        return
+
+    connector = Connector.get(instance)
+
+    for name, path in connector.get_branches():
+        branch, created = Branch.objects.get_or_create(
+            name=name,
+            path=path,
+            repo=instance
+        )
+
+
+class Branch(models.Model):
+
+    name = models.CharField(max_length=255)
+    path = models.CharField(max_length=255)
+
+    repo = models.ForeignKey("Repo", null=True)
+
+    analyzed = models.BooleanField(default=False)
+    analyzing = models.BooleanField(default=False)
+    analyzed_date = models.DateTimeField(null=True, blank=True)
+
+    measured = models.BooleanField(default=False)
+    measuring = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return "Branch %s at %s" % (self.name, self.path)
+
+    def cleanup(self):
+        self.remove_all(File, File.objects.filter(revision__branch=self))
+        self.remove_all(Revision, Revision.objects.filter(branch=self))
+        self.remove_all(Author, Author.objects.filter(revision__branch=self))
 
     def remove_all(self, cls, elements):
         query = sql.delete(cls, str(elements.values("id").query))
 
-        cls.objects.raw(query)
+        sql.execute(query)
 
-    def cleanup(self, branch):
-        self.remove_all(File, File.objects.filter(revision__repo=self, revision__branch=branch))
-        self.remove_all(Revision, Revision.objects.filter(repo=self, branch=branch))
-        self.remove_all(Author, Author.objects.filter(repo=self, revision__branch=branch))
+    def analyze(self):
+        self.analyzed = False
+        self.analyzing = True
+        self.save()
 
-    def busy(self):
-        return self.analyzing or self.measuring
+        self.cleanup()
 
-    def get_status(self):
-        if self.analyzing:
-            return "Analyzing"
+        connector = Connector.get(self.repo)
+        connector.analyze(self)
 
-        return "Measuring"
+        self.analyzing = False
+        self.analyzed = True
+        self.analyzed_date = datetime.now(self.repo.timezone)
+        self.save()
 
-    def measure(self, branch):
+    def abort_analyze(self):
+        self.analyzed = False
+        self.analyzing = False
+
+        self.save()
+
+    def measure(self):
         self.measured = False
         self.measuring = True
         self.save()
 
-        analyzer = Analyzer(self, branch)
+        analyzer = Analyzer(self.repo, self)
         analyzer.start()
 
         self.measuring = False
@@ -96,40 +163,6 @@ class Repo(models.Model):
 
         self.save()
 
-    def abort_analyze(self):
-        self.analyzed = False
-        self.analyzing = False
-
-        self.save()
-
-    def measurable(self):
-        for branch in self.branch_set.all():
-            if branch.analyzed():
-                return True
-
-        return False
-
-    def create_revision(self, branch, identifier):
-        return Revision.objects.create(
-            repo=self,
-            branch=branch,
-            identifier=identifier
-        )
-
-    def branch_count(self):
-        return self.branch_set.count()
-
-    def author_count(self):
-        return self.author_set.count()
-
-    def default_branch(self):
-        default = Branch.objects.filter(repo=self)[0:1]
-
-        if default:
-            return default[0]
-
-        return None
-
     def age(self):
         if not self.analyzed or self.revision_set.count() == 0:
             return "n/a"
@@ -139,19 +172,39 @@ class Repo(models.Model):
 
         return end.date() - start.date()
 
-    def authors(self, branch):
-        return Author.objects.filter(repo=self, revision__branch=branch)\
-                             .annotate(revision_count=Count("revision"))\
-                             .order_by("-revision_count")
+    def punchcard(self, author=None):
+        revisions = Revision.objects.filter(branch=self)
 
-    def revisions(self):
-        return Revision.objects.filter(repo=self)\
-                               .order_by("revision_date__date")
+        if author:
+            revisions = revisions.filter(author=author)
 
-    def file_statistics(self, branch, author=None):
+        response = {}
+
+        result = revisions.values("revision_date__weekday", "revision_date__hour")\
+                          .annotate(count=Count("revision_date__hour"))
+
+        hour_max = 0
+
+        for revision in result:
+            weekday = revision["revision_date__weekday"]
+            hour = revision["revision_date__hour"]
+            count = revision["count"]
+
+            hour_max = max(count, hour_max)
+
+            if not weekday in response:
+                response[weekday] = {}
+
+            response[weekday][hour] = count
+
+        response["max"] = hour_max
+
+        return response
+
+    def file_statistics(self, author=None):
         result = []
 
-        files = File.objects.filter(revision__repo=self, revision__branch=branch, mimetype__isnull=False)
+        files = File.objects.filter(revision__branch=self, mimetype__isnull=False)
 
         if author:
             files = files.filter(revision__author=author)
@@ -178,8 +231,8 @@ class Repo(models.Model):
 
         return result
 
-    def commit_history(self, branch, author=None):
-        revisions = Revision.objects.filter(repo=self, branch=branch)
+    def commit_history(self, author=None):
+        revisions = Revision.objects.filter(branch=self)
 
         if author:
             revisions = revisions.filter(author=author)
@@ -213,87 +266,41 @@ class Repo(models.Model):
 
         return response
 
-    def punchcard(self, branch, author=None):
-        revisions = Revision.objects.filter(repo=self, branch=branch)
+    def authors(self):
+        return Author.objects.filter(revision__branch=self)\
+                             .annotate(rev_count=Count("revision"))\
+                             .order_by("-rev_count")
 
-        if author:
-            revisions = revisions.filter(author=author)
+    def revisions(self):
+        return Revision.objects.filter(branch=self).order_by("revision_date__date")
 
-        response = {}
-
-        result = revisions.values("revision_date__weekday", "revision_date__hour")\
-                          .annotate(count=Count("revision_date__hour"))
-
-        hour_max = 0
-
-        for revision in result:
-            weekday = revision["revision_date__weekday"]
-            hour = revision["revision_date__hour"]
-            count = revision["count"]
-
-            hour_max = max(count, hour_max)
-
-            if not weekday in response:
-                response[weekday] = {}
-
-            response[weekday][hour] = count
-
-        response["max"] = hour_max
-
-        return response
-
-
-@receiver(post_save, sender=Repo)
-def add_branches_to_repo(sender, **kwargs):
-    instance = kwargs["instance"]
-
-    if instance.branch_set.count() > 0:
-        return
-
-    connector = Connector.get(instance)
-
-    for name, path in connector.get_branches():
-        branch, created = Branch.objects.get_or_create(
-            name=name,
-            path=path,
-            repo=instance
+    def create_revision(self, identifier):
+        return Revision.objects.create(
+            branch=self,
+            identifier=identifier
         )
 
-
-class Branch(models.Model):
-
-    name = models.CharField(max_length=255)
-    path = models.CharField(max_length=255)
-
-    repo = models.ForeignKey("Repo", null=True)
-
-    def __unicode__(self):
-        return "Branch %s at %s" % (self.name, self.path)
-
-    def analyzed(self):
-        return Revision.objects.filter(branch=self).count() > 0
 
 class Revision(models.Model):
 
     identifier = models.CharField(max_length=255)
 
-    repo = models.ForeignKey("Repo")
     branch = models.ForeignKey("Branch", null=True)
     author = models.ForeignKey("Author", null=True, blank=True)
     revision_date = models.ForeignKey("RevisionDate", null=True, blank=True)
 
     def __unicode__(self):
-        return "%s created by %s in %s" % (self.identifier, self.author, self.repo)
+        return "%s created by %s in branch %s of %s" % (self.identifier, self.author, self.branch, self.branch.repo)
 
     def add_file(self, filename, action, original=None):
         mimetype, encoding = guess_type(filename)
 
         if original:
             original = File.objects\
-                           .filter(name=original, revision__repo=self.repo)\
+                           .filter(name=original, revision__branch=self.branch)\
                            .order_by("-revision__revision_date__date")[0:1]
 
-        File.objects.get_or_create(
+        File.objects.create(
             revision=self,
             name=filename,
             mimetype=mimetype,
@@ -301,16 +308,16 @@ class Revision(models.Model):
             copy_of=original[0] if original else None
         )
 
-    def set_author(self, name):
+    def set_author(self, name, email=None):
         author, created = Author.objects.get_or_create(
-            repo=self.repo,
-            name=name
+            name=name,
+            email=email
         )
 
         self.author = author
 
     def set_date(self, date):
-        self.revision_date = RevisionDate.from_date(date, self.repo.timezone)
+        self.revision_date = RevisionDate.from_date(date, self.branch.repo.timezone)
 
     def date(self):
         return self.revision_date.date
@@ -385,19 +392,23 @@ class File(models.Model):
 
 class Author(models.Model):
 
-    repo = models.ForeignKey("Repo", null=True, blank=True)
-
     name = models.CharField(max_length=255)
+    email = models.EmailField(null=True)
 
     def __unicode__(self):
+        if self.email:
+            return "%s (%s)" % (self.name, self.email)
+
         return self.name
 
-    def revision_count(self):
-        return Revision.objects.filter(author=self, repo=self.repo).count()
+    def revision_count(self, branch):
+        revisions = Revision.objects.filter(author=self, branch=branch).distinct()
 
-    def json(self):
+        return revisions.count()
+
+    def json(self, branch):
         return {
             "id": self.id,
-            "name": self.name,
-            "count": self.revision_count
+            "name": str(self),
+            "count": self.revision_count(branch)
         }

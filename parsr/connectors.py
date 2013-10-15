@@ -97,6 +97,7 @@ class Git(Connector):
 
             self.repo.head.reference = head
             self.repo.head.reset(index=True, working_tree=True)
+            self.repo.remote().pull()
 
             return
 
@@ -121,8 +122,8 @@ class Git(Connector):
 
         stats = commit.stats
 
-        revision = self.info.create_revision(branch, commit.hexsha)
-        revision.set_author(commit.author.name)
+        revision = branch.create_revision(commit.hexsha)
+        revision.set_author(commit.author.name, commit.author.email)
         revision.set_date(self.parse_date(commit.committed_date))
 
         if not parent:
@@ -162,6 +163,8 @@ class Git(Connector):
 
     def analyze(self, branch):
         last_commit = None
+
+        self.switch_to(branch)
 
         for commit in self.repo.iter_commits():
             self.parse(branch, commit, last_commit)
@@ -249,7 +252,7 @@ class SVN(Connector):
 
         log = log[0]
 
-        revision = self.info.create_revision(branch, identifier)
+        revision = branch.create_revision(branch, identifier)
         revision.set_author(log.author)
         revision.set_date(self.parse_date(log.date))
 
@@ -346,7 +349,7 @@ class Mercurial(Connector):
         return peer.path()
 
     def parse(self, branch, commit):
-        revision = self.info.create_revision(branch, commit.hex())
+        revision = branch.create_revision(branch, commit.hex())
         revision.set_author(commit.user())
 
         timestamp, foo = commit.date()
@@ -373,6 +376,8 @@ class Mercurial(Connector):
 
 
     def analyze(self, branch):
+        # self.switch_to(branch)
+
         for id in self.repo:
             commit = self.repo[id]
 

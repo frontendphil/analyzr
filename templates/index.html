@@ -16,8 +16,8 @@
                         <abbr title='Anonymous repo access'>S</abbr>
                     </th>
                     <th>Type</th>
-                    <th>Branches</th>
-                    <th>Authors</th>
+                    <th># Branches</th>
+                    <th># Authors</th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -77,7 +77,7 @@
                                     <ul class='dropdown-menu' role="menu">
                                         {% for branch in repo.branch_set.all %}
                                             <li>
-                                                <a href="#" rel="{% url 'parsr.views.analyze' repo_id=repo.pk branch_id=branch.pk %}" class="analyze">
+                                                <a href="#" rel="{% url 'parsr.views.analyze' branch_id=branch.pk %}" class="analyze">
                                                     {{ branch.name }}
 
                                                     {% if branch.analyzed %}
@@ -97,7 +97,7 @@
                                             {% for branch in repo.branch_set.all %}
                                                 {% if branch.analyzed %}
                                                     <li>
-                                                        <a href="#" rel="{% url 'parsr.views.measure' repo_id=repo.pk branch_id=branch.pk %}" class="measure">
+                                                        <a href="#" rel="{% url 'parsr.views.measure' branch_id=branch.pk %}" class="measure">
                                                             {{ branch.name }}
                                                             {% if branch.measured %}
                                                                 <i class='icon-ok'></i>

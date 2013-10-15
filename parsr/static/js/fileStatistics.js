@@ -9,11 +9,10 @@ var FileStatistics;
         init: function(target) {
             this.dom = $(target);
 
-            var repo = this.dom.data("repo");
             var branch = this.dom.data("branch");
             var author = this.dom.data("author");
 
-            var url = "/file_stats/repo/" + repo + "/branch/" + branch;
+            var url = "/file_stats/branch/" + branch;
 
             if(author) {
                 url = url + "/author/" + author;
