@@ -1,24 +1,7 @@
 {% extends "base.html" %}
 
-{% block content %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Location</th>
-                <th>Branches</th>
-                <th>Authors</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>{{ repo.url }}</td>
-                <td>{{ repo.branch_count }}</td>
-                <td>{{ repo.author_count }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    Current Branch:
+{% block branch %}
+    <i class='icon-code-fork'></i>
     <select data-repo="{{ repo.id }}" class='branch' value="{{ branch.id }}">
         {% for b in repo.branch_set.all %}
             {% if b.analyzed %}
@@ -30,27 +13,10 @@
             {% endif %}
         {% endfor %}
     </select>
+{% endblock %}
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Last analyzed</th>
-                <th>Age</th>
-                <th>Authors</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>{{ branch.name }}</td>
-                <td>{{ branch.analyzed_date }}</td>
-                <td>{{ branch.age }}</td>
-                <td>{{ branch.author_count }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <ul class='nav nav-tabs nav-justified'>
+{% block content %}
+    <ul class='nav nav-pills'>
         <li class='active'>
             <a href='#' data-target='.overview'>Overview</a>
         </li>
@@ -58,6 +24,37 @@
             <a href='#' data-target='.contrib'>Contributors</a>
         </li>
     </ul>
+
+    <hr />
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th colspan='3'>Repository</th>
+                <th colspan='4' class='split'>Branch</th>
+            </tr>
+            <tr>
+                <th>Location</th>
+                <th>Branches</th>
+                <th>Authors</th>
+                <th class='split'>Name</th>
+                <th>Last analyzed</th>
+                <th>Age</th>
+                <th>Authors</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ repo.url }}</td>
+                <td>{{ repo.branch_count }}</td>
+                <td>{{ repo.author_count }}</td>
+                <td class='split'>{{ branch.name }}</td>
+                <td>{{ branch.analyzed_date }}</td>
+                <td>{{ branch.age }}</td>
+                <td>{{ branch.author_count }}</td>
+            </tr>
+        </tbody>
+    </table>
 
     <div class='overview'>
         <div

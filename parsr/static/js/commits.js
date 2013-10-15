@@ -2,28 +2,17 @@ var CommitHistory;
 
 (function() {
 
-    CommitHistory = Class.extend({
+    CommitHistory = Component.extend({
 
         init: function(target, attrs) {
             attrs = attrs || {};
 
-            this.dom = $(target);
-
             this.margins = this.createMargins(attrs.margins);
 
-            this.width = attrs.width || this.dom.width();
+            this.width = attrs.width || $(target).width();
             this.height = attrs.height || 400;
 
-            var branch = this.dom.data("branch");
-            var author = this.dom.data("author");
-
-            var url = "/commits/branch/" + branch;
-
-            if(author) {
-                url = url + "/author/" + author;
-            }
-
-            this.setup(url);
+            this._super("commits", target);
         },
 
         getInnerWidth: function() {
@@ -51,7 +40,7 @@ var CommitHistory;
 
                 result.push({
                     day: day,
-                    count: data[year][month][day] || 0
+                    count: (data[year][month][day] || {}).commits || 0
                 });
             });
 

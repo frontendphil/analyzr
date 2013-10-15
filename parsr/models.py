@@ -1,4 +1,6 @@
 from datetime import datetime
+from hashlib import md5
+from urllib import urlencode
 
 from django.db import models
 from django.db.models import Count
@@ -207,11 +209,13 @@ class Branch(models.Model):
         files = File.objects.filter(revision__branch=self, mimetype__isnull=False)
 
         if author:
-            files = files.filter(revision__author=author)
+            # Author specific stats need to consider all files and changes to them
+            # but not deletes
+            files = files.filter(revision__author=author, change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])
 
             count = files.values("mimetype").count()
 
-            for stat in files.values("mimetype").annotate(count=Count("mimetype")).order_by("-count"):
+            for stat in files.values("mimetype").annotate(count=Count("mimetype")).order_by("count"):
                 result.append({
                     "mimetype": stat["mimetype"],
                     "share": stat["count"] / (1.0 * count)
@@ -260,7 +264,13 @@ class Branch(models.Model):
             if not month in response["data"][year]:
                 response["data"][year][month] = {}
 
-            response["data"][year][month][day] = count
+            response["data"][year][month][day] = {
+                "commits": count,
+                "files": File.objects.filter(revision__revision_date__day=day,
+                                             revision__revision_date__month=month,
+                                             revision__revision_date__year=year,
+                                             revision__branch=self).count()
+            }
 
         response["upper"] = count_max
 
@@ -409,9 +419,23 @@ class Author(models.Model):
 
         return revisions.count()
 
+    def get_icon(self):
+        size = 40
+        mail = ""
+
+        if self.email:
+            mail = md5(self.email.lower()).hexdigest()
+
+        params = urlencode({
+            's': str(size)
+        })
+
+        return "http://www.gravatar.com/avatar/%s?%s" % (mail, params)
+
     def json(self, branch):
         return {
             "id": self.id,
             "name": str(self),
+            "icon": self.get_icon(),
             "count": self.revision_count(branch)
         }

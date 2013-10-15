@@ -30,9 +30,9 @@
     background: rgba(255, 255, 255, 0.5);
 
     .info {
-        width: 25%;
+        padding: 10px 15px;
 
-        padding: 20px;
+        width: 15%;
 
         background: #fff;
 
@@ -55,6 +55,15 @@
 
 .nav {
     margin-top: 20px;
+}
+
+.branch-info {
+    padding: 10px 15px;
+
+    h5 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
 }
 
 .center {
@@ -230,15 +239,30 @@
     }
 }
 
+table {
+    .split {
+        border-left: 1px solid #ddd;
+    }
+}
+
 .contributors {
     text-align: center;
 
     table {
         text-align: left;
 
-        .rank,
         .revisions {
             width: 10%;
+        }
+
+        .rank {
+            width: 5%;
+            text-align: center;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
         }
     }
 }

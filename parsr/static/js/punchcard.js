@@ -12,58 +12,42 @@ var Punchcard;
         "Sunday"
     ];
 
-    Punchcard = Class.extend({
+    Punchcard = Component.extend({
 
         init: function(attrs) {
-            this.dom = $(attrs.renderTo);
-
-            var branch = this.dom.data("branch");
-            var author = this.dom.data("author");
-
-            var url = "/punchcard/branch/" + branch;
-
-            if(author) {
-                url = url + "/author/" + author;
-            }
-
-            this.setup(url);
+            this._super("punchcard", attrs.renderTo);
         },
 
-        setup: function(url) {
+        handleData: function(data) {
+            var table = $("<table class='table' />");
             var that = this;
 
-            $.ajax(url, {
-                success: function(data) {
-                    var table = $("<table class='table' />");
+            this.createHeader(table);
 
-                    that.createHeader(table);
+            var container = $("<tbody></tbody>");
+            table.append(container);
 
-                    var container = $("<tbody></tbody>");
-                    table.append(container);
+            $.each(WEEKDAYS, function(day) {
+                var dayContainer = $(
+                    "<tr>" +
+                        "<td class='day'>" + WEEKDAYS[day] + "</td>" +
+                    "</tr>"
+                );
 
-                    $.each(WEEKDAYS, function(day) {
-                        var dayContainer = $(
-                            "<tr>" +
-                                "<td class='day'>" + WEEKDAYS[day] + "</td>" +
-                            "</tr>"
-                        );
+                for(var hour = 0; hour < 24; hour = hour + 1) {
+                    var hourContainer = $("<td class='hour' />");
 
-                        for(var hour = 0; hour < 24; hour = hour + 1) {
-                            var hourContainer = $("<td class='hour' />");
+                    if(data[day]) {
+                        hourContainer.append(that.createCircle(data[day][hour], data.max));
+                    }
 
-                            if(data[day]) {
-                                hourContainer.append(that.createCircle(data[day][hour], data.max));
-                            }
-
-                            dayContainer.append(hourContainer);
-                        }
-
-                        container.append(dayContainer);
-                    });
-
-                    that.dom.append(table);
+                    dayContainer.append(hourContainer);
                 }
+
+                container.append(dayContainer);
             });
+
+            this.dom.append(table);
         },
 
         createCircle: function(value, max) {

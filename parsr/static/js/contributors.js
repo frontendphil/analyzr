@@ -4,16 +4,13 @@ var Contributors;
 
     var LOOK_AROUND = 3;
 
-    Contributors = Class.extend({
+    Contributors = Component.extend({
+
         init: function(target) {
-            this.dom = $(target);
-
-            var branch = this.dom.data("branch");
-
-            this.setup(this.getUrl(branch), branch);
+            this._super("contributors", target);
         },
 
-        getUrl: function(branch, page) {
+        getUrl: function(base, branch, page) {
             var url = "/contributors/branch/" + branch;
 
             if(!page) {
@@ -127,6 +124,7 @@ var Contributors;
                     "<thead>" +
                         "<tr>" +
                             "<th class='rank'>#</td>" +
+                            "<th></th>" +
                             "<th>Name</th>" +
                             "<th class='revisions'>Revisions</th>" +
                         "<tr>" +
@@ -140,7 +138,8 @@ var Contributors;
             $.each(data.authors, function(index) {
                 var entry = $(
                     "<tr>" +
-                        "<td>" + ((data.perPage * (data.page - 1)) + index + 1) + "</td>" +
+                        "<td class='rank'>" + ((data.perPage * (data.page - 1)) + index + 1) + "</td>" +
+                        "<td class='avatar' style='background-image:url(" + this.icon + ")'></td>" +
                         "<td>" +
                             "<a href='/author/" + this.id + "/branch/" + branch + "'>" + this.name + "</a>" +
                         "</td>" +
@@ -154,20 +153,15 @@ var Contributors;
             return table;
         },
 
-        setup: function(url, branch) {
-            var that = this;
+        handleData: function(data, branch) {
+            this.clear();
 
-            $.ajax(url, {
-                success: function(data) {
-                    that.clear();
+            var table = this.createTable(data, branch);
+            var pagination = this.createPagination(data, branch);
 
-                    var table = that.createTable(data, branch);
-                    var pagination = that.createPagination(data, branch);
-
-                    that.dom.append(table, pagination);
-                }
-            });
+            this.dom.append(table, pagination);
         }
+
     });
 
     Contributors.auto = function(target) {

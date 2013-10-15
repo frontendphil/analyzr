@@ -1,7 +1,12 @@
 {% extends "repo.html" %}
 
+{% load filters %}
+
 {% block branch %}
-    <h4>{{ branch.name }}</h4>
+    <h5>
+        <i class='icon-code-fork'></i>
+        {{ branch.name }}
+    </h5>
 {% endblock %}
 
 {% block content %}
@@ -11,6 +16,7 @@
     </a>
 
     <h1>
+        {% gravatar author.email %}
         {{ author.name }}
 
         {% if author.email %}
