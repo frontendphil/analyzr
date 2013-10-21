@@ -1,7 +1,7 @@
 <project>
 
     <path id="classpath">
-        <fileset dir="{{ project_path }}/lib">
+        <fileset dir="{{ project_path }}/lib/{{ checker }}">
             <include name="*.jar" />
         </fileset>
     </path>

@@ -2,13 +2,22 @@
 
 {% block content %}
     <taskdef
-        name="checkstyle"
-        resource="checkstyletask.properties" />
+        resource="checkstyletask.properties"
+        classpathref="classpath" />
 
-    <target name="checkstyle">
+    <target name="measure">
         <checkstyle
-            config="{{ TEMPlATE_DIR }}/configs/checkstyle.config.xml">
+            failOnViolation="false"
+            config="{{ project_path }}/templates/config/checkstyle.config.xml"
+            maxErrors="2147483647">
 
+            <formatter type="xml" toFile="{{ target }}" />
+
+            <fileset dir="{{ base_path }}">
+                {% for file in files %}
+                    <include name="{{ file }}" />
+                {% endfor %}
+            </fileset>
         </checkstyle>
     </target>
 {% endblock %}

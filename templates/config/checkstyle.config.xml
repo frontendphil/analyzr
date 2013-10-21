@@ -1,8 +1,17 @@
-<module name="Checker">
-    <property name="basedir" value="{{ BASE_DIR }}" />
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+    "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
 
-    <moduel name="TreeWalker">
-        <module name="ClassFanOutComplexity" />
-        <module name="CyclomaticComplexity" />
+<module name="Checker">
+    <module name="TreeWalker">
+        <module name="ClassFanOutComplexity">
+            <property name="max" value="1" />
+            <message key="classFanOutComplexity" value="{0}" />
+        </module>
+        <module name="CyclomaticComplexity">
+            <property name="max" value="1" />
+            <message key="cyclomaticComplexity" value="{0}" />
+        </module>
     </module>
 </module>

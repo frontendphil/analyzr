@@ -11,7 +11,7 @@ var Contributors;
         },
 
         getUrl: function(base, branch, page) {
-            var url = "/contributors/branch/" + branch;
+            var url = "/" + base + "/branch/" + branch;
 
             if(!page) {
                 return url;
@@ -32,7 +32,7 @@ var Contributors;
             var that = this;
 
             element.find("a").click(function() {
-                var url = that.getUrl(branch, page);
+                var url = that.getUrl("contributors", branch, page);
 
                 that.setup(url, branch);
 

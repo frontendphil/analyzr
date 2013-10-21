@@ -206,7 +206,7 @@ class Branch(models.Model):
     def file_statistics(self, author=None):
         result = []
 
-        files = File.objects.filter(revision__branch=self, mimetype__isnull=False)
+        files = File.objects.filter(revision__branch=self, mimetype__in=Analyzer.parseable_types())
 
         if author:
             # Author specific stats need to consider all files and changes to them
@@ -265,11 +265,11 @@ class Branch(models.Model):
                 response["data"][year][month] = {}
 
             response["data"][year][month][day] = {
-                "commits": count,
-                "files": File.objects.filter(revision__revision_date__day=day,
-                                             revision__revision_date__month=month,
-                                             revision__revision_date__year=year,
-                                             revision__branch=self).count()
+                "commits": count
+                # "files": File.objects.filter(revision__revision_date__day=day,
+                #                              revision__revision_date__month=month,
+                #                              revision__revision_date__year=year,
+                #                              revision__branch=self).count()
             }
 
         response["upper"] = count_max
@@ -301,6 +301,8 @@ class Revision(models.Model):
     branch = models.ForeignKey("Branch", null=True)
     author = models.ForeignKey("Author", null=True, blank=True)
     revision_date = models.ForeignKey("RevisionDate", null=True, blank=True)
+
+    next = models.ForeignKey("Revision", related_name='previous', null=True)
 
     def __unicode__(self):
         return "%s created by %s in branch %s of %s" % (self.identifier, self.author, self.branch, self.branch.repo)
