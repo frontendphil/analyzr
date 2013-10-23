@@ -130,6 +130,7 @@ INSTALLED_APPS = (
     'south',
     'parsr',
     'timezone_field',
+    'annoying',
 )
 
 # A sample logging configuration. The only tangible logging

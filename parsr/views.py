@@ -2,29 +2,37 @@ import json
 import traceback
 import sys
 
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
-from django.template import RequestContext
 from django.http import HttpResponse
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+
+from annoying.decorators import render_to, ajax_request
+from annoying.functions import get_object_or_None
 
 from parsr.models import Repo, Author, Branch
 from parsr.forms import RepoForm
 
 
+def get_branch_and_author(branch_id, author_id):
+    branch = get_object_or_404(Branch, pk=branch_id)
+    author = get_object_or_None(Author, pk=author_id)
+
+    return branch, author
+
+
+@render_to("index.html")
 def index(request):
     repositories = Repo.objects.all()
 
-    return render_to_response("index.html", { "repositories": repositories }, context_instance=RequestContext(request))
+    return { "repositories": repositories }
 
 
+@render_to("create.html")
 def create(request):
     form = RepoForm()
 
-    return render_to_response("create.html",
-        {
-            "form": form
-        }, context_instance=RequestContext(request))
+    return { "form": form }
 
 
 @require_POST
@@ -58,16 +66,15 @@ def remove(request, repo_id):
     return HttpResponse(status=200)
 
 
+@render_to("edit.html")
 def edit(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
     form = RepoForm(instance=repo)
 
-    return render_to_response("edit.html",
-        {
-            "form": form
-        }, context_instance=RequestContext(request))
+    return { "form": form }
 
 
+@ajax_request
 def contributors(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
@@ -94,52 +101,46 @@ def contributors(request, branch_id):
         "authors": [author.json(branch) for author in authors]
     }
 
-    return HttpResponse(json.dumps(response), mimetype="application/json")
+    return response
 
 
+@render_to("repo.html")
 def repo(request, repo_id, branch_id=None):
     repo = get_object_or_404(Repo, pk=repo_id)
     branch = get_object_or_404(Branch, pk=branch_id) if branch_id else repo.default_branch()
 
-    return render_to_response("repo.html",
-        {
-            "repo": repo,
-            "branch": branch
-        }, context_instance=RequestContext(request))
+    return { "repo": repo, "branch": branch }
 
 
+@render_to("author.html")
 def author(request, author_id, branch_id):
-    author = get_object_or_404(Author, pk=author_id)
-    branch = get_object_or_404(Branch, pk=branch_id)
+    branch, author = get_branch_and_author(branch_id, author_id)
 
-    return render_to_response("author.html",
-        {
-            "author": author,
-            "branch": branch
-        }, context_instance=RequestContext(request))
+    return { "author": author, "branch": branch }
 
 
+@ajax_request
 def punchcard(request, branch_id, author_id=None):
-    branch = get_object_or_404(Branch, pk=branch_id)
-    author = get_object_or_404(Author, pk=author_id) if author_id else None
+    branch, author = get_branch_and_author(branch_id, author_id)
 
-    return HttpResponse(json.dumps(branch.punchcard(author)), mimetype="application/json")
+    return branch.punchcard(author)
 
 
+@ajax_request
 def file_stats(request, branch_id, author_id=None):
-    branch = get_object_or_404(Branch, pk=branch_id)
-    author = get_object_or_404(Author, pk=author_id) if author_id else None
+    branch, author = get_branch_and_author(branch_id, author_id)
 
-    return HttpResponse(json.dumps(branch.file_statistics(author)), mimetype="application/json")
+    return branch.file_statistics(author)
 
 
+@ajax_request
 def commits(request, branch_id, author_id=None):
-    branch = get_object_or_404(Branch, pk=branch_id)
-    author = get_object_or_404(Author, pk=author_id) if author_id else None
+    branch, author = get_branch_and_author(branch_id, author_id)
 
-    return HttpResponse(json.dumps(branch.commit_history(author)), mimetype="application/json")
+    return branch.commit_history(author)
 
 
+@ajax_request
 @require_POST
 def analyze(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
@@ -151,9 +152,10 @@ def analyze(request, branch_id):
 
         branch.abort_analyze()
 
-    return HttpResponse(json.dumps({ "status": "ok" }), mimetype="application/json")
+    return { "status": "ok" }
 
 
+@ajax_request
 @require_POST
 def measure(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
@@ -165,4 +167,4 @@ def measure(request, branch_id):
 
         branch.abort_measure()
 
-    return HttpResponse(json.dumps({ "status": "ok" }), mimetype="application/json")
+    return { "status": "ok" }

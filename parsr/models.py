@@ -338,7 +338,10 @@ class Revision(models.Model):
         return self.revision_date.date
 
     def modified_files(self):
-        return self.file_set.filter(change_type__in=[Action.ADD, Action.MODIFY])
+        return self.file_set.filter(change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])
+
+    def get_file(self, filename):
+        return self.file_set.get(name=filename)
 
 
 class RevisionDate(models.Model):
@@ -401,8 +404,43 @@ class File(models.Model):
     change_type = models.CharField(max_length=1, null=True, choices=CHANGE_TYPES)
     copy_of = models.ForeignKey("File", null=True)
 
+    cyclomatic_complexity = models.IntegerField(default=0)
+    cyclomatic_complexity_delta = models.IntegerField(default=0)
+
     def __unicode__(self):
         return self.name
+
+    def get_previous(self):
+        if self.change_type == Action.ADD:
+            return None
+
+        try:
+            return File.objects.filter(name=self.name,
+                                       revision__revision_date__date__lt=self.revision.date())\
+                               .order_by("-revision__revision_date__date")[0]
+        except:
+            files = File.objects.filter(name=self.name,
+                                        revision__revision_date__date__lte=self.revision.date())\
+                                .order_by("-revision__revision_date__date")
+
+            if files.count() > 1:
+                # multiple edits in one minute. we pick something.
+                # hopefully does not happen too often
+                return files[1]
+
+            return None
+
+    def add_measures(self, measures):
+        previous = self.get_previous()
+
+        for measure in measures:
+            if measure["kind"] == "CyclomaticComplexity":
+                self.cyclomatic_complexity = measure["value"]
+
+                if previous:
+                    self.cyclomatic_complexity_delta = measure["value"] - previous.cyclomatic_complexity
+
+        self.save()
 
 
 class Author(models.Model):

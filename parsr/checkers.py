@@ -28,7 +28,7 @@ class Checker(object):
         pass
 
     def parse(self, connector):
-        pass
+        return {}
 
 
 class Checkstyle(Checker):
@@ -90,6 +90,26 @@ class Checkstyle(Checker):
             "value": value
         })
 
+    def aggregate_values(self, filename):
+        if not filename in self.measures:
+            return
+
+        metrics = {}
+
+        for measure in self.measures[filename]:
+            if not measure["kind"] in metrics:
+                metrics["kind"] = []
+
+            metrics["kind"].append(measure["value"])
+
+        self.measures[filename] = []
+
+        for metric, values in metrics.iteritems():
+            self.measures[filename].append({
+                "kind": metric,
+                "value": sum(values) / len(values)
+            })
+
     def parse(self, connector):
         if not self.results:
             return
@@ -98,15 +118,21 @@ class Checkstyle(Checker):
         files = xml_doc.getElementsByTagName("file")
 
         for f in files:
-            name = f.attributes["name"].value.replace(connector.get_repo_path(), "")
+            # replace leading / as files are internally stored without it.
+            name = f.attributes["name"].value.replace(connector.get_repo_path(), "")\
+                                             .replace("/", "", 1)
 
             violations = f.getElementsByTagName("error")
 
             for violation in violations:
                 self.parse_violation(name, violation)
 
+            self.aggregate_values(name)
+
         # Parse results only once
         self.results = None
+
+        return self.measures
 
 class AOPMetrics(Checker):
     pass

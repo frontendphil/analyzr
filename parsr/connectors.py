@@ -172,7 +172,7 @@ class Git(Connector):
             last_commit = commit
 
         # create initial commit
-        self.parse(None, last_commit)
+        self.parse(branch, None, last_commit)
 
     def get_branches(self):
         result = []

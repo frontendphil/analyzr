@@ -46,7 +46,14 @@ class Analyzer(object):
 
         for mimetype, analyzer in self.analyzers.iteritems():
             if not analyzer.empty():
-                analyzer.measure(revision, self.connector)
+                results = analyzer.measure(revision, self.connector)
+
+                self.store_results(revision, results)
+
+    def store_results(self, revision, results):
+        for filename, measures in results.iteritems():
+            f = revision.get_file(filename)
+            f.add_measures(measures)
 
     def start(self):
         self.connector.switch_to(self.branch)
@@ -60,6 +67,7 @@ class BaseAnalyzer(object):
 
     def __init__(self):
         self.files = []
+        self.results = {}
 
     def add_file(self, f):
         self.files.append(f)
@@ -80,12 +88,27 @@ class BaseAnalyzer(object):
         for checker in self.checkers:
             checker.configure(self.files, revision, connector)
             checker.run()
-            checker.parse(connector)
+
+            results = checker.parse(connector)
+
+            self.store_results(results)
+
+        results = self.results
 
         self.files = []
+        self.results = {}
+
+        return results
 
     def empty(self):
         return len(self.files) == 0
+
+    def store_results(self, results):
+        for filename, measures in results.iteritems():
+            if not filename in self.results:
+                self.results[filename] = []
+
+            self.results[filename] += measures
 
 
 class Java(BaseAnalyzer):
