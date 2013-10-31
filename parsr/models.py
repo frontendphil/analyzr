@@ -292,8 +292,13 @@ class Branch(models.Model):
     def author_count(self):
         return Author.objects.filter(revision__branch=self).distinct().count()
 
-    def revisions(self):
-        return Revision.objects.filter(branch=self).order_by("revision_date__date")
+    def revisions(self, author=None):
+        revisions = Revision.objects.filter(branch=self)
+
+        if author:
+            revisions = revisions.filter(author=author)
+
+        return revisions.order_by("revision_date__date")
 
     def create_revision(self, identifier):
         return Revision.objects.create(
@@ -304,7 +309,7 @@ class Branch(models.Model):
     def metrics(self, author):
         result = []
 
-        for revision in self.revisions():
+        for revision in self.revisions(author):
             files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
                                 .aggregate(
                                     mccabe=Avg("cyclomatic_complexity_delta"),
