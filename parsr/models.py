@@ -3,7 +3,7 @@ from hashlib import md5
 from urllib import urlencode
 
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Avg
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -53,6 +53,9 @@ class Repo(models.Model):
 
     def measurable(self):
         return Branch.objects.filter(repo=self, analyzed=True).count() > 0
+
+    def measured(self):
+        return Branch.objects.filter(repo=self, measured=True).count() > 0
 
     def get_status(self):
         if self.analyzing():
@@ -298,6 +301,30 @@ class Branch(models.Model):
             identifier=identifier
         )
 
+    def metrics(self, author):
+        result = []
+
+        for revision in self.revisions():
+            files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
+                                .aggregate(
+                                    mccabe=Avg("cyclomatic_complexity_delta"),
+                                    halstead_volume=Avg("halstead_volume_delta"),
+                                    halstead_difficulty=Avg("halstead_difficulty_delta"),
+                                    halstead_effort=Avg("halstead_effort_delta")
+                                )
+
+            if not files["mccabe"]:
+                continue
+
+            result.append({
+                "date": revision.date().isoformat(),
+                "Cyclomatic Complexity": files["mccabe"],
+                "Halstead Volume": files["halstead_volume"],
+                "Halstead Difficulty": files["halstead_difficulty"],
+                "Halstead Effort": files["halstead_effort"]
+            })
+
+        return result
 
 class Revision(models.Model):
 

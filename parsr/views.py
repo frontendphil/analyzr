@@ -141,6 +141,13 @@ def commits(request, branch_id, author_id=None):
 
 
 @ajax_request
+def metrics(request, branch_id, author_id):
+    branch, author = get_branch_and_author(branch_id, author_id)
+
+    return branch.metrics(author)
+
+
+@ajax_request
 @require_POST
 def analyze(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)

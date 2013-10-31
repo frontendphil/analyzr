@@ -22,6 +22,8 @@ urlpatterns = patterns('parsr.views',
 
     url(r'^contributors/branch/(?P<branch_id>\d+)$', 'contributors'),
 
+    url(r'^metrics/branch/(?P<branch_id>\d+)/author/(?P<author_id>\d)/$', 'metrics'),
+
     url(r'^punchcard/branch/(?P<branch_id>\d+)/author/(?P<author_id>\d+)/$', "punchcard"),
     url(r'^punchcard/branch/(?P<branch_id>\d+)$', "punchcard"),
 

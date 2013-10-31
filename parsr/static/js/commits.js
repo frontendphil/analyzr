@@ -124,7 +124,7 @@ var CommitHistory;
             var xAxis = d3.svg.axis().scale(x).orient("bottom");
             var yAxis = d3.svg.axis().scale(y).orient("left").tickSize(-this.getInnerWidth());
 
-            var svg = d3.select(this.dom[0]).append("svg")
+            var svg = d3.select(this.dom.get(0)).append("svg")
                 .attr("class", "chart")
                 .attr("width", this.width)
                 .attr("height", this.height)
