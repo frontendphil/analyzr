@@ -206,11 +206,12 @@ class Branch(models.Model):
     def file_statistics(self, author=None):
         result = []
 
-        files = File.objects.filter(revision__branch=self, mimetype__in=Analyzer.parseable_types())
+        files = File.objects.filter(revision__branch=self)
 
         if author:
             # Author specific stats need to consider all files and changes to them
             # but not deletes
+            files = files.filter(mimetype__in=Analyzer.parseable_types())
             files = files.filter(revision__author=author, change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])
 
             count = files.values("mimetype").count()
@@ -222,6 +223,10 @@ class Branch(models.Model):
                 })
 
             return result
+
+        # raw query processing seems to work a little different. that is why we need to
+        # manually put the strings into quotes.
+        files = files.filter(mimetype__in=["'%s'" % t for t in Analyzer.parseable_types()])
 
         query = sql.newest_files(str(files.query))
         count = File.objects.raw(sql.count_entries(query))[0].count
@@ -318,7 +323,7 @@ class Revision(models.Model):
         File.objects.create(
             revision=self,
             name=filename,
-            mimetype=mimetype,
+            mimetype=mimetype.split("/")[1] if mimetype else None,
             change_type=action,
             copy_of=original[0] if original else None
         )
@@ -396,6 +401,13 @@ class File(models.Model):
         (Action.DELETE, "Deleted")
     )
 
+    KNOWN_LANGUAGES = Analyzer.parseable_types() + [
+        "x-python",
+        "html",
+        "json",
+        "x-sql"
+    ]
+
     revision = models.ForeignKey("Revision")
 
     name = models.CharField(max_length=255)
@@ -404,8 +416,15 @@ class File(models.Model):
     change_type = models.CharField(max_length=1, null=True, choices=CHANGE_TYPES)
     copy_of = models.ForeignKey("File", null=True)
 
-    cyclomatic_complexity = models.IntegerField(default=0)
-    cyclomatic_complexity_delta = models.IntegerField(default=0)
+    cyclomatic_complexity = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    cyclomatic_complexity_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    halstead_volume = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_volume_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_difficulty = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_difficulty_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_effort = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_effort_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     def __unicode__(self):
         return self.name
@@ -440,7 +459,24 @@ class File(models.Model):
                 if previous:
                     self.cyclomatic_complexity_delta = measure["value"] - previous.cyclomatic_complexity
 
+            if measure["kind"] == "Halstead":
+                volume = measure["value"]["volume"]
+                difficulty = measure["value"]["difficulty"]
+                effort = measure["value"]["effort"]
+
+                self.halstead_volume = volume
+                self.halstead_difficulty = difficulty
+                self.halstead_effort = effort
+
+                if previous:
+                    self.halstead_volume_delta = volume - previous.halstead_volume
+                    self.halstead_difficulty_delta = difficulty - previous.halstead_difficulty
+                    self.halstead_effort_delta = effort - previous.halstead_effort
+
         self.save()
+
+    def get_identifier(self):
+        return md5(self.name).hexdigest()
 
 
 class Author(models.Model):
@@ -472,10 +508,26 @@ class Author(models.Model):
 
         return "http://www.gravatar.com/avatar/%s?%s" % (mail, params)
 
+    def get_prime_language(self, branch):
+        files = File.objects.filter(
+                                revision__branch=branch,
+                                revision__author=self,
+                                mimetype__in=File.KNOWN_LANGUAGES
+                            )\
+                            .values("mimetype")\
+                            .annotate(count=Count("mimetype"))\
+                            .order_by("-count")
+
+        if not files:
+            return None
+
+        return files[0]
+
     def json(self, branch):
         return {
             "id": self.id,
             "name": str(self),
             "icon": self.get_icon(),
-            "count": self.revision_count(branch)
+            "count": self.revision_count(branch),
+            "primeLanguage": self.get_prime_language(branch)
         }

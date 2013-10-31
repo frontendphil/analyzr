@@ -1,7 +1,7 @@
 import os
 
 from parsr.connectors import Connector
-from parsr.checkers import Checkstyle, AOPMetrics
+from parsr.checkers import Checkstyle, AOPMetrics, ComplexityReport
 
 from analyzr.settings import RESULT_PATH
 
@@ -14,7 +14,7 @@ class Analyzer(object):
         types = []
 
         for key, value in cls.analyzers.iteritems():
-            types.append("'%s'" % key)
+            types.append(key)
 
         return types
 
@@ -82,10 +82,13 @@ class BaseAnalyzer(object):
         if not os.path.exists(result_path):
             os.makedirs(result_path)
 
-    def measure(self, revision, connector):
-        self.setup_paths(connector)
+        return (config_path, result_path)
 
-        for checker in self.checkers:
+    def measure(self, revision, connector):
+        config_path, result_path = self.setup_paths(connector)
+
+        for cls in self.checkers:
+            checker = cls(config_path, result_path)
             checker.configure(self.files, revision, connector)
             checker.run()
 
@@ -114,21 +117,25 @@ class BaseAnalyzer(object):
 class Java(BaseAnalyzer):
 
     def __init__(self):
-        self.checkers = [Checkstyle(), AOPMetrics()]
+        self.checkers = [Checkstyle, AOPMetrics]
 
         super(Java, self).__init__()
 
 
-Analyzer.register("text/x-java-source", Java)
+Analyzer.register("x-java-source", Java)
 
 
 class JavaScript(BaseAnalyzer):
-    pass
+    def __init__(self):
+        self.checkers = [ComplexityReport]
 
-Analyzer.register("application/javascript", JavaScript)
+        super(JavaScript, self).__init__()
+
+
+Analyzer.register("javascript", JavaScript)
 
 
 class C(BaseAnalyzer):
     pass
 
-Analyzer.register("text/x-c", C)
+Analyzer.register("x-c", C)

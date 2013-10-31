@@ -4,6 +4,14 @@ var Contributors;
 
     var LOOK_AROUND = 3;
 
+    var LANGUAGE_MAPPINGS = {
+        "x-java-source": "java",
+        "javascript": "js",
+        "x-sql": "sql",
+        "x-python": "py",
+        "html": "html"
+    };
+
     Contributors = Component.extend({
 
         init: function(target) {
@@ -125,6 +133,7 @@ var Contributors;
                         "<tr>" +
                             "<th class='rank'>#</td>" +
                             "<th></th>" +
+                            "<th></th>" +
                             "<th>Name</th>" +
                             "<th class='revisions'>Revisions</th>" +
                         "<tr>" +
@@ -136,9 +145,18 @@ var Contributors;
             table.append(body);
 
             $.each(data.authors, function(index) {
+                var language = "N/A";
+
+                if(this.primeLanguage) {
+                    language = LANGUAGE_MAPPINGS[this.primeLanguage.mimetype];
+                }
+
                 var entry = $(
                     "<tr>" +
                         "<td class='rank'>" + ((data.perPage * (data.page - 1)) + index + 1) + "</td>" +
+                        "<td class='lang'>" +
+                            (language || "") +
+                        "</td>" +
                         "<td class='avatar' style='background-image:url(" + this.icon + ")'></td>" +
                         "<td>" +
                             "<a href='/author/" + this.id + "/branch/" + branch + "'>" + this.name + "</a>" +
