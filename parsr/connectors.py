@@ -116,6 +116,19 @@ class Git(Connector):
 
         return git.Repo.clone_from(repo.url, folder)
 
+    def get_churn(self, revision, filename):
+        commit = self.repo.commit(revision)
+        stats = commit.stats.files
+
+        if not filename in stats:
+            return
+
+        return {
+            "added": stats[filename]["insertions"],
+            "removed": stats[filename]["deletions"]
+        }
+
+
     def parse(self, branch, parent, commit=None):
         if not commit:
             return
@@ -156,7 +169,7 @@ class Git(Connector):
             if not filename:
                 filename = diff.a_blob.path
 
-            revision.add_file(filename, action, original)
+            revision.add_file(filename, action, original=original)
 
         revision.save()
 
@@ -262,7 +275,7 @@ class SVN(Connector):
             if filename.action == Action.MOVE:
                 original = filename.copyfrom_path
 
-            revision.add_file(filename.path, filename.action, original)
+            revision.add_file(filename.path, filename.action, original=original)
 
         revision.save()
 
@@ -370,7 +383,7 @@ class Mercurial(Connector):
             if action == Action.MOVE:
                 original = self.get_original(filectx)
 
-            revision.add_file(filename, action, original)
+            revision.add_file(filename, action, original=original)
 
         revision.save()
 

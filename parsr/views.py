@@ -148,6 +148,13 @@ def metrics(request, branch_id, author_id):
 
 
 @ajax_request
+def churn(request, branch_id, author_id):
+    branch, author = get_branch_and_author(branch_id, author_id)
+
+    return branch.churn(author)
+
+
+@ajax_request
 @require_POST
 def analyze(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)

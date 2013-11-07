@@ -2,26 +2,10 @@ var Metrics;
 
 (function() {
 
-    Metrics = Component.extend({
+    Metrics = Graph.extend({
 
         init: function(target, attrs) {
-            attrs = attrs || {};
-
-            this.margins = this.createMargins(attrs.margins || {});
-
-            this.width = attrs.width || $(target).width();
-            this.height = attrs.height || 400;
-
-            this._super("metrics", target);
-        },
-
-        createMargins: function(margins) {
-            return {
-                top: margins.top || 0,
-                left: margins.left || 0,
-                bottom: margins.bottom || 0,
-                right: margins.right || 0
-            };
+            this._super("metrics", target, attrs);
         },
 
         createDiagram: function(data) {
@@ -42,7 +26,7 @@ var Metrics;
 
             var svg = d3.select(this.dom.get(0)).append("svg")
                 .attr("class", "chart")
-                .attr("width", this.width)
+                .attr("width", this.width + this.margins.left + this.margins.right)
                 .attr("height", this.height + this.margins.top + this.margins.bottom)
                 .append("g")
                 .attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
@@ -87,17 +71,7 @@ var Metrics;
                 .text(data.type);
         },
 
-        getInnerWidth: function() {
-            return this.width - this.margins.left - this.margins.right;
-        },
-
-        getInnerHeight: function() {
-            return this.height - this.margins.top - this.margins.bottom;
-        },
-
         setup: function(url) {
-            var parseDate = d3.time.format("%Y%m%d - %H:%M").parse;
-
             var that = this;
 
             d3.json(url, function(error, data) {

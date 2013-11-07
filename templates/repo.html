@@ -89,6 +89,7 @@
     <script type="text/javascript">
         $(document).ready(function() {
             CommitHistory.auto(".commits", {
+                height: 200,
                 margins: {
                     top: 50,
                     left: 40,
@@ -103,6 +104,15 @@
                     top: 50,
                     left: 100,
                     bottom: 50
+                }
+            });
+
+            CodeChurn.auto(".churn", {
+                height: 300,
+                margins: {
+                    top: 50,
+                    left: 40,
+                    bottom: 20
                 }
             });
         })

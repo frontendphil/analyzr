@@ -3,7 +3,7 @@ from hashlib import md5
 from urllib import urlencode
 
 from django.db import models
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Sum
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -331,6 +331,28 @@ class Branch(models.Model):
 
         return result
 
+    def churn(self, author):
+        result = []
+
+        for revision in self.revisions(author):
+            files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
+                                .aggregate(
+                                    added=Sum("lines_added"),
+                                    removed=Sum("lines_removed")
+                                )
+
+            if not files["added"]:
+                # code churn not measured for this revision
+                continue
+
+            result.append({
+                "date": revision.date().isoformat(),
+                "added": files["added"],
+                "removed": files["removed"]
+            })
+
+        return result
+
 class Revision(models.Model):
 
     identifier = models.CharField(max_length=255)
@@ -458,6 +480,9 @@ class File(models.Model):
     halstead_effort = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     halstead_effort_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
+    lines_added = models.IntegerField(default=0)
+    lines_removed = models.IntegerField(default=0)
+
     def __unicode__(self):
         return self.name
 
@@ -504,6 +529,19 @@ class File(models.Model):
                     self.halstead_volume_delta = volume - previous.halstead_volume
                     self.halstead_difficulty_delta = difficulty - previous.halstead_difficulty
                     self.halstead_effort_delta = effort - previous.halstead_effort
+
+            if measure["kind"] == "churn":
+                self.lines_added = measure["value"]["added"]
+                self.lines_removed = measure["value"]["removed"]
+
+        self.save()
+
+    def add_churn(self, churn=None):
+        if not churn:
+            return
+
+        self.lines_added = churn["added"]
+        self.lines_removed = churn["removed"]
 
         self.save()
 

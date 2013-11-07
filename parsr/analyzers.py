@@ -54,6 +54,7 @@ class Analyzer(object):
         for filename, measures in results.iteritems():
             f = revision.get_file(filename)
             f.add_measures(measures)
+            f.add_churn(self.connector.get_churn(revision.identifier, filename))
 
     def start(self):
         self.connector.switch_to(self.branch)
