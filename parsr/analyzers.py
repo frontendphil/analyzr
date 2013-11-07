@@ -54,10 +54,16 @@ class Analyzer(object):
         for filename, measures in results.iteritems():
             f = revision.get_file(filename)
             f.add_measures(measures)
-            f.add_churn(self.connector.get_churn(revision.identifier, filename))
+
+            code_churn = self.connector.get_churn(revision.identifier, filename)
+
+            f.add_churn(code_churn)
 
     def start(self):
-        self.connector.switch_to(self.branch)
+        try:
+            self.connector.switch_to(self.branch)
+        except:
+            pass
 
         for revision in self.branch.revisions():
             self.connector.checkout(revision)

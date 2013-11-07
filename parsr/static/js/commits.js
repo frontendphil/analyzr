@@ -31,6 +31,8 @@ var CommitHistory;
             return d3.map(data[year]).keys();
         },
 
+        prepareSVG: function() {},
+
         getPastMonth: function(data, year, month) {
             var months = this.getMonths(data, year);
 

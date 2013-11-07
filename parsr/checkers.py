@@ -7,7 +7,7 @@ from decimal import Decimal
 
 from parsr.metrics import Metric
 
-from analyzr.settings import CONFIG_PATH, RESULT_PATH, PROJECT_PATH
+from analyzr.settings import CONFIG_PATH, PROJECT_PATH
 
 
 class Checker(object):

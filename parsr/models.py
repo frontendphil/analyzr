@@ -465,6 +465,8 @@ class File(models.Model):
     revision = models.ForeignKey("Revision")
 
     name = models.CharField(max_length=255)
+    package = models.CharField(max_length=255)
+
     mimetype = models.CharField(max_length=255, null=True)
 
     change_type = models.CharField(max_length=1, null=True, choices=CHANGE_TYPES)

@@ -71,6 +71,8 @@ var Metrics;
                 .text(data.type);
         },
 
+        prepareSVG: function() {},
+
         setup: function(url) {
             var that = this;
 
