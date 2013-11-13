@@ -1,7 +1,7 @@
 import os
 
 from parsr.connectors import Connector
-from parsr.checkers import Checkstyle, AOPMetrics, ComplexityReport
+from parsr.checkers import JHawk, ComplexityReport
 
 from analyzr.settings import RESULT_PATH
 
@@ -36,6 +36,7 @@ class Analyzer(object):
         return Analyzer.analyzers[mimetype]
 
     def measure(self, revision):
+        print revision.modified_files()
         for f in revision.modified_files():
             analyzer = self.get_specific_analyzer(f.mimetype)
 
@@ -124,7 +125,7 @@ class BaseAnalyzer(object):
 class Java(BaseAnalyzer):
 
     def __init__(self):
-        self.checkers = [Checkstyle, AOPMetrics]
+        self.checkers = [JHawk]
 
         super(Java, self).__init__()
 

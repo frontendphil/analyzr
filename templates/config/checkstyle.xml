@@ -15,7 +15,7 @@
 
             <fileset dir="{{ base_path }}">
                 {% for file in files %}
-                    <include name="{{ file }}" />
+                    <include name="{{ file.full_path() }}" />
                 {% endfor %}
             </fileset>
         </checkstyle>

@@ -37,16 +37,24 @@ class Checker(object):
 
 class Checkstyle(Checker):
 
+    def __init__(self, config_path, result_path):
+        self.name = "checkstyle"
+
+        super(Checkstyle, self).__init__(config_path, result_path)
+
+    def __unicode__(self):
+        return "Checkstyle Checker"
+
     def configure(self, files, revision, connector):
         self.measures = {}
 
-        template = self.env.get_template("checkstyle.xml")
+        template = self.env.get_template("%s.xml" % self.name)
 
         filename = self.config_file(revision)
         result_file = self.result_file(revision)
 
         options = {
-            "checker": "checkstyle",
+            "checker": self.name,
             "project_path": PROJECT_PATH,
             "base_path": connector.get_repo_path(),
             "target": result_file,
@@ -138,10 +146,23 @@ class Checkstyle(Checker):
 
         return self.measures
 
-class AOPMetrics(Checker):
-    pass
+class JHawk(Checkstyle):
+
+    def __init__(self, config_path, result_path):
+        super(JHawk, self).__init__(config_path, result_path)
+
+        self.name = "jhawk"
+
+    def parse(self, connector):
+        pass
+
+    def __unicode__(self):
+        return "JHawk Java Checker"
 
 class ComplexityReport(Checker):
+
+    def __unicode__(self):
+        return "Complexity Report JavaScript Checker"
 
     def result_file(self, revision):
         return "%s/%s" % (self.result_path, revision.identifier)
@@ -152,7 +173,7 @@ class ComplexityReport(Checker):
         self.base_path = connector.get_repo_path()
 
     def get_file_path(self, f):
-        return "%s/%s" % (self.base_path, f.name)
+        return "%s/%s" % (self.base_path, f.full_path())
 
     def run(self):
         for f in self.files:
@@ -176,7 +197,7 @@ class ComplexityReport(Checker):
                 halstead = data["aggregate"]["complexity"]["halstead"]
                 mccabe = data["aggregate"]["complexity"]["cyclomatic"]
 
-                results[f.name] = [
+                results[f.full_path()] = [
                     {
                         "kind": "CyclomaticComplexity",
                         "value": Decimal("%d" % mccabe)

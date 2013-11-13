@@ -1,0 +1,18 @@
+{% extends "base.xml" %}
+
+{% block content %}
+    <taskdef
+        name="jhawk"
+        classname="com.virtualmachinery.jhawk.ant.JHawkAntTask"
+        classpathref="classpath" />
+
+    <target name="measure">
+        <jhawk
+            filepattern='.*\.java'
+            recursive="true"
+            outputlevels="c"
+            startpath="{{ base_path }}"
+            xmlfilename="{{ target }}">
+        </jhawk>
+    </target>
+{% endblock %}

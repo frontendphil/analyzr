@@ -4,7 +4,7 @@ from urllib import urlencode
 
 from django.db import models
 from django.db.models import Count, Avg, Sum
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from timezone_field import TimeZoneField
@@ -28,10 +28,11 @@ class Repo(models.Model):
 
     url = models.CharField(max_length=255)
     kind = models.CharField(max_length=255, choices=TYPES)
-
     anonymous = models.BooleanField(default=True)
-
     timezone = TimeZoneField(default=TIME_ZONE)
+
+    ignored_folders = models.CharField(max_length=255, null=True, blank=True)
+    ignored_files = models.CharField(max_length=255, null=True, blank=True)
 
     user = models.CharField(max_length=255, null=True, blank=True)
     password = models.CharField(max_length=255, null=True, blank=True)
@@ -84,6 +85,20 @@ class Repo(models.Model):
 
         return None
 
+    def ignores(self, package, filename):
+        if not package.startswith("/"):
+            package = "/%s" % package
+
+        for pkg in self.ignored_folders.split(","):
+            if pkg and pkg in package:
+                return True
+
+        for name in self.ignored_files.split(","):
+            if name and filename.startswith(name):
+                return True
+
+        return False
+
 
 @receiver(post_save, sender=Repo)
 def add_branches_to_repo(sender, **kwargs):
@@ -100,6 +115,30 @@ def add_branches_to_repo(sender, **kwargs):
             path=path,
             repo=instance
         )
+
+
+@receiver(pre_save, sender=Repo)
+def clean_ignores(sender, instance, **kwargs):
+    filenames = []
+    foldernames = []
+
+    if instance.ignored_files:
+        for filename in instance.ignored_files.split(","):
+            filenames.append(filename.strip())
+
+    instance.ignored_files = ",".join(filenames)
+
+    if instance.ignored_folders:
+        for foldername in instance.ignored_folders.split(","):
+            if not foldername.startswith("/"):
+                foldername = "/%s" % foldername
+
+            if not foldername.endswith("/"):
+                foldername = "%s/" % foldername
+
+            foldernames.append(foldername)
+
+    instance.ignored_folders = ",".join(foldernames)
 
 
 class Branch(models.Model):
@@ -132,12 +171,17 @@ class Branch(models.Model):
     def analyze(self):
         self.analyzed = False
         self.analyzing = True
+
+        self.measured = False
+        self.measuring = False
         self.save()
 
         self.cleanup()
 
         connector = Connector.get(self.repo)
         connector.analyze(self)
+
+        # Maybe search and delete empty revisions
 
         self.analyzing = False
         self.analyzed = True
@@ -157,6 +201,8 @@ class Branch(models.Model):
 
         analyzer = Analyzer(self.repo, self)
         analyzer.start()
+
+        # self.remove_results()
 
         self.measuring = False
         self.measured = True
@@ -367,16 +413,22 @@ class Revision(models.Model):
         return "%s created by %s in branch %s of %s" % (self.identifier, self.author, self.branch, self.branch.repo)
 
     def add_file(self, filename, action, original=None):
+        package, filename = File.parse_name(filename)
+
+        if self.branch.repo.ignores(package, filename):
+            return
+
         mimetype, encoding = guess_type(filename)
 
         if original:
             original = File.objects\
-                           .filter(name=original, revision__branch=self.branch)\
+                           .filter(name=filename, package=package, revision__branch=self.branch)\
                            .order_by("-revision__revision_date__date")[0:1]
 
         File.objects.create(
             revision=self,
             name=filename,
+            package=package,
             mimetype=mimetype.split("/")[1] if mimetype else None,
             change_type=action,
             copy_of=original[0] if original else None
@@ -400,7 +452,9 @@ class Revision(models.Model):
         return self.file_set.filter(change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])
 
     def get_file(self, filename):
-        return self.file_set.get(name=filename)
+        package, filename = File.parse_name(filename)
+
+        return self.file_set.get(name=filename, package=package)
 
 
 class RevisionDate(models.Model):
@@ -447,6 +501,15 @@ class RevisionDate(models.Model):
 
 
 class File(models.Model):
+
+    @classmethod
+    def parse_name(cls, filename):
+        parts = filename.rsplit("/", 1)
+
+        if not len(parts) == 2:
+            parts = [""] + parts
+
+        return parts
 
     CHANGE_TYPES = (
         (Action.ADD, "Added"),
@@ -549,6 +612,9 @@ class File(models.Model):
 
     def get_identifier(self):
         return md5(self.name).hexdigest()
+
+    def full_path(self):
+        return "%s/%s" % (self.package, self.name)
 
 
 class Author(models.Model):
