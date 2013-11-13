@@ -62,14 +62,14 @@ var Graph;
                 .attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
         },
 
-        createDomain: function(data, clb) {
+        createDomain: function(data, min, max) {
             this.scale.x.domain(d3.extent(data, function(d) {
                 return d.date;
             }));
 
             this.scale.y.domain([
-                d3.min(data, clb),
-                d3.max(data, clb)
+                d3.min(data, min),
+                d3.max(data, max)
             ]);
         },
 
@@ -86,7 +86,11 @@ var Graph;
 
         beforeRequest: function() {},
 
-        getYDomain: function(d) {
+        getMinValue: function(d) {
+            return d.value;
+        },
+
+        getMaxValue: function(d) {
             return d.value;
         },
 
@@ -104,7 +108,7 @@ var Graph;
                     d.date = new Date(d.date);
                 });
 
-                that.createDomain(data, that.getYDomain);
+                that.createDomain(data, that.getMinValue, that.getMaxValue);
 
                 that.handleData(that.svg, data);
 

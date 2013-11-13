@@ -11,26 +11,48 @@ var CodeChurn;
         beforeRequest: function() {
             var that = this;
 
-            this.area = d3.svg.area()
+            this.added = d3.svg.area()
                 .x(function(d) {
                     return that.scale.x(d.date);
                 })
-                .y0(this.height)
                 .y1(function(d) {
                     return that.scale.y(d.added);
+                })
+                .y0(function() {
+                    return that.scale.y(0);
+                });
+
+            this.removed = d3.svg.area()
+                .x(function(d) {
+                    return that.scale.x(d.date);
+                })
+                .y1(function() {
+                    return that.scale.y(0);
+                })
+                .y0(function(d) {
+                    return that.scale.y(-1 * d.removed);
                 });
         },
 
         handleData: function(svg, data) {
             svg.append("path")
                 .datum(data)
-                .attr("class", "area")
-                .attr("d", this.area);
+                .attr("class", "area added")
+                .attr("d", this.added);
+
+            svg.append("path")
+                .datum(data)
+                .attr("class", "area removed")
+                .attr("d", this.removed);
         },
 
-        getYDomain: function(d) {
+        getMaxValue: function(d) {
             return d.added;
         },
+
+        getMinValue: function(d) {
+            return -1 * d.removed;
+        }
 
     });
 
