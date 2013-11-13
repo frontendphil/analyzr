@@ -202,8 +202,6 @@ class Branch(models.Model):
         analyzer = Analyzer(self.repo, self)
         analyzer.start()
 
-        # self.remove_results()
-
         self.measuring = False
         self.measured = True
         self.save()
@@ -353,32 +351,59 @@ class Branch(models.Model):
         )
 
     def metrics(self, author):
-        result = []
+        result = {
+            "info": {
+                "dates": []
+            },
+            "data": {}
+        }
 
         for revision in self.revisions(author):
-            files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
-                                .aggregate(
-                                    mccabe=Avg("cyclomatic_complexity_delta"),
-                                    halstead_volume=Avg("halstead_volume_delta"),
-                                    halstead_difficulty=Avg("halstead_difficulty_delta"),
-                                    halstead_effort=Avg("halstead_effort_delta")
-                                )
+            # files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
+            #                     .values("package", "name")\
+            #                     .annotate(
+            #                         mccabe=Avg("cyclomatic_complexity_delta"),
+            #                         halstead_volume=Avg("halstead_volume_delta"),
+            #                         halstead_difficulty=Avg("halstead_difficulty_delta"),
+            #                         halstead_effort=Avg("halstead_effort_delta")
+                                # )
 
-            if not files["mccabe"]:
+            files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())
+
+            if not files:
                 continue
 
-            result.append({
-                "date": revision.date().isoformat(),
-                "Cyclomatic Complexity": files["mccabe"],
-                "Halstead Volume": files["halstead_volume"],
-                "Halstead Difficulty": files["halstead_difficulty"],
-                "Halstead Effort": files["halstead_effort"]
-            })
+            # result.append({
+            #     "date": revision.date().isoformat(),
+            #     "Cyclomatic Complexity": files["mccabe"],
+            #     "Halstead Volume": files["halstead_volume"],
+            #     "Halstead Difficulty": files["halstead_difficulty"],
+            #     "Halstead Effort": files["halstead_effort"]
+            # })
+
+            result["info"]["dates"].append(revision.date().isoformat())
+
+            for f in files:
+                if not f.full_path() in result["data"]:
+                    result["data"][f.full_path()] = []
+
+                result["data"][f.full_path()].append({
+                    "date": revision.date().isoformat(),
+                    "Cyclomatic Complexity": float(f.cyclomatic_complexity_delta),
+                    "Halstead Volume": float(f.halstead_volume_delta),
+                    "Halstead Difficulty": float(f.halstead_difficulty_delta),
+                    "Halstead Effort": float(f.halstead_effort_delta)
+                })
 
         return result
 
     def churn(self, author):
-        result = []
+        result = {
+            "info": {
+                "dates": []
+            },
+            "data": []
+        }
 
         for revision in self.revisions(author):
             files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
@@ -391,7 +416,9 @@ class Branch(models.Model):
                 # code churn not measured for this revision
                 continue
 
-            result.append({
+            result["info"]["dates"].append(revision.date().isoformat())
+
+            result["data"].append({
                 "date": revision.date().isoformat(),
                 "added": files["added"],
                 "removed": files["removed"]

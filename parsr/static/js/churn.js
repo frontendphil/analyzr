@@ -35,6 +35,10 @@ var CodeChurn;
         },
 
         handleData: function(svg, data) {
+            data.forEach(function(d) {
+                d.date = new Date(d.date);
+            });
+
             svg.append("path")
                 .datum(data)
                 .attr("class", "area added")

@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from parsr.connectors import Connector
 from parsr.checkers import JHawk, ComplexityReport
@@ -36,7 +37,6 @@ class Analyzer(object):
         return Analyzer.analyzers[mimetype]
 
     def measure(self, revision):
-        print revision.modified_files()
         for f in revision.modified_files():
             analyzer = self.get_specific_analyzer(f.mimetype)
 
@@ -92,6 +92,10 @@ class BaseAnalyzer(object):
 
         return (config_path, result_path)
 
+    def cleanup(config_path, result_path):
+        shutil.rmtree(config_path)
+        shutil.rmtree(result_path)
+
     def measure(self, revision, connector):
         config_path, result_path = self.setup_paths(connector)
 
@@ -108,6 +112,8 @@ class BaseAnalyzer(object):
 
         self.files = []
         self.results = {}
+
+        self.cleanup()
 
         return results
 

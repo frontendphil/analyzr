@@ -8,32 +8,30 @@ var Metrics;
             this._super("metrics", target, attrs);
         },
 
-        createDiagram: function(data) {
-            var x = d3.time.scale().range([0, this.width]);
+        createMetric: function(svg, data, color, offset) {
             var y = d3.scale.linear().range([this.height, 0]);
+            var yAxis = d3.svg.axis()
+                .scale(y)
+                .orient("left");
 
-            var xAxis = d3.svg.axis().scale(x).orient("bottom");
-            var yAxis = d3.svg.axis().scale(y).orient("left").tickSize(-this.getInnerWidth());
+            var that = this;
+
+            var current = 0;
+
+            data.values.forEach(function(d) {
+                current = current + d.value;
+
+                d.value = current;
+            });
 
             var line = d3.svg.line()
                 .interpolate("basis")
                 .x(function(d) {
-                    return x(d.date);
+                    return that.scale.x(d.date);
                 })
                 .y(function(d) {
                     return y(d.value);
                 });
-
-            var svg = d3.select(this.dom.get(0)).append("svg")
-                .attr("class", "chart")
-                .attr("width", this.width + this.margins.left + this.margins.right)
-                .attr("height", this.height + this.margins.top + this.margins.bottom)
-                .append("g")
-                .attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
-
-            x.domain(d3.extent(data.values, function(d) {
-                return d.date;
-            }));
 
             y.domain([
                 d3.min(data.values, function(d) {
@@ -45,61 +43,83 @@ var Metrics;
             ]);
 
             svg.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0, " + this.height + ")")
-                .call(xAxis);
-
-            svg.append("g")
-                .attr("class", "y axis")
+                .attr("class", "y axis axis-" + data.id)
+                .attr("transform", "translate(" + offset + ", 0)")
                 .call(yAxis);
 
-            var metric = svg.selectAll(".metric")
+            var metric = svg.selectAll(".metric." + data.id)
                 .data([data])
                 .enter().append("g")
-                .attr("class", "metric");
+                .attr("class", "metric " + data.id);
 
             metric.append("path")
                 .attr("class", "line")
                 .attr("d", function(d) {
                     return line(d.values);
+                })
+                .style("stroke", function(d) {
+                    return color(d.id);
                 });
 
             svg.append("text")
                 .attr("class", "header")
-                .attr("dx", -this.margins.left)
-                .attr("dy", -(this.margins.top / 2))
+                .attr("dx", offset)
+                .attr("dy", 0)
+                .style("fill", function() {
+                    return color(data.id);
+                })
                 .text(data.type);
         },
 
-        prepareSVG: function() {},
+        addYAxis: function() {},
 
-        setup: function(url) {
+        handleData: function(svg, data) {
             var that = this;
 
-            d3.json(url, function(error, data) {
-                data.forEach(function(d) {
-                    d.date = new Date(d.date);
-                });
-
-                var metrics = d3.keys(data[0])
-                    .sort()
-                    .filter(function(key) {
-                        return key !== "date";
-                    })
-                    .map(function(type) {
-                        return {
-                            type: type,
-                            values: data.map(function(d) {
+            var files = d3.keys(data)
+                .sort()
+                .map(function(file) {
+                    return {
+                        name: file,
+                        metrics: d3.keys(data[file][0])
+                            .sort()
+                            .filter(function(key) {
+                                return key !== "date";
+                            })
+                            .map(function(type) {
                                 return {
-                                    date: d.date,
-                                    value: d[type]
+                                    type: type,
+                                    id: type.replace(" ", "_").toLowerCase(),
+                                    values: data[file].map(function(d) {
+                                        return {
+                                            date: new Date(d.date),
+                                            value: d[type]
+                                        };
+                                    })
                                 };
                             })
-                        };
+                    };
                 });
 
-                metrics.forEach(function(metric) {
-                    that.createDiagram(metric);
+            var height = this.height + this.margins.bottom + this.margins.top;
+
+            d3.select(".metrics svg")
+                .attr("height", (files.length * height));
+
+            files.forEach(function(file, index) {
+                var offset = that.width / file.metrics.length;
+
+                var color = d3.scale.category10();
+                color.domain(d3.map(file.metrics, function(d) {
+                    return d.id;
+                }));
+
+                var container = that.svg.append("g")
+                    .attr("class", "file")
+                    .attr("transform", "translate(0," + (index * height) + ")");
+
+                file.metrics.forEach(function(metric, index) {
+                    that.createMetric(container, metric, color, index * offset);
                 });
             });
         }
