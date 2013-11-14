@@ -70,6 +70,10 @@ var Graph;
                 d3.min(data.data, min),
                 d3.max(data.data, max)
             ]);
+
+            var domain = this.scale.x.domain();
+
+            this.axis.x.ticks(d3.time.days(domain[0], domain[1]).length);
         },
 
         addAxis: function(svg) {
@@ -81,7 +85,10 @@ var Graph;
             svg.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + this.height + ")")
-                .call(this.axis.x);
+                .call(this.axis.x)
+                .selectAll("text")
+                    .style("text-anchor", "end")
+                    .attr("transform", "rotate(-65)");
         },
 
         addYAxis: function(svg) {

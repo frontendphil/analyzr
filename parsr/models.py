@@ -89,6 +89,9 @@ class Repo(models.Model):
         if not package.startswith("/"):
             package = "/%s" % package
 
+        if not package.endswith("/"):
+            package = "%s/" % package
+
         for pkg in self.ignored_folders.split(","):
             if pkg and pkg in package:
                 return True
@@ -359,7 +362,10 @@ class Branch(models.Model):
         }
 
         for revision in self.revisions(author):
-            files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())
+            files = File.objects.filter(
+                revision=revision,
+                mimetype__in=Analyzer.parseable_types(),
+                change_type__in=[Action.ADD, Action.MODIFY])
 
             if not files:
                 continue
@@ -372,6 +378,7 @@ class Branch(models.Model):
 
                 result["data"][f.full_path()].append({
                     "date": revision.date().isoformat(),
+                    "deleted": f.change_type == Action.DELETE,
                     "Cyclomatic Complexity": float(f.cyclomatic_complexity),
                     "Halstead Volume": float(f.halstead_volume),
                     "Halstead Difficulty": float(f.halstead_difficulty),

@@ -39,8 +39,18 @@ var Metrics;
             var select = $("<select />");
 
             $.each(files, function() {
+                var deleted = "";
+
+                if(this.deleted) {
+                    deleted = " - DELETED";
+                }
+
                 select.append(
-                    "<option value='" + this.name + "'>" + this.name + " (" + this.count + ")</option>"
+                    "<option value='" +
+                        this.name +
+                    "'>" +
+                        this.name + " (" + this.count + ")" + deleted +
+                    "</option>"
                 );
             });
 
@@ -50,16 +60,20 @@ var Metrics;
         parse: function(data) {
             return d3.keys(data)
                 .map(function(file) {
+                    var deleted = false;
+
                     var metrics = d3.keys(data[file][0])
                         .sort()
                         .filter(function(key) {
-                            return key !== "date";
+                            return key !== "date" && key !== "deleted";
                         })
                         .map(function(type) {
                             return {
                                 type: type,
                                 id: type.replace(" ", "_").toLowerCase(),
                                 values: data[file].map(function(d) {
+                                    deleted = deleted || d.deleted;
+
                                     return {
                                         id: type.replace(" ", "_").toLowerCase(),
                                         date: new Date(d.date),
@@ -71,6 +85,7 @@ var Metrics;
 
                     return {
                         name: file,
+                        deleted: deleted,
                         metrics: metrics,
                         count: metrics[0].values.length
                     };
@@ -207,10 +222,12 @@ var Metrics;
                     return d.date;
                 }));
 
+                var domain = that.scale.x.domain();
+
                 var axis = d3.svg.axis()
                     .scale(that.scale.x)
                     .orient("bottom")
-                    .ticks(d3.time.days(that.scale.x.domain()[0], that.scale.x.domain()[1]).length)
+                    .ticks(d3.time.days(domain[0], domain[1]).length)
                     .tickSize(-that.getInnerHeight());
 
                 that.svg.select(".x.axis")
@@ -221,6 +238,8 @@ var Metrics;
 
                 that.raise("file.change", file);
             });
+
+            select.change();
         }
     });
 

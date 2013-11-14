@@ -56,6 +56,19 @@
         $(".nav li").each(function() {
             var li = $(this);
 
+            var changeContent = function(target, targets) {
+                $.each(targets, function() {
+                    $(this.toString()).hide();
+
+                    $(".nav li").removeClass("active");
+                });
+
+                $("." + target)
+                    .show();
+
+                $("*[data-target=" + target + "]").parent("li").addClass("active");
+            };
+
             li.find("a").each(function() {
                 var a = $(this);
 
@@ -65,23 +78,23 @@
                     return;
                 }
 
-                targets.push(target);
+                targets.push("." + target);
 
                 a.click(function() {
-                    $.each(targets, function() {
-                        $(this.toString()).hide();
-
-                        $(".nav li").removeClass("active");
-                    });
-
-                    $(target).show();
-                    a.parent("li").addClass("active");
+                    changeContent(target, targets);
+                    window.location.hash = target;
 
                     return false;
                 });
 
-                $(target).hide();
+                $("." + target).hide();
             });
+
+            if(window.location.hash) {
+                var target = window.location.hash.replace("#", "");
+
+                changeContent(target, targets);
+            }
 
             if(li.hasClass("active")) {
                 li.find("a").click();
