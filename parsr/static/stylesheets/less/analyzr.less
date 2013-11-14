@@ -200,28 +200,20 @@
             shape-rendering: crispEdges;
         }
 
-        &.x {
-            .tick {
-                text {
-                    font-size: 11px;
-                }
+        .tick {
+            line {
+                stroke: #000;
+                stroke-opacity: 0.2;
+            }
+
+            text {
+                font-size: 11px;
             }
         }
 
-        &.y {
-            path {
+        &.x {
+            .domain {
                 display: none;
-            }
-
-            .tick {
-                line {
-                    stroke: #fff;
-                    stroke-opacity: 0.2;
-                }
-
-                text {
-                    font-size: 11px;
-                }
             }
         }
     }
@@ -275,6 +267,8 @@ table {
 }
 
 .metrics {
+    text-align: center;
+
     .chart {
         .line {
             fill: none;

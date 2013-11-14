@@ -3,7 +3,7 @@ from hashlib import md5
 from urllib import urlencode
 
 from django.db import models
-from django.db.models import Count, Avg, Sum
+from django.db.models import Count, Sum
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
@@ -359,27 +359,10 @@ class Branch(models.Model):
         }
 
         for revision in self.revisions(author):
-            # files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
-            #                     .values("package", "name")\
-            #                     .annotate(
-            #                         mccabe=Avg("cyclomatic_complexity_delta"),
-            #                         halstead_volume=Avg("halstead_volume_delta"),
-            #                         halstead_difficulty=Avg("halstead_difficulty_delta"),
-            #                         halstead_effort=Avg("halstead_effort_delta")
-                                # )
-
             files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())
 
             if not files:
                 continue
-
-            # result.append({
-            #     "date": revision.date().isoformat(),
-            #     "Cyclomatic Complexity": files["mccabe"],
-            #     "Halstead Volume": files["halstead_volume"],
-            #     "Halstead Difficulty": files["halstead_difficulty"],
-            #     "Halstead Effort": files["halstead_effort"]
-            # })
 
             result["info"]["dates"].append(revision.date().isoformat())
 

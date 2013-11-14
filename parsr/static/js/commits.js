@@ -104,8 +104,8 @@ var CommitHistory;
 
             var svg = d3.select(this.dom.get(0)).append("svg")
                 .attr("class", "chart")
-                .attr("width", this.width)
-                .attr("height", this.height)
+                .attr("width", this.width + this.margins.left + this.margins.right)
+                .attr("height", this.height + this.margins.top + this.margins.bottom)
                 .append("g")
                 .attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
 
@@ -117,12 +117,6 @@ var CommitHistory;
                 .attr("class", "title")
                 .attr("dx", this.getInnerWidth())
                 .attr("dy", -(this.margins.top / 2));
-
-            svg.append("text")
-                .attr("class", "header")
-                .attr("dx", -this.margins.left)
-                .attr("dy", -(this.margins.top / 2))
-                .text("Commit History");
 
             var update = function(data, month, year, initial) {
                 title.text(month + " / " + year);

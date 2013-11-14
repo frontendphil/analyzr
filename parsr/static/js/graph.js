@@ -9,8 +9,8 @@ var Graph;
 
             this.margins = this.createMargins(attrs.margins || {});
 
-            this.width = attrs.width || $(target).width();
-            this.height = attrs.height || 400;
+            this.width = (attrs.width || $(target).width()) - this.margins.left - this.margins.right;
+            this.height = (attrs.height || 400) - this.margins.top - this.margins.bottom;
 
             this.dom = $(target);
             this.svg = this.prepareSVG();
@@ -28,11 +28,11 @@ var Graph;
         },
 
         getInnerWidth: function() {
-            return this.width - this.margins.left - this.margins.right;
+            return this.width;
         },
 
         getInnerHeight: function() {
-            return this.height - this.margins.top - this.margins.bottom;
+            return this.height;
         },
 
         prepareScale: function() {
@@ -46,8 +46,8 @@ var Graph;
 
         prepareAxis: function(x, y) {
             this.axis = {
-                x: d3.svg.axis().scale(x).orient("bottom"),
-                y: d3.svg.axis().scale(y).orient("left")
+                x: d3.svg.axis().scale(x).orient("bottom").tickSize(-1 * this.getInnerHeight()),
+                y: d3.svg.axis().scale(y).orient("left").tickSize(-1 * this.getInnerWidth())
             };
         },
 
