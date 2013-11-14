@@ -389,10 +389,10 @@ class Branch(models.Model):
 
                 result["data"][f.full_path()].append({
                     "date": revision.date().isoformat(),
-                    "Cyclomatic Complexity": float(f.cyclomatic_complexity_delta),
-                    "Halstead Volume": float(f.halstead_volume_delta),
-                    "Halstead Difficulty": float(f.halstead_difficulty_delta),
-                    "Halstead Effort": float(f.halstead_effort_delta)
+                    "Cyclomatic Complexity": float(f.cyclomatic_complexity),
+                    "Halstead Volume": float(f.halstead_volume),
+                    "Halstead Difficulty": float(f.halstead_difficulty),
+                    "Halstead Effort": float(f.halstead_effort)
                 })
 
         return result

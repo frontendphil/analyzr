@@ -92,7 +92,7 @@ class BaseAnalyzer(object):
 
         return (config_path, result_path)
 
-    def cleanup(config_path, result_path):
+    def cleanup(self, config_path, result_path):
         shutil.rmtree(config_path)
         shutil.rmtree(result_path)
 
@@ -113,7 +113,7 @@ class BaseAnalyzer(object):
         self.files = []
         self.results = {}
 
-        self.cleanup()
+        self.cleanup(config_path, result_path)
 
         return results
 
