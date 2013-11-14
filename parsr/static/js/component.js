@@ -2,9 +2,11 @@ var Component;
 
 (function() {
 
-    Component = Class.extend({
+    Component = Observeable.extend({
 
         init: function(base, target) {
+            this._super();
+
             this.dom = $(target);
 
             var branch = this.dom.data("branch");

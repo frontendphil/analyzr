@@ -10,11 +10,15 @@ var Metrics;
             this._super("metrics", target, attrs);
         },
 
-        updateScale: function(svg, data) {
-            var y = this.setScale(data, d3.scale.linear().range([this.height, 0]));
+        updateScale: function(svg, metrics) {
+            var that = this;
 
-            svg.select(".axis-" + data.id)
-                .call(d3.svg.axis().scale(y).orient("left"));
+            $.each(metrics, function() {
+                var y = that.setScale(this, d3.scale.linear().range([that.height, 0]));
+
+                svg.select(".axis-" + this.id)
+                    .call(d3.svg.axis().scale(y).orient("left"));
+            });
         },
 
         addYAxis: function() {},
@@ -78,10 +82,15 @@ var Metrics;
             return this.scales[metric.id];
         },
 
-        prepareDiagram: function(data, color) {
+        prepareDiagram: function(data) {
             var that = this;
 
-            this.prepareAxis(data, color);
+            var color = d3.scale.category10();
+            color.domain($.map(data, function(d) {
+                return d.id;
+            }));
+
+            this.createAxis(data, color);
 
             var metric = that.svg.selectAll(".metric")
                 .data(data)
@@ -105,15 +114,28 @@ var Metrics;
                 .style("stroke", function(d) {
                     return color(d.id);
                 });
+
+            this.on("file.change", function(file) {
+                that.svg.selectAll(".line")
+                    .data(file.metrics)
+                    .transition()
+                    .attr("d", function(d) {
+                        return line(d.values);
+                    });
+            });
+
+            that.updateScale(that.svg, data);
         },
 
-        prepareAxis: function(data, color) {
+        createAxis: function(data, color) {
             var that = this;
 
             var offset = that.width / data.length;
 
             $.each(data, function(index) {
                 that.setScale(this, d3.scale.linear().range([that.height, 0]));
+
+                var metric = this;
 
                 that.svg.append("g")
                     .attr("class", "y axis axis-" + this.id)
@@ -124,7 +146,7 @@ var Metrics;
                     .attr("dx", offset * index)
                     .attr("dy", 0)
                     .style("fill", function() {
-                        return color(this.id);
+                        return color(metric.id);
                     })
                     .text(this.type);
             });
@@ -135,12 +157,7 @@ var Metrics;
 
             var files = this.parse(data);
 
-            var color = d3.scale.category10();
-            color.domain($.map(files[0].metrics, function(d) {
-                return d.id;
-            }));
-
-            this.prepareDiagram(files[0].metrics, color);
+            this.prepareDiagram(files[0].metrics);
 
             var select = this.createSelect(files);
 
@@ -163,9 +180,7 @@ var Metrics;
             select.change(function() {
                 var file = getFile(this.value);
 
-                $.each(file.metrics, function() {
-                    that.updateScale(that.svg, this);
-                });
+                that.updateScale(that.svg, file.metrics);
 
                 that.scale.x = d3.time.scale().range([0, that.width]);
                 that.scale.x.domain(d3.extent(file.metrics[0].values, function(d) {
@@ -175,12 +190,7 @@ var Metrics;
                 that.svg.select(".x.axis")
                     .call(d3.svg.axis().scale(that.scale.x).orient("bottom"));
 
-                that.svg.selectAll(".line")
-                    .data(file.metrics)
-                    .transition()
-                    .attr("d", function(d) {
-                        return line(d.values);
-                    });
+                that.raise("file.change", file);
             });
         }
     });
