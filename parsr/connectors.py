@@ -265,7 +265,7 @@ class SVN(Connector):
 
         log = log[0]
 
-        revision = branch.create_revision(branch, identifier)
+        revision = branch.create_revision(identifier)
         revision.set_author(log.author)
         revision.set_date(self.parse_date(log.date))
 
@@ -362,7 +362,7 @@ class Mercurial(Connector):
         return peer.path()
 
     def parse(self, branch, commit):
-        revision = branch.create_revision(branch, commit.hex())
+        revision = branch.create_revision(commit.hex())
         revision.set_author(commit.user())
 
         timestamp, foo = commit.date()
