@@ -99,9 +99,7 @@ var Metrics;
             this.scales[metric.id] = scale;
 
             scale.domain([
-                d3.min(metric.values, function(d) {
-                    return d.value;
-                }),
+                0,
                 d3.max(metric.values, function(d) {
                     return d.value;
                 })
@@ -130,7 +128,6 @@ var Metrics;
                 .attr("class", "metric");
 
             var line = d3.svg.line()
-                .interpolate("basis")
                 .x(function(d) {
                     return that.scale.x(d.date);
                 })

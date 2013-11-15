@@ -185,6 +185,10 @@ class ComplexityReport(Checker):
             if not returncode == 0:
                 raise Exception("Error running analyzer script")
 
+    def average(self, functions):
+        # maybe use median here instead
+        return sum([function["complexity"]["cyclomatic"] for function in functions]) / len(functions)
+
     def parse(self, connector):
         results = {}
 
@@ -195,12 +199,14 @@ class ComplexityReport(Checker):
                 data = json.load(result)[0]
 
                 halstead = data["aggregate"]["complexity"]["halstead"]
-                mccabe = data["aggregate"]["complexity"]["cyclomatic"]
+
+                if len(data["functions"]) == 0:
+                    continue
 
                 results[f.full_path()] = [
                     {
                         "kind": "CyclomaticComplexity",
-                        "value": Decimal("%d" % mccabe)
+                        "value": Decimal("%d" % self.average(data["functions"]))
                     },
                     {
                         "kind": "Halstead",

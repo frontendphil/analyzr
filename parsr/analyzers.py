@@ -93,6 +93,8 @@ class BaseAnalyzer(object):
         return (config_path, result_path)
 
     def cleanup(self, config_path, result_path):
+        return
+
         shutil.rmtree(config_path)
         shutil.rmtree(result_path)
 
