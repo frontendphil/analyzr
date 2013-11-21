@@ -112,6 +112,43 @@ var Metrics;
             return this.scales[metric.id];
         },
 
+        createCircle: function(parent, color) {
+            parent.append("circle")
+                .attr("class", "outer")
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", 7)
+                .style("fill", function(d) {
+                    return color(d.id);
+                });
+
+            parent.append("circle")
+                .attr("class", "ring")
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", 5)
+                .style("fill", "#fff");
+
+            parent.append("circle")
+                .attr("class", "center")
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", 4)
+                .style("fill", function(d) {
+                    return color(d.id);
+                });
+
+            parent.append("text")
+                .attr("class", "text")
+                .attr("dx", 10)
+                .attr("dy", 5)
+                .append("tspan")
+                    .attr("class", "value")
+                    .style("fill", function(d) {
+                        return color(d.id);
+                    });
+        },
+
         prepareDiagram: function(data) {
             var that = this;
 
@@ -134,14 +171,7 @@ var Metrics;
                     return "circle circle-" + d.id;
                 });
 
-            circle.append("circle")
-                .attr("class", "outer")
-                .attr("cx", 0)
-                .attr("cy", 0)
-                .attr("r", 7)
-                .style("fill", function(d) {
-                    return color(d.id);
-                });
+            this.createCircle(circle, color);
 
             var line = d3.svg.line()
                 .x(function(d) {
@@ -229,6 +259,18 @@ var Metrics;
             return value;
         },
 
+        nearestValue: function(space, needle) {
+            var result = space[0];
+
+            $.each(space, function() {
+                if(this <= needle) {
+                    result = this;
+                }
+            });
+
+            return result;
+        },
+
         handleMouseMove: function(args, metrics) {
             var mouse = d3.mouse(args);
 
@@ -240,18 +282,44 @@ var Metrics;
 
             var that = this;
 
+            var getXY = function(metric) {
+                var value = that.nearestValue($.map(metric.values, function(value) {
+                    return value.date;
+                }), date);
+
+                var x = value;
+                var y;
+
+                $.each(metric.values, function() {
+                    if(this.date.toISOString() !== value.toISOString()) {
+                        return;
+                    }
+
+                    y = this.value;
+                });
+
+                return {
+                    x: x,
+                    y: y
+                };
+            };
+
             var moveCircles = function(metric, scale) {
                 return function(selection) {
                     return selection.attr("transform", function() {
-                        var x = that.scale.x(date);
-                        var y;
+                        var coord = getXY(metric, scale);
 
-                        $.each(metric.values, function() {
-                            // FUCKING FUCK! FILTER THIS SHIT!!!
-                            y = scale(this.value);
-                        });
+                        return "translate(" + that.scale.x(coord.x) + "," + scale(coord.y) + ")";
+                    });
+                };
+            };
 
-                        return "translate(" + x + "," + y + ")";
+            var updateValue = function(metric, scale) {
+                return function(selection) {
+                    return selection.text(function() {
+                        var coord = getXY(metric, scale);
+
+                        return coord.y;
                     });
                 };
             };
@@ -266,6 +334,7 @@ var Metrics;
                 }
 
                 that.svg.selectAll(".circle-" + this.id).call(moveCircles(this, scale));
+                that.svg.selectAll(".circle-" + this.id + " .value").call(updateValue(this, scale));
             });
         },
 
@@ -309,6 +378,8 @@ var Metrics;
                 .on("mouseleave", function() {
                     that.handleMouseLeave();
                 });
+
+            this.handleMouseLeave();
 
             select.change(function() {
                 var file = getFile(this.value);

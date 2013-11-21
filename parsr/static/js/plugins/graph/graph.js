@@ -118,7 +118,10 @@ var Graph;
 
             var that = this;
 
+            this.mask("Loading graph data...");
+
             d3.json(url, function(response) {
+                that.unmask();
                 that.prepareData(response);
                 that.createDomain(response, that.getMinValue, that.getMaxValue);
                 that.handleData(that.svg, response.data);

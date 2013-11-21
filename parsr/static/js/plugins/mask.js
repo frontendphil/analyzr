@@ -61,7 +61,7 @@ var Mask;
 
 		remove: function() {
 			this.dom.fadeOut(function() {
-				$(this).remove()
+				$(this).remove();
 			});
 		},
 
