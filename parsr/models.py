@@ -78,7 +78,7 @@ class Repo(models.Model):
         return Author.objects.filter(revision__branch__repo=self).distinct().count()
 
     def default_branch(self):
-        default = Branch.objects.filter(repo=self)[0:1]
+        default = Branch.objects.filter(repo=self, analyzed=True)[0:1]
 
         if default:
             return default[0]

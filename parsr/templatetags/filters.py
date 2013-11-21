@@ -11,7 +11,7 @@ class GravatarUrlNode(template.Node):
 
     def render(self, context):
         try:
-            email = self.email.resolve(context)
+            email = self.email.resolve(context) or ""
         except template.VariableDoesNotExist:
             return ''
 

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<form class='add-repo form-horizontal' method='post' action='{% url "parsr.views.save" %}'>
+	<form class='add-repo form-horizontal' role='form' method='post' action='{% url "parsr.views.save" %}'>
 		{% include "includes/repo_form.html" %}
 	</form>
 {% endblock %}
