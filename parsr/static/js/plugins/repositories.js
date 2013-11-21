@@ -168,6 +168,10 @@ var Repositories;
                 link.click(function() {
                     that.request($(this).data("rel"));
 
+                    window.setTimeout(function() {
+                        window.location.href = window.location.href;
+                    }, 100);
+
                     return false;
                 });
 

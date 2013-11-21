@@ -1,6 +1,10 @@
 .repos {
     .btn-group {
         margin-right: 5px;
+
+        i {
+            margin-left: 5px;
+        }
     }
 
     table {
@@ -11,12 +15,6 @@
 
             td {
                 vertical-align: middle;
-            }
-
-            &:last-child {
-                // td {
-                //     text-align: center;
-                // }
             }
         }
     }
@@ -283,10 +281,23 @@ table {
     text-align: center;
 
     .chart {
+        .background {
+            fill: none;
+            pointer-events: all;
+        }
+
+        .circle {
+            .outer {
+                fill: #000;
+            }
+        }
+
         .line {
             fill: none;
 
             stroke-width: 2px;
+
+            pointer-events: none;
         }
 
         .y.axis {

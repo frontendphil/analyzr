@@ -31,6 +31,8 @@ var Metrics;
                 svg.select(".axis-" + this.id)
                     .call(axis);
             });
+
+            that.createDataPreview(metrics);
         },
 
         addYAxis: function() {},
@@ -46,9 +48,7 @@ var Metrics;
                 }
 
                 select.append(
-                    "<option value='" +
-                        this.name +
-                    "'>" +
+                    "<option value='" + this.name + "'>" +
                         this.name + " (" + this.count + ")" + deleted +
                     "</option>"
                 );
@@ -127,6 +127,22 @@ var Metrics;
                 .enter().append("g")
                 .attr("class", "metric");
 
+            var circle = that.svg.selectAll(".circle")
+                .data(data)
+                .enter().append("g")
+                .attr("class", function(d) {
+                    return "circle circle-" + d.id;
+                });
+
+            circle.append("circle")
+                .attr("class", "outer")
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", 7)
+                .style("fill", function(d) {
+                    return color(d.id);
+                });
+
             var line = d3.svg.line()
                 .x(function(d) {
                     return that.scale.x(d.date);
@@ -154,6 +170,11 @@ var Metrics;
             });
 
             that.updateScale(that.svg, data);
+
+            this.svg.append("rect")
+                .attr("class", "background")
+                .attr("width", this.width)
+                .attr("height", this.height);
         },
 
         createAxis: function(data, color) {
@@ -184,6 +205,78 @@ var Metrics;
             });
         },
 
+        handleMouseEnter: function() {
+            this.svg.selectAll(".circle")
+                .transition()
+                .attr("opacity", 1);
+        },
+
+        handleMouseLeave: function() {
+            this.svg.selectAll(".circle")
+                .transition()
+                .attr("opacity", 0);
+        },
+
+        constrain: function(value, min, max) {
+            if(value < min) {
+                return min;
+            }
+
+            if(value > max) {
+                return max;
+            }
+
+            return value;
+        },
+
+        handleMouseMove: function(args, metrics) {
+            var mouse = d3.mouse(args);
+
+            var x = mouse[0];
+            var y = mouse[1];
+
+            var date = this.scale.x.invert(x);
+            date = this.constrain(date, this.scale.x.domain()[0], this.scale.x.domain()[1]);
+
+            var that = this;
+
+            var moveCircles = function(metric, scale) {
+                return function(selection) {
+                    return selection.attr("transform", function() {
+                        var x = that.scale.x(date);
+                        var y;
+
+                        $.each(metric.values, function() {
+                            // FUCKING FUCK! FILTER THIS SHIT!!!
+                            y = scale(this.value);
+                        });
+
+                        return "translate(" + x + "," + y + ")";
+                    });
+                };
+            };
+
+            $.each(metrics, function() {
+                var scale = that.getScale(this);
+
+                if(y > scale.range()[0]) {
+                    that.handleMouseLeave();
+
+                    return;
+                }
+
+                that.svg.selectAll(".circle-" + this.id).call(moveCircles(this, scale));
+            });
+        },
+
+        createDataPreview: function(metrics) {
+            var that = this;
+
+            this.svg.select(".background").on("mousemove", function() {
+                that.handleMouseMove(this, metrics);
+            });
+        },
+
         handleData: function(svg, data) {
             var that = this;
 
@@ -208,6 +301,14 @@ var Metrics;
 
                 return result;
             };
+
+            this.svg.select(".background")
+                .on("mouseenter", function() {
+                    that.handleMouseEnter();
+                })
+                .on("mouseleave", function() {
+                    that.handleMouseLeave();
+                });
 
             select.change(function() {
                 var file = getFile(this.value);
@@ -239,11 +340,4 @@ var Metrics;
             select.change();
         }
     });
-
-    Metrics.auto = function(target, attrs) {
-        $(target || ".metrics").each(function() {
-            new Metrics(this, attrs);
-        });
-    };
-
 }());

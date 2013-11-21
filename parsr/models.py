@@ -66,12 +66,12 @@ class Repo(models.Model):
         if self.analyzing():
             branch = Branch.objects.get(repo=self, analyzing=True)
 
-            return "Analyzing %s" % branch.name
+            return "Analyzing %s..." % branch.name
 
         if self.measuring():
             branch = Branch.objects.get(repo=self, measuring=True)
 
-            return "Measuring %s" % branch.name
+            return "Measuring %s..." % branch.name
 
         return "Ready"
 
