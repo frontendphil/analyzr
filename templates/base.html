@@ -35,19 +35,23 @@
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/bootstrap.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/d3.v3.js"></script>
 
-    <script type="text/javascript" src="{{ STATIC_URL }}js/class.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/observeable.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/mask.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/component.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/graph.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/dialog.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/punchcard.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/fileStatistics.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/commits.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/contributors.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/metrics.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/churn.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/add.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/core/class.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/core/observeable.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/core/component.js"></script>
+
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/ping.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/mask.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/dialog.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/punchcard.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/add.js"></script>
+
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/graph.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/fileStatistics.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/commits.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/contributors.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/metrics.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/churn.js"></script>
+
     <script type="text/javascript" src="{{ STATIC_URL }}js/analyzr.js"></script>
 
     {% block script %}

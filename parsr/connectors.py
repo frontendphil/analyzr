@@ -57,6 +57,9 @@ class Connector(object):
     def switch_to(self, branch):
         raise NotImplementedError
 
+    def get_churn(self, revision, filename):
+        raise NotImplementedError
+
     def get_branches(self):
         return [("Root", "/")]
 
@@ -251,6 +254,9 @@ class SVN(Connector):
     def get_action(self, status):
         if status == svn_status.added:
             return Action.ADD
+
+    def get_churn(self, revision, filename):
+        pass
 
     def parse(self, branch, identifier):
         log = self.repo.log("%s%s" % (self.info.url, branch.path),

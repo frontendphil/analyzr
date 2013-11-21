@@ -20,7 +20,7 @@ class Checker(object):
         self.result_path = result_path
 
     def config_file(self, revision):
-        return "%s/%s.xml" % (self.result_path, revision.identifier)
+        return "%s/%s.xml" % (self.config_path, revision.identifier)
 
     def result_file(self, revision):
         return "%s/%s.xml" % (self.result_path, revision.identifier)
