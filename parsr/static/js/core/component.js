@@ -4,27 +4,25 @@ var Component;
 
     Component = Observeable.extend({
 
-        init: function(base, target) {
+        init: function(action, target) {
             this._super();
 
             this.dom = $(target);
 
-            var branch = this.dom.data("branch");
+            this.branch = this.dom.data("branch");
             var author = this.dom.data("author");
 
-            var url = this.getUrl(base, branch, author);
-
-            this.setup(url, branch);
+            this.url = this.getUrl(action, this.branch, author);
         },
 
-        getUrl: function(base, branch, author) {
-            var url = "/" + base + "/branch/" + branch;
+        getUrl: function(action, branch, author) {
+            var url = branch;
 
             if(author) {
-                url = url + "/author/" + author;
+                url = url + author;
             }
 
-            return url;
+            return url + "/" + action;
         },
 
         mask: function(text) {
@@ -34,6 +32,14 @@ var Component;
 
         unmask: function() {
             this.elementMask.remove();
+        },
+
+        load: function() {
+            if(this.dom.length === 0) {
+                return;
+            }
+
+            this.setup(this.url, this.branch);
         },
 
         setup: function(url, branch) {

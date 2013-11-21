@@ -4,8 +4,9 @@ import sys
 
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.core.urlresolvers import reverse
 
 from annoying.decorators import render_to, ajax_request
 from annoying.functions import get_object_or_None
@@ -104,6 +105,13 @@ def contributors(request, branch_id):
     return response
 
 
+@ajax_request
+def repos(request):
+    repos = Repo.objects.all().order_by("-url")
+
+    return [repo.json() for repo in repos]
+
+
 @render_to("repo.html")
 def repo(request, repo_id, branch_id=None):
     repo = get_object_or_404(Repo, pk=repo_id)
@@ -112,8 +120,24 @@ def repo(request, repo_id, branch_id=None):
     return { "repo": repo, "branch": branch }
 
 
+def branch(request, branch_id):
+    branch = get_object_or_404(Branch, pk=branch_id)
+
+    return HttpResponseRedirect(reverse("parsr.views.repo", kwargs={
+        "branch_id": branch.id,
+        "repo_id": branch.repo.id
+    }))
+
+
+@ajax_request
+def author(request, author_id):
+    author = get_object_or_404(Author, pk=author_id)
+
+    return author.json()
+
+
 @render_to("author.html")
-def author(request, author_id, branch_id):
+def branch_author(request, author_id, branch_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
     return { "author": author, "branch": branch }

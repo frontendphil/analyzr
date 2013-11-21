@@ -2,6 +2,7 @@ from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
 
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Count, Sum
 from django.db.models.signals import post_save, pre_save
@@ -39,6 +40,9 @@ class Repo(models.Model):
 
     def __unicode__(self):
         return "%s repository at: %s" % (self.kind, self.url)
+
+    def href(self):
+        return reverse("parsr.views.repo", kwargs={"repo_id": self.id})
 
     def busy(self):
         return self.analyzing() or self.measuring()
@@ -102,6 +106,24 @@ class Repo(models.Model):
 
         return False
 
+    def json(self):
+        return {
+            "href": self.href(),
+            "name": self.url,
+            "kind": self.kind,
+            "busy": self.busy(),
+            "status": self.get_status(),
+            "anonymous": self.anonymous,
+            "analyzed": self.analyzed(),
+            "analyzing": self.analyzing(),
+            "measurable": self.measurable(),
+            "measured": self.measured(),
+            "measuring": self.measuring(),
+            "branchCount": self.branch_count(),
+            "authorCount": self.author_count(),
+            "branches": [branch.json() for branch in self.branch_set.all()]
+        }
+
 
 @receiver(post_save, sender=Repo)
 def add_branches_to_repo(sender, **kwargs):
@@ -160,6 +182,20 @@ class Branch(models.Model):
 
     def __unicode__(self):
         return "Branch %s at %s" % (self.name, self.path)
+
+    def json(self):
+        return {
+            "href": self.href(),
+            "name": self.name,
+            "path": self.path,
+            "analyzed": self.analyzed,
+            "analyzing": self.analyzing,
+            "measured": self.measured,
+            "measuring": self.measuring
+        }
+
+    def href(self):
+        return reverse("parsr.views.branch", kwargs={"branch_id": self.id})
 
     def cleanup(self):
         self.remove_all(File, File.objects.filter(revision__branch=self))
@@ -645,6 +681,9 @@ class Author(models.Model):
 
         return self.name
 
+    def href(self):
+        return reverse("parsr.views.author", kwargs={"author_id": self.id})
+
     def revision_count(self, branch):
         revisions = Revision.objects.filter(author=self, branch=branch).distinct()
 
@@ -680,7 +719,7 @@ class Author(models.Model):
 
     def json(self, branch):
         return {
-            "id": self.id,
+            "href": self.href(),
             "name": str(self),
             "icon": self.get_icon(),
             "count": self.revision_count(branch),

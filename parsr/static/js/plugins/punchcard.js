@@ -14,8 +14,8 @@ var Punchcard;
 
     Punchcard = Component.extend({
 
-        init: function(attrs) {
-            this._super("punchcard", attrs.renderTo);
+        init: function(target) {
+            this._super("punchcard", target);
         },
 
         handleData: function(data) {
@@ -90,13 +90,5 @@ var Punchcard;
         }
 
     });
-
-    Punchcard.auto = function() {
-        $(".punchcard").each(function() {
-            new Punchcard({
-                renderTo: this
-            });
-        });
-    };
 
 }());

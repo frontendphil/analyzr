@@ -39,22 +39,20 @@
     <script type="text/javascript" src="{{ STATIC_URL }}js/core/observeable.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/core/component.js"></script>
 
-    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/ping.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/mask.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/dialog.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/punchcard.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/repositories.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/contributors.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/add.js"></script>
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/graph.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/fileStatistics.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/commits.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/contributors.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/metrics.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/churn.js"></script>
 
-    <script type="text/javascript" src="{{ STATIC_URL }}js/analyzr.js"></script>
-
-    {% block script %}
-    {% endblock %}
+    {% block specific %}{% endblock %}
+    {% block script %}{% endblock %}
 </body>
 </html>

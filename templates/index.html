@@ -1,138 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class='repos'>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th class='status'>
-                        <abbr title='At least one branch analyzed'>A</abbr>
-                    </th>
-                    <th class='status'>
-                        <abbr title='At least one branch measured'>M</abbr>
-                    </th>
-                    <th>Location</th>
-                    <th class='status'>
-                        <abbr title='Anonymous repo access'>S</abbr>
-                    </th>
-                    <th>Type</th>
-                    <th># Branches</th>
-                    <th># Authors</th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for repo in repositories %}
-                    <tr>
-                        <td class='status'>
-                            {% if repo.analyzing %}
-                                <i class='icon-refresh icon-spin'></i>
-                            {% else %}
-                                {% if repo.analyzed %}
-                                    <i class='icon-ok'></i>
-                                {% else %}
-                                    <i class='icon-question'></i>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                        <td class='status'>
-                            {% if repo.measuring %}
-                                <i class='icon-refresh icon-spin'></i>
-                            {% else %}
-                                {% if repo.measured %}
-                                    <i class='icon-ok'></i>
-                                {% else %}
-                                    <i class='icon-question'></i>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if repo.busy or not repo.analyzed %}
-                                {{ repo.url }}
-                            {% else %}
-                                <a href='{% url "parsr.views.repo" repo_id=repo.pk %}'>
-                                    {{ repo.url }}
-                                </a>
-                            {% endif %}
-                        </td>
-                        <td class='status'>
-                            {% if repo.anonymous %}
-                                <i class='icon-unlock-alt'></i>
-                            {% else %}
-                                <i class='icon-lock'></i>
-                            {% endif %}
-                        </td>
-                        <td>{{ repo.kind }}</td>
-                        <td>{{ repo.branch_count }}</td>
-                        <td>{{ repo.author_count }}</td>
-                        <td>
-                            {% if repo.busy %}
-                                {{ repo.get_status }}...
-                            {% else %}
-                                <div class="btn-group">
-                                    <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Analyze <span class="caret"></span></button>
+    <div class='repos'></div>
+{% endblock %}
 
-                                    <ul class='dropdown-menu' role="menu">
-                                        {% for branch in repo.branch_set.all %}
-                                            <li>
-                                                <a href="#" rel="{% url 'parsr.views.analyze' branch_id=branch.pk %}" class="analyze">
-                                                    {{ branch.name }}
-
-                                                    {% if branch.analyzed %}
-                                                        <i class='icon-ok'></i>
-                                                    {% endif %}
-                                                </a>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-
-                                {% if repo.measurable %}
-                                    <div class="btn-group">
-                                        <button type="button" class='btn btn-default btn-sm dropdown-toggle' data-toggle="dropdown">Measure <span class="caret"></span></button>
-
-                                        <ul class='dropdown-menu' role="menu">
-                                            {% for branch in repo.branch_set.all %}
-                                                {% if branch.analyzed %}
-                                                    <li>
-                                                        <a href="#" rel="{% url 'parsr.views.measure' branch_id=branch.pk %}" class="measure">
-                                                            {{ branch.name }}
-                                                            {% if branch.measured %}
-                                                                <i class='icon-ok'></i>
-                                                            {% endif %}
-                                                        </a>
-                                                    </li>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </ul>
-                                    </div>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if not repo.busy %}
-                                <a href='{% url "parsr.views.edit" repo_id=repo.id %}'>
-                                    <i class='icon-edit'></i>
-                                </a>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if not repo.busy %}
-                                <a href='#' trigger='delete' action='{% url "parsr.views.remove" repo_id=repo.id %}'>
-                                    <i class='icon-remove'></i>
-                                </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-                <tr>
-                    <td colspan='10'>
-                        <a href='{% url "parsr.views.create" %}' class='btn btn-default'>Add another repository...</a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+{% block script %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var repositories = new Repositories(".repos");
+            repositories.load();
+        });
+    </script>
 {% endblock %}

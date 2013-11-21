@@ -16,7 +16,7 @@ var FileStatistics;
             this.end = 360;
             this.current = this.start.h;
 
-            this._super("file_stats", target);
+            this._super("stats", target);
         },
 
         getColor: function(steps) {

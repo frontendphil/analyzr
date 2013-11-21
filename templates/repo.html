@@ -59,36 +59,108 @@
     <div class='overview'>
         <div
             class='stats'
-            data-repo="{{ repo.id }}"
-            data-branch="{{ branch.id }}"></div>
+            data-repo="{{ repo.href }}"
+            data-branch="{{ branch.href }}"></div>
 
         <hr />
 
         <div
             class='commits'
-            data-repo="{{ repo.id }}"
-            data-branch="{{ branch.id }}"></div>
+            data-repo="{{ repo.href }}"
+            data-branch="{{ branch.href }}"></div>
     </div>
 
     <div class='contrib'>
         <div
             class='contributors'
-            data-repo='{{ repo.id }}'
-            data-branch="{{ branch.id }}"></div>
+            data-repo='{{ repo.href }}'
+            data-branch="{{ branch.href }}"></div>
 
         <hr />
 
         <div
             class='punchcard'
-            data-repo='{{ repo.id }}'
-            data-branch="{{ branch.id }}"></div>
+            data-repo='{{ repo.href }}'
+            data-branch="{{ branch.href }}"></div>
     </div>
+{% endblock %}
+
+{% block specific %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $("select.branch").change(function() {
+                var branch = $(this).find("option:selected").attr("value");
+                var repo = $(this).data("repo");
+
+                window.location.href = "/repo/" + repo + "/branch/" + branch;
+            });
+
+            var targets = [];
+
+            $(".nav li").each(function() {
+                var li = $(this);
+
+                var changeContent = function(target, targets) {
+                    $.each(targets, function() {
+                        $(this.toString()).hide();
+
+                        $(".nav li").removeClass("active");
+                    });
+
+                    $("." + target)
+                        .show();
+
+                    $("*[data-target=" + target + "]").parent("li").addClass("active");
+                };
+
+                li.find("a").each(function() {
+                    var a = $(this);
+
+                    var target = a.attr("data-target");
+
+                    if(!target) {
+                        return;
+                    }
+
+                    targets.push("." + target);
+
+                    a.click(function() {
+                        changeContent(target, targets);
+                        window.location.hash = target;
+
+                        return false;
+                    });
+
+                    $("." + target).hide();
+                });
+
+                if(window.location.hash) {
+                    var target = window.location.hash.replace("#", "");
+
+                    changeContent(target, targets);
+                }
+
+                if(li.hasClass("active")) {
+                    li.find("a").click();
+                }
+            });
+
+            var contributors = new Contributors(".contributors");
+            contributors.load();
+        });
+    </script>
 {% endblock %}
 
 {% block script %}
     <script type="text/javascript">
         $(document).ready(function() {
-            CommitHistory.auto(".commits", {
+            var punchcard = new Punchcard(".punchcard");
+            punchcard.load();
+
+            var stats = new FileStatistics(".stats");
+            stats.load();
+
+            var history = new CommitHistory(".commits", {
                 height: 300,
                 margins: {
                     top: 50,
@@ -96,27 +168,7 @@
                     bottom: 20
                 }
             });
-
-            Contributors.auto(".contributors");
-
-            Metrics.auto(".metrics", {
-                height: 400,
-                margins: {
-                    top: 20,
-                    left: 100,
-                    right: 100,
-                    bottom: 40
-                }
-            });
-
-            CodeChurn.auto(".churn", {
-                height: 300,
-                margins: {
-                    top: 20,
-                    left: 40,
-                    bottom: 40
-                }
-            });
-        })
+            history.load();
+        });
     </script>
 {% endblock %}

@@ -28,37 +28,68 @@
 
     <div
         class='stats'
-        data-author="{{ author.id }}"
-        data-branch="{{ branch.id }}"></div>
+        data-author="{{ author.href }}"
+        data-branch="{{ branch.href }}"></div>
 
     <hr />
 
     {% if branch.measured %}
         <div
             class='metrics'
-            data-author="{{ author.id }}"
-            data-branch="{{ branch.id }}"></div>
+            data-author="{{ author.href }}"
+            data-branch="{{ branch.href }}"></div>
 
         <hr />
 
         <div
             class='churn'
-            data-author="{{ author.id }}"
-            data-branch="{{ branch.id }}"></div>
+            data-author="{{ author.href }}"
+            data-branch="{{ branch.href }}"></div>
 
         <hr />
     {% endif %}
 
     <div
         class="commits"
-        data-author="{{ author.id }}"
-        data-branch="{{ branch.id }}"></div>
+        data-author="{{ author.href }}"
+        data-branch="{{ branch.href }}"></div>
 
     <hr />
 
     <div
         class='punchcard'
-        data-author="{{ author.id }}"
-        data-branch="{{ branch.id }}"></div>
+        data-author="{{ author.href }}"
+        data-branch="{{ branch.href }}"></div>
 
+{% endblock %}
+
+{% block specific %}{% endblock %}
+
+{% block script %}
+    {{ block.super }}
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var metrics = new Metrics(".metrics", {
+                height: 400,
+                margins: {
+                    top: 20,
+                    left: 100,
+                    right: 100,
+                    bottom: 40
+                }
+            });
+            metrics.load();
+
+            var churn = new CodeChurn(".churn", {
+                height: 300,
+                margins: {
+                    top: 20,
+                    left: 40,
+                    bottom: 40
+                }
+            });
+            churn.load();
+        });
+    </script>
 {% endblock %}

@@ -18,8 +18,8 @@ var Contributors;
             this._super("contributors", target);
         },
 
-        getUrl: function(base, branch, page) {
-            var url = "/" + base + "/branch/" + branch;
+        getUrl: function(action, branch, page) {
+            var url = branch + "/" + action;
 
             if(!page) {
                 return url;
@@ -159,7 +159,7 @@ var Contributors;
                         "</td>" +
                         "<td class='avatar' style='background-image:url(" + this.icon + ")'></td>" +
                         "<td>" +
-                            "<a href='/author/" + this.id + "/branch/" + branch + "'>" + this.name + "</a>" +
+                            "<a href='" + branch + this.href + "'>" + this.name + "</a>" +
                         "</td>" +
                         "<td>" + this.count + "</td>" +
                     "</tr>"
