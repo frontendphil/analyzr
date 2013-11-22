@@ -112,7 +112,7 @@ var Metrics;
             return this.scales[metric.id];
         },
 
-        createCircle: function(parent, color) {
+        createComplexCircle: function(parent, color) {
             parent.append("circle")
                 .attr("class", "outer")
                 .attr("cx", 0)
@@ -137,16 +137,18 @@ var Metrics;
                 .style("fill", function(d) {
                     return color(d.id);
                 });
+        },
 
-            parent.append("text")
-                .attr("class", "text")
+        createCircle: function(parent, value, color) {
+            this.createComplexCircle(parent, color);
+            this.createComplexCircle(value, color);
+
+            value.append("text")
                 .attr("dx", 10)
                 .attr("dy", 5)
-                .append("tspan")
-                    .attr("class", "value")
-                    .style("fill", function(d) {
-                        return color(d.id);
-                    });
+                .style("fill", function(d) {
+                    return color(d.id);
+                });
         },
 
         prepareDiagram: function(data) {
@@ -171,7 +173,20 @@ var Metrics;
                     return "circle circle-" + d.id;
                 });
 
-            this.createCircle(circle, color);
+            var text = this.svg.selectAll(".values")
+                .data(data)
+                .enter().append("g")
+                .attr("class", function(d) {
+                    return "value value-" + d.id;
+                })
+                .attr("transform", function(d, index) {
+                    var stepSize = that.width / data.length;
+                    var offset = stepSize / 2;
+
+                    return "translate(" + ((index * stepSize) + offset) + ",-" + (that.margins.top / 2) + ")";
+                });
+
+            this.createCircle(circle, text, color);
 
             var line = d3.svg.line()
                 .x(function(d) {
@@ -239,10 +254,18 @@ var Metrics;
             this.svg.selectAll(".circle")
                 .transition()
                 .attr("opacity", 1);
+
+            this.svg.selectAll(".value")
+                .transition()
+                .attr("opacity", 1);
         },
 
         handleMouseLeave: function() {
             this.svg.selectAll(".circle")
+                .transition()
+                .attr("opacity", 0);
+
+            this.svg.selectAll(".value")
                 .transition()
                 .attr("opacity", 0);
         },
@@ -333,8 +356,10 @@ var Metrics;
                     return;
                 }
 
+                that.handleMouseEnter();
+
                 that.svg.selectAll(".circle-" + this.id).call(moveCircles(this, scale));
-                that.svg.selectAll(".circle-" + this.id + " .value").call(updateValue(this, scale));
+                that.svg.selectAll(".value-" + this.id + " text").call(updateValue(this, scale));
             });
         },
 
