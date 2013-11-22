@@ -170,14 +170,14 @@ var Metrics;
                 .data(data)
                 .enter().append("g")
                 .attr("class", function(d) {
-                    return "circle circle-" + d.id;
+                    return "optional circle circle-" + d.id;
                 });
 
-            var text = this.svg.selectAll(".values")
+            var text = this.svg.selectAll(".value")
                 .data(data)
                 .enter().append("g")
                 .attr("class", function(d) {
-                    return "value value-" + d.id;
+                    return "optional value value-" + d.id;
                 })
                 .attr("transform", function(d, index) {
                     var stepSize = that.width / data.length;
@@ -251,21 +251,21 @@ var Metrics;
         },
 
         handleMouseEnter: function() {
-            this.svg.selectAll(".circle")
+            this.svg.selectAll(".optional")
                 .transition()
                 .attr("opacity", 1);
 
-            this.svg.selectAll(".value")
+            this.svg.selectAll(".position")
                 .transition()
-                .attr("opacity", 1);
+                .attr("opacity", 0.2);
         },
 
         handleMouseLeave: function() {
-            this.svg.selectAll(".circle")
+            this.svg.selectAll(".optional")
                 .transition()
                 .attr("opacity", 0);
 
-            this.svg.selectAll(".value")
+            this.svg.selectAll(".position")
                 .transition()
                 .attr("opacity", 0);
         },
@@ -327,12 +327,15 @@ var Metrics;
                 };
             };
 
-            var moveCircles = function(metric, scale) {
+            var moveCircles = function(metric, scale, isLine) {
                 return function(selection) {
                     return selection.attr("transform", function() {
                         var coord = getXY(metric, scale);
 
-                        return "translate(" + that.scale.x(coord.x) + "," + scale(coord.y) + ")";
+                        var x = that.scale.x(coord.x);
+                        var y = isLine ? 0 : scale(coord.y);
+
+                        return "translate(" + x + "," + y + ")";
                     });
                 };
             };
@@ -359,6 +362,7 @@ var Metrics;
                 that.handleMouseEnter();
 
                 that.svg.selectAll(".circle-" + this.id).call(moveCircles(this, scale));
+                that.svg.selectAll(".position").call(moveCircles(this, scale, true));
                 that.svg.selectAll(".value-" + this.id + " text").call(updateValue(this, scale));
             });
         },
@@ -375,6 +379,15 @@ var Metrics;
             var that = this;
 
             var files = this.parse(data);
+
+            this.svg.append("line")
+                .attr("class", "position")
+                .attr("opacity", 0.2)
+                .attr("x0", 0)
+                .attr("x1", 0)
+                .attr("y0", 0)
+                .attr("y1", this.height)
+                .style("stroke", "#000");
 
             this.prepareDiagram(files[0].metrics);
 
