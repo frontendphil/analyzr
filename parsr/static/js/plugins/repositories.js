@@ -290,7 +290,7 @@ var Repositories;
                         if(progress < 100) {
                             container.find(".progress-bar").html(Math.round(progress) + "%");
 
-                            window.setTimeout(updateProgress, 5000);
+                            window.setTimeout(updateProgress, 10000);
                         } else {
                             container.fadeOut(function() {
                                 that.load();
