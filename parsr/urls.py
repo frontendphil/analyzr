@@ -1,12 +1,13 @@
 from django.conf.urls import patterns, url
 from django.contrib import admin
 
-from parsr.models import Repo, Revision, Author, File
+from parsr import models
 
-admin.site.register(Repo)
-admin.site.register(Revision)
-admin.site.register(Author)
-admin.site.register(File)
+admin.site.register(models.Repo)
+admin.site.register(models.Revision)
+admin.site.register(models.Author)
+admin.site.register(models.File)
+admin.site.register(models.Branch)
 
 urlpatterns = patterns('parsr.views',
     url(r"^$", "index"),

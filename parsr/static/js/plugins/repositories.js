@@ -2,6 +2,8 @@ var Repositories;
 
 (function() {
 
+    var REFRESH_INTERVAL = 30 * 1000;
+
     Repositories = Observeable.extend({
 
         init: function(target) {
@@ -287,10 +289,16 @@ var Repositories;
                             width: progress + "%"
                         });
 
+                        if(progress !== 0 && !progress) {
+                            window.setTimeout(updateProgress, REFRESH_INTERVAL);
+
+                            return;
+                        }
+
                         if(progress < 100) {
                             container.find(".progress-bar").html(Math.round(progress) + "%");
 
-                            window.setTimeout(updateProgress, 30000);
+                            window.setTimeout(updateProgress, REFRESH_INTERVAL);
                         } else {
                             container.fadeOut(function() {
                                 that.load();
