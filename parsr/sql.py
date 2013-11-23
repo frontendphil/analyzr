@@ -67,3 +67,15 @@ def delete(cls, query):
     return """
         DELETE FROM %s WHERE id IN ( %s )
     """ % (cls._meta.db_table, query)
+
+def reset(branch):
+    query = """
+        UPDATE
+            parsr_revision
+        SET
+            measured = 0
+        WHERE
+            branch_id = %d
+    """ % branch.id
+
+    execute(query)

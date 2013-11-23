@@ -20,6 +20,10 @@ class Action(object):
     MOVE = "C"
     DELETE = "D"
 
+    @classmethod
+    def readable(cls):
+        return [cls.ADD, cls.MODIFY]
+
 
 class Connector(object):
 

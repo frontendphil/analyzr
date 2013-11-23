@@ -256,6 +256,8 @@ class Branch(models.Model):
         self.measuring = True
         self.save()
 
+        sql.reset(self)
+
         analyzer = Analyzer(self.repo, self)
         analyzer.start()
 
@@ -419,7 +421,7 @@ class Branch(models.Model):
             files = File.objects.filter(
                 revision=revision,
                 mimetype__in=Analyzer.parseable_types(),
-                change_type__in=[Action.ADD, Action.MODIFY])
+                change_type__in=Action.readable())
 
             if not files:
                 continue
@@ -532,7 +534,7 @@ class Revision(models.Model):
     def get_file(self, filename):
         package, filename = File.parse_name(filename)
 
-        return self.file_set.get(name=filename, package__endswith=package)
+        return self.file_set.get(name=filename, package__endswith=package, change_type__in=Action.readable())
 
 
 class RevisionDate(models.Model):

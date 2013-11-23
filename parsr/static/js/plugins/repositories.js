@@ -290,7 +290,7 @@ var Repositories;
                         if(progress < 100) {
                             window.setTimeout(updateProgress, 5000);
                         } else {
-                            container.slideUp(function() {
+                            container.fadeOut(function() {
                                 that.load();
                             });
                         }
