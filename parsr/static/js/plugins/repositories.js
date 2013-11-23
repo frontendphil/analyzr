@@ -288,6 +288,8 @@ var Repositories;
                         });
 
                         if(progress < 100) {
+                            container.find(".progress-bar").html(Math.round(progress) + "%");
+
                             window.setTimeout(updateProgress, 5000);
                         } else {
                             container.fadeOut(function() {
@@ -320,7 +322,7 @@ var Repositories;
                         var repo = that.createRepo(this);
                         body.append(repo);
 
-                        if(this.status.action === "measuring") {
+                        if(this.status.action !== "ready") {
                             var progess = that.createStatusIndicator(repo, this.status.rep, this.status.action);
                             body.append(progess);
                         }

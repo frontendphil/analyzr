@@ -380,6 +380,10 @@ var Metrics;
 
             var files = this.parse(data);
 
+            if(files.length === 0) {
+                return;
+            }
+
             this.svg.append("line")
                 .attr("class", "position")
                 .attr("opacity", 0.2)

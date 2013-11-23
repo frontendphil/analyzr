@@ -135,9 +135,11 @@ class Git(Connector):
             "removed": stats[filename]["deletions"]
         }
 
-
     def parse(self, branch, parent, commit=None):
         if not commit:
+            branch.revision_count = parent.count()
+            branch.save()
+
             return
 
         stats = commit.stats
@@ -291,6 +293,9 @@ class SVN(Connector):
 
     def analyze(self, branch):
         head = self.get_head_revision(branch)
+
+        branch.revision_count = head
+        branch.save()
 
         while head > 0:
             self.parse(branch, head)

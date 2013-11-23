@@ -61,10 +61,7 @@ class Analyzer(object):
             f.add_churn(code_churn)
 
     def start(self):
-        try:
-            self.connector.switch_to(self.branch)
-        except:
-            pass
+        self.connector.switch_to(self.branch)
 
         for revision in self.branch.revisions():
             self.connector.checkout(revision)

@@ -186,6 +186,8 @@ class Branch(models.Model):
     measured = models.BooleanField(default=False)
     measuring = models.BooleanField(default=False)
 
+    revision_count = models.IntegerField(default=0)
+
     def __unicode__(self):
         return "Branch %s at %s" % (self.name, self.path)
 
@@ -194,6 +196,7 @@ class Branch(models.Model):
 
         if self.analyzing:
             info["action"] = "analyzing"
+            info["count"] = self.revision_count,
             info["progress"] = self.revision_set.all().count()
 
         if self.measuring:
