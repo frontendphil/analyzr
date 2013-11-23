@@ -81,6 +81,9 @@ class Repo(models.Model):
             "rep": branch.json() if branch else None
         }
 
+    def branches(self):
+        return Branch.objects.filter(repo=self)
+
     def branch_count(self):
         return Branch.objects.filter(repo=self).count()
 
@@ -525,6 +528,12 @@ class Revision(models.Model):
 
     def date(self):
         return self.revision_date.date
+
+    def get_previous(self):
+        if self.previous.all().count() > 0:
+            return self.previous.all()[0]
+
+        return None
 
     def modified_files(self):
         return self.file_set.filter(change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])

@@ -249,7 +249,7 @@ var Repositories;
                     }
 
                     that.request($(this).data("action"), function() {
-                        $("tr[data-href='" + info.href + "']").slideUp(function() {
+                        $("tr[data-href='" + info.href + "']").fadeOut(function() {
                             $(this).remove();
                         });
                     });
@@ -290,7 +290,7 @@ var Repositories;
                         if(progress < 100) {
                             container.find(".progress-bar").html(Math.round(progress) + "%");
 
-                            window.setTimeout(updateProgress, 10000);
+                            window.setTimeout(updateProgress, 30000);
                         } else {
                             container.fadeOut(function() {
                                 that.load();

@@ -124,7 +124,7 @@ class Git(Connector):
         return git.Repo.clone_from(repo.url, folder)
 
     def get_churn(self, revision, filename):
-        commit = self.repo.commit(revision)
+        commit = self.repo.commit(revision.identifier)
         stats = commit.stats.files
 
         if not filename in stats:
@@ -182,15 +182,23 @@ class Git(Connector):
 
         revision.save()
 
+        return revision
+
 
     def analyze(self, branch):
         last_commit = None
+        last_revision = None
 
         self.switch_to(branch)
 
         for commit in self.repo.iter_commits():
-            self.parse(branch, commit, last_commit)
+            revision = self.parse(branch, commit, last_commit)
 
+            if revision:
+                revision.next = last_revision
+                revision.save()
+
+            last_revision = revision
             last_commit = commit
 
         # create initial commit
@@ -217,14 +225,15 @@ class SVN(Connector):
         path = "%s%s" % (self.info.url, branch.path)
 
         if not self.is_checked_out():
-            self.repo.checkout(path, self.get_repo_path())
+            self.repo.checkout(path, self.get_repo_path(), ignore_externals=True)
         else:
-            self.repo.switch(self.get_repo_path, path)
+            self.repo.switch(self.get_repo_path(), path, ignore_externals=True)
 
     def checkout(self, revision):
         self.repo.update(self.get_repo_path(),
             recurse=True,
-            revision=Revision(revision_kind.number, revision.identifier))
+            revision=Revision(revision_kind.number, revision.identifier),
+            ignore_externals=True)
 
     def create_repo(self, repo):
         client = Client()
@@ -262,14 +271,52 @@ class SVN(Connector):
             return Action.ADD
 
     def get_churn(self, revision, filename):
-        pass
+        previous = revision.get_previous()
+
+        print previous
+
+        if not previous:
+            return
+
+        summary = self.repo.diff_summarize(
+            "%s/%s" % (previous.branch.path, filename),
+            Revision(revision_kind.number, previous.identifier),
+            "%s/%s" % (revision.branch.path, filename),
+            Revision(revision_kind.number, revision.identifier),
+            ignore_ancestry=True
+            )
+
+        added = 0
+        removed = 0
+
+        for line in summary.split("\n"):
+            if line.startswith("+"):
+                added = added + 1
+
+            if line.startswith("-"):
+                removed = removed + 1
+
+        return {
+            "added": added,
+            "removed": removed
+        }
 
     def parse(self, branch, identifier):
-        log = self.repo.log("%s%s" % (self.info.url, branch.path),
-            revision_start=Revision(revision_kind.number, identifier),
-            revision_end=Revision(revision_kind.number, identifier),
-            discover_changed_paths=True,
-            limit=0)
+        try:
+            log = self.repo.log("%s%s" % (self.info.url, branch.path),
+                revision_start=Revision(revision_kind.number, identifier),
+                revision_end=Revision(revision_kind.number, identifier),
+                discover_changed_paths=True,
+                limit=0)
+        except:
+            try:
+                log = self.repo.log("%s" % self.info.url,
+                    revision_start=Revision(revision_kind.number, identifier),
+                    revision_end=Revision(revision_kind.number, identifier),
+                    discover_changed_paths=True,
+                    limit=0)
+            except:
+                return
 
         if len(log) == 0:
             # Revision does not affect current branch
@@ -287,9 +334,13 @@ class SVN(Connector):
             if filename.action == Action.MOVE:
                 original = filename.copyfrom_path
 
-            revision.add_file(filename.path, filename.action, original=original)
+            path = filename.path.replace("%s/" % branch.path, "")
+
+            revision.add_file(path, filename.action, original=original)
 
         revision.save()
+
+        return revision
 
     def analyze(self, branch):
         head = self.get_head_revision(branch)
@@ -297,8 +348,14 @@ class SVN(Connector):
         branch.revision_count = head
         branch.save()
 
+        last_revision = None
+
         while head > 0:
-            self.parse(branch, head)
+            revision = self.parse(branch, head)
+            revision.next = last_revision
+            revision.save()
+
+            last_revision = revision
 
             head = head - 1
 
@@ -328,9 +385,12 @@ class SVN(Connector):
 
     def update(self, path):
         if not os.path.exists(path):
-            self.repo.checkout(self.info.url, path, revision=Revision(revision_kind.head), recurse=True)
+            self.repo.checkout(self.info.url, path,
+                revision=Revision(revision_kind.head),
+                recurse=True,
+                ignore_externals=True)
         else:
-            self.repo.update(path)
+            self.repo.update(path, ignore_externals=True)
 
 
 Connector.register("svn", SVN)

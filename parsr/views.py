@@ -62,6 +62,9 @@ def save(request):
 def remove(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
 
+    for branch in repo.branches():
+        branch.cleanup()
+
     repo.delete()
 
     return HttpResponse(status=200)

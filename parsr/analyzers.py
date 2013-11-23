@@ -1,6 +1,8 @@
 import os
 import shutil
 
+import pysvn
+
 from parsr.connectors import Connector
 from parsr.checkers import JHawk, ComplexityReport
 
@@ -56,7 +58,7 @@ class Analyzer(object):
             f = revision.get_file(filename)
             f.add_measures(measures)
 
-            code_churn = self.connector.get_churn(revision.identifier, filename)
+            code_churn = self.connector.get_churn(revision, filename)
 
             f.add_churn(code_churn)
 
@@ -64,8 +66,12 @@ class Analyzer(object):
         self.connector.switch_to(self.branch)
 
         for revision in self.branch.revisions():
-            self.connector.checkout(revision)
-            self.measure(revision)
+            try:
+                self.connector.checkout(revision)
+                self.measure(revision)
+            except pysvn.ClientError:
+                # happens if branch structure is fucked up
+                pass
 
             revision.measured = True
             revision.save()
@@ -76,6 +82,9 @@ class BaseAnalyzer(object):
     def __init__(self):
         self.files = []
         self.results = {}
+
+    def __str__(self):
+        return self.__unicode__()
 
     def add_file(self, f):
         self.files.append(f)
@@ -104,6 +113,9 @@ class BaseAnalyzer(object):
         for cls in self.checkers:
             checker = cls(config_path, result_path)
             checker.configure(self.files, revision, connector)
+
+            print "Running %s" % checker
+
             checker.run()
 
             results = checker.parse(connector)
@@ -137,8 +149,12 @@ class Java(BaseAnalyzer):
 
         super(Java, self).__init__()
 
+    def __unicode__(self):
+        return "Java analyzer using: %d" % self.checkers
+
 
 Analyzer.register("x-java-source", Java)
+Analyzer.register("x-java", Java)
 
 
 class JavaScript(BaseAnalyzer):
@@ -147,11 +163,17 @@ class JavaScript(BaseAnalyzer):
 
         super(JavaScript, self).__init__()
 
+    def __unicode__(self):
+        return "JavaScript analyzer using: %s" % self.checkers
+
 
 Analyzer.register("javascript", JavaScript)
 
 
 class C(BaseAnalyzer):
     pass
+
+    def __unicode__(self):
+        return "C analyzer"
 
 Analyzer.register("x-c", C)

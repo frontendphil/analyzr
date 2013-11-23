@@ -19,6 +19,9 @@ class Checker(object):
         self.config_path = config_path
         self.result_path = result_path
 
+    def __str__(self):
+        return self.__unicode__()
+
     def config_file(self, revision):
         return "%s/%s.xml" % (self.config_path, revision.identifier)
 
@@ -302,7 +305,12 @@ class ComplexityReport(Checker):
             path = "%s_%s.json" % (self.result, f.get_identifier())
 
             with open(path) as result:
-                data = json.load(result)[0]
+                contents = json.load(result)
+
+                if not contents:
+                    continue
+
+                data = contents[0]
 
                 halstead = data["aggregate"]["complexity"]["halstead"]
 
