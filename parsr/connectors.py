@@ -227,7 +227,7 @@ class SVN(Connector):
         if not self.is_checked_out():
             self.repo.checkout(path, self.get_repo_path(), ignore_externals=True)
         else:
-            self.repo.switch(self.get_repo_path(), path, ignore_externals=True)
+            self.repo.switch(self.get_repo_path(), path)
 
     def checkout(self, revision):
         self.repo.update(self.get_repo_path(),
