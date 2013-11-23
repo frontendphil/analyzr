@@ -63,17 +63,23 @@ class Repo(models.Model):
         return Branch.objects.filter(repo=self, measured=True).count() > 0
 
     def get_status(self):
+        branch = None
+        status = "ready"
+
         if self.analyzing():
             branch = Branch.objects.get(repo=self, analyzing=True)
 
-            return "Analyzing %s..." % branch.name
+            status = "analyzing"
 
         if self.measuring():
             branch = Branch.objects.get(repo=self, measuring=True)
 
-            return "Measuring %s..." % branch.name
+            status = "measuring"
 
-        return "Ready"
+        return {
+            "action": status,
+            "rep": branch.json() if branch else None
+        }
 
     def branch_count(self):
         return Branch.objects.filter(repo=self).count()
@@ -184,6 +190,17 @@ class Branch(models.Model):
         return "Branch %s at %s" % (self.name, self.path)
 
     def json(self):
+        info = {}
+
+        if self.analyzing:
+            info["action"] = "analyzing"
+            info["progress"] = self.revision_set.all().count()
+
+        if self.measuring:
+            info["action"] = "measuring"
+            info["progress"] = self.revision_set.filter(measured=True).count()
+            info["count"] = self.revision_set.all().count()
+
         return {
             "href": self.href(),
             "name": self.name,
@@ -191,7 +208,8 @@ class Branch(models.Model):
             "analyzed": self.analyzed,
             "analyzing": self.analyzing,
             "measured": self.measured,
-            "measuring": self.measuring
+            "measuring": self.measuring,
+            "activity": info
         }
 
     def href(self):
@@ -462,6 +480,8 @@ class Revision(models.Model):
 
     next = models.ForeignKey("Revision", related_name='previous', null=True)
 
+    measured = models.BooleanField(default=False)
+
     def __unicode__(self):
         return "%s created by %s in branch %s of %s" % (self.identifier, self.author, self.branch, self.branch.repo)
 
@@ -504,10 +524,15 @@ class Revision(models.Model):
     def modified_files(self):
         return self.file_set.filter(change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])
 
+    def includes(self, filename):
+        package, filename = File.parse_name(filename)
+
+        return not self.file_set.filter(name=filename, package__endswith=package).count() == 0
+
     def get_file(self, filename):
         package, filename = File.parse_name(filename)
 
-        return self.file_set.get(name=filename, package=package)
+        return self.file_set.get(name=filename, package__endswith=package)
 
 
 class RevisionDate(models.Model):

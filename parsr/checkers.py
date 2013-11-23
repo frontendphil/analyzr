@@ -25,6 +25,9 @@ class Checker(object):
     def result_file(self, revision):
         return "%s/%s.xml" % (self.result_path, revision.identifier)
 
+    def get_decimal(self, value):
+        return Decimal("%d" % round(float(value), 2))
+
     def configure(self, files, revision, connector):
         pass
 
@@ -153,8 +156,111 @@ class JHawk(Checkstyle):
 
         self.name = "jhawk"
 
+    def configure(self, files, revision, connector):
+        super(JHawk, self).configure(files, revision, connector)
+
+        self.revision = revision
+
+    def run(self):
+        if not self.configuration:
+            return
+
+        returncode = subprocess.call([
+            "ant",
+            "-lib", "%s/lib/%s/JHawkCommandLine.jar" % (PROJECT_PATH, self.name),
+            "-f", self.configuration,
+            "measure"
+        ])
+
+        if not returncode == 0:
+            raise Exception("Error running analyzer script")
+
+        # Don't allow multiple runs with the same configuration
+        self.configuration = None
+
+    def get_metrics(self, parent):
+        for node in parent.childNodes:
+            if node.localName == "Metrics":
+                return node
+
+    def get_node_value(self, parent, node_name):
+        for node in parent.childNodes:
+            if node.localName == node_name:
+                return node.firstChild.nodeValue
+
+    def get_name(self, parent):
+        return self.get_node_value(parent, "Name")
+
+    def add_halstead_metrics(self, filename, metrics):
+        volume = self.get_decimal(self.get_node_value(metrics, "halsteadCumulativeVolume"))
+        effort = self.get_decimal(self.get_node_value(metrics, "halsteadEffort"))
+        difficulty = effort / volume
+
+        self.measures[filename].append({
+            "kind": "Halstead",
+            "value": {
+                "volume": volume,
+                "difficulty": difficulty,
+                "effort": effort
+            }
+        })
+
     def parse(self, connector):
-        pass
+        if not self.results:
+            return
+
+        xml_doc = minidom.parse("%s.xml" % self.results)
+        packages = xml_doc.getElementsByTagName("Package")
+
+        for package in packages:
+            name = self.get_name(package)
+            classes = package.getElementsByTagName("Class")
+
+            path = name.replace(".", "/")
+
+            for cls in classes:
+                class_metrics = self.get_metrics(cls)
+                class_name = self.get_node_value(cls, "ClassName")
+
+                if "$" in class_name:
+                    # private class inside of class
+                    # ignore!
+                    continue
+
+                filename = "%s/%s.java" % (path, class_name)
+
+                if not self.revision.includes(filename):
+                    # JHawk analyzes _everything_ therefore we must
+                    # filter files, which are not present in the current revision
+                    continue
+
+                if not filename in self.measures:
+                    self.measures[filename] = []
+
+                self.add_halstead_metrics(filename, class_metrics)
+
+                methods = cls.getElementsByTagName("Method")
+
+                complexities = []
+
+                for method in methods:
+                    method_metrics = self.get_metrics(method)
+
+                    complexities.append(self.get_node_value(method_metrics, "cyclomaticComplexity"))
+
+                if len(methods) == 0:
+                    continue
+
+                self.measures[filename].append({
+                    "kind": "CyclomaticComplexity",
+                    "value": self.get_decimal(sum([float(complexity) for complexity in complexities]) / len(methods))
+                })
+
+        return self.measures
+
+
+    def result_file(self, revision):
+        return "%s/%s" % (self.result_path, revision.identifier)
 
     def __unicode__(self):
         return "JHawk Java Checker"

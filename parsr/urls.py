@@ -19,6 +19,7 @@ urlpatterns = patterns('parsr.views',
     url(r"^repo/(?P<repo_id>\d+)/branch/(?P<branch_id>\d+)", "repo"),
 
     url(r"^branch/(?P<branch_id>\d+)$", "branch"),
+    url(r"^branch/(?P<branch_id>\d+)/info$", "branch_info"),
     url(r'^branch/(?P<branch_id>\d+)/contributors$', 'contributors'),
     url(r'^branch/(?P<branch_id>\d+)/author/(?P<author_id>\d+)$', 'branch_author'),
     url(r'^branch/(?P<branch_id>\d+)/author/(?P<author_id>\d+)/commits$', "commits"),

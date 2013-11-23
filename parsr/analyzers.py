@@ -60,6 +60,9 @@ class Analyzer(object):
 
             f.add_churn(code_churn)
 
+        revision.measured = True
+        revision.save()
+
     def start(self):
         try:
             self.connector.switch_to(self.branch)

@@ -6,7 +6,7 @@ class RepoForm(forms.ModelForm):
 
 	class Meta:
 		model = Repo
-		fields = ["url", "kind", "timezone", "anonymous", "user", "password"]
+		fields = ["url", "kind", "timezone", "ignored_folders", "ignored_files", "anonymous", "user", "password"]
 
 		def get_widget(widget, cls=""):
 			return widget(attrs={"class": "form-control %s" % cls})
@@ -15,6 +15,8 @@ class RepoForm(forms.ModelForm):
 			"url": get_widget(forms.TextInput),
 			"kind": get_widget(forms.Select),
 			"timezone": get_widget(forms.Select),
+			"ignored_folders": get_widget(forms.TextInput),
+			"ignored_files": get_widget(forms.TextInput),
 			"user": get_widget(forms.TextInput, "optional"),
 			"password": get_widget(forms.PasswordInput, "optional")
 		}

@@ -130,6 +130,13 @@ def branch(request, branch_id):
 
 
 @ajax_request
+def branch_info(request, branch_id):
+    branch = get_object_or_404(Branch, pk=branch_id)
+
+    return branch.json()
+
+
+@ajax_request
 def author(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
 

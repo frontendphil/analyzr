@@ -153,7 +153,13 @@ var Repositories;
 
         createActions: function(repo) {
             if(repo.busy) {
-                return this.wrap(repo.status);
+                var status = repo.status;
+
+                if(status.action === "analyzing") {
+                    return this.wrap("Analyzing branch " + status.rep.name + "...");
+                }
+
+                return this.wrap("Measuring branch " + status.rep.name + "...");
             }
 
             var that = this;
@@ -257,6 +263,46 @@ var Repositories;
             return repo;
         },
 
+        createStatusIndicator: function(repo, branch, action) {
+            if(branch.activity.action !== action) {
+                return;
+            }
+
+            var container = $(
+                "<tr class='progress progress-striped active'>" +
+                    "<td colspan='" + repo.children().length + "'>" +
+                        "<div class='progress-bar' role='progressbar'></div>" +
+                    "</td>" +
+                "</tr>"
+            );
+
+            var that = this;
+
+            var updateProgress = function() {
+                $.ajax(branch.href + "/info", {
+                    success: function(data) {
+                        var progress = (100 *  data.activity.progress / data.activity.count);
+
+                        container.find(".progress-bar").css({
+                            width: progress + "%"
+                        });
+
+                        if(progress < 100) {
+                            window.setTimeout(updateProgress, 5000);
+                        } else {
+                            container.slideUp(function() {
+                                that.load();
+                            });
+                        }
+                    }
+                });
+            };
+
+            updateProgress();
+
+            return container;
+        },
+
         load: function() {
             var that = this;
 
@@ -272,13 +318,13 @@ var Repositories;
                 success: function(repositories) {
                     $.each(repositories, function() {
                         var repo = that.createRepo(this);
-
                         body.append(repo);
-                    });
 
-                    window.setTimeout(function() {
-                        that.load();
-                    }, 30000);
+                        if(this.status.action === "measuring") {
+                            var progess = that.createStatusIndicator(repo, this.status.rep, this.status.action);
+                            body.append(progess);
+                        }
+                    });
                 }
             });
         }
