@@ -352,7 +352,7 @@ class SVN(Connector):
             if filename.action == Action.MOVE:
                 original = filename.copyfrom_path
 
-            path = filename.path.replace("%s/" % branch.path, "")
+            path = unicode(filename.path).replace("%s/" % branch.path, "")
 
             revision.add_file(path, filename.action, original=original)
 
