@@ -483,8 +483,8 @@ class Revision(models.Model):
     identifier = models.CharField(max_length=255)
 
     branch = models.ForeignKey("Branch", null=True)
-    author = models.ForeignKey("Author", null=True, blank=True)
-    revision_date = models.ForeignKey("RevisionDate", null=True, blank=True)
+    author = models.ForeignKey("Author", null=True)
+    revision_date = models.ForeignKey("RevisionDate", null=True)
 
     next = models.ForeignKey("Revision", related_name='previous', null=True)
 

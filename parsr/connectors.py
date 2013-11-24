@@ -4,6 +4,7 @@ from shutil import rmtree
 
 import os
 import git
+import locale
 
 from mercurial import ui, hg, node
 
@@ -12,6 +13,19 @@ from pysvn import opt_revision_kind as revision_kind
 from pysvn import wc_status_kind as svn_status
 
 from analyzr.settings import CHECKOUT_PATH
+
+language_code, encoding = locale.getdefaultlocale()
+
+if language_code is None:
+    language_code = "en_US"
+
+if encoding is None:
+    encoding = "UTF-8"
+
+if encoding.lower() == "utf":
+    encoding = "UTF-8"
+
+locale.setlocale(locale.LC_ALL, "%s.%s" % (language_code, encoding))
 
 
 class Action(object):
