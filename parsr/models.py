@@ -285,7 +285,12 @@ class Branch(models.Model):
         self.save()
 
     def last_analyzed_revision(self):
-        return self.revision_set.get(next=None)
+        revisions = self.revision_set.filter(next=None).order_by("revision_date__date")
+
+        if revisions.count() == 0:
+            return None
+
+        return revisions[0]
 
     def last_measured_revision(self):
         revisions = self.revision_set.filter(measured=True).order_by("-revision_date__date")
