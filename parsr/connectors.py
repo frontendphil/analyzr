@@ -352,7 +352,7 @@ class SVN(Connector):
             if filename.action == Action.MOVE:
                 original = filename.copyfrom_path
 
-            path = unicode(filename.path).replace("%s/" % branch.path, "")
+            path = filename.path.decode("utf-8").replace("%s/" % branch.path, "")
 
             revision.add_file(path, filename.action, original=original)
 
@@ -360,20 +360,31 @@ class SVN(Connector):
 
         return revision
 
+    def get_start_revision(self, resume, head):
+        while head > 0:
+            if resume and not resume.represents("%d" % head):
+                head = head - 1
+
+                continue
+
+            return head
+
     def analyze(self, branch, resume_at=None):
         head = self.get_head_revision(branch)
 
         branch.revision_count = head
         branch.save()
 
-        last_revision = resume_at.next if resume_at else None
+        last_revision = None
+
+        if resume_at:
+            head = self.get_start_revision(resume_at, head)
+
+            last_revision = resume_at.next
+
+            resume_at.delete()
 
         while head > 0:
-            if resume_at and not resume_at.represents(head):
-                head = head - 1
-
-                continue
-
             revision = self.parse(branch, head)
 
             if revision:
