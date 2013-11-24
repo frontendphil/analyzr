@@ -295,7 +295,7 @@ class ComplexityReport(Checker):
 
     def average(self, functions):
         # maybe use median here instead
-        return sum([function["complexity"]["cyclomatic"] for function in functions]) / len(functions)
+        return sum([function["cyclomatic"] for function in functions]) / len(functions)
 
     def parse(self, connector):
         results = {}
@@ -311,7 +311,7 @@ class ComplexityReport(Checker):
 
                 data = contents["reports"][0]
 
-                halstead = data["aggregate"]["complexity"]["halstead"]
+                halstead = data["aggregate"]["halstead"]
 
                 if len(data["functions"]) == 0:
                     continue
