@@ -188,31 +188,48 @@ def churn(request, branch_id, author_id):
     return branch.churn(author)
 
 
-@ajax_request
-@require_POST
-def analyze(request, branch_id):
-    branch = get_object_or_404(Branch, pk=branch_id)
-
+def track_action(action, abort):
     try:
-        branch.analyze()
+        action()
     except Exception:
         traceback.print_exc(file=sys.stdout)
 
-        branch.abort_analyze()
+        abort()
 
     return { "status": "ok" }
+
+
+def get_branch(branch_id):
+    return get_object_or_404(Branch, pk=branch_id)
+
+
+@ajax_request
+@require_POST
+def analyze(request, branch_id):
+    branch = get_branch(branch_id)
+
+    return track_action(lambda: branch.analyze(), lambda: branch.abort_analyze())
+
+
+@ajax_request
+@require_POST
+def resume_analyze(request, branch_id):
+    branch = get_object_or_404(Branch, pk=branch_id)
+
+    return track_action(lambda: branch.analyze(resume=True), lambda: branch.abort_analyze())
 
 
 @ajax_request
 @require_POST
 def measure(request, branch_id):
-    branch = get_object_or_404(Branch, pk=branch_id)
+    branch = get_branch(branch_id)
 
-    try:
-        branch.measure()
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
+    return track_action(lambda: branch.measure(), lambda: branch.abort_measure())
 
-        branch.abort_measure()
 
-    return { "status": "ok" }
+@ajax_request
+@require_POST
+def resume_measure(request, branch_id):
+    branch = get_branch(branch_id)
+
+    return track_action(lambda: branch.measure(resume=True), lambda: branch.abort_measure())

@@ -1,11 +1,12 @@
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
+from shutil import rmtree
 
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Count, Sum
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, pre_delete
 from django.dispatch import receiver
 
 from timezone_field import TimeZoneField
@@ -175,6 +176,14 @@ def clean_ignores(sender, instance, **kwargs):
     instance.ignored_folders = ",".join(foldernames)
 
 
+@receiver(pre_delete, sender=Repo)
+def remove_repo(sender, instance, **kwargs):
+    connector = Connector.get(instance)
+
+    path = connector.get_repo_path()
+    rmtree(path)
+
+
 class Branch(models.Model):
 
     name = models.CharField(max_length=255)
@@ -211,12 +220,26 @@ class Branch(models.Model):
             "href": self.href(),
             "name": self.name,
             "path": self.path,
-            "analyzed": self.analyzed,
-            "analyzing": self.analyzing,
-            "measured": self.measured,
-            "measuring": self.measuring,
+            "analyze": {
+                "running": self.analyzing,
+                "finished": self.analyzed,
+                "interrupted": self.analyzing_interrupted()
+            },
+            "measure": {
+                "running": self.measuring,
+                "finished": self.measured,
+                "interrupted": self.measuring_interrupted()
+            },
             "activity": info
         }
+
+    def analyzing_interrupted(self):
+        return not self.analyzed and self.revision_set.count() > 0
+
+    def measuring_interrupted(self):
+        measured = self.revision_set.filter(measured=True).count()
+
+        return measured > 0 and not measured == self.revision_set.all().count()
 
     def href(self):
         return reverse("parsr.views.branch", kwargs={"branch_id": self.id})
@@ -231,7 +254,7 @@ class Branch(models.Model):
 
         sql.execute(query)
 
-    def analyze(self):
+    def analyze(self, resume=False):
         self.analyzed = False
         self.analyzing = True
 
@@ -239,12 +262,16 @@ class Branch(models.Model):
         self.measuring = False
         self.save()
 
-        self.cleanup()
+        if not resume:
+            self.cleanup()
+
+        revision = None
+
+        if resume:
+            revision = self.last_analyzed_revision()
 
         connector = Connector.get(self.repo)
-        connector.analyze(self)
-
-        # Maybe search and delete empty revisions
+        connector.analyze(self, revision)
 
         self.analyzing = False
         self.analyzed = True
@@ -257,15 +284,32 @@ class Branch(models.Model):
 
         self.save()
 
-    def measure(self):
+    def last_analyzed_revision(self):
+        return self.revision_set.get(next=None)
+
+    def last_measured_revision(self):
+        revisions = self.revision_set.filter(measured=True).order_by("-revision_date__date")
+
+        if revisions.count() == 0:
+            return None
+
+        return revisions[0]
+
+    def measure(self, resume=False):
         self.measured = False
         self.measuring = True
         self.save()
 
-        sql.reset(self)
+        if not resume:
+            sql.reset(self)
+
+        revision = None
+
+        if resume:
+            revision = self.last_measured_revision()
 
         analyzer = Analyzer(self.repo, self)
-        analyzer.start()
+        analyzer.start(revision)
 
         self.measuring = False
         self.measured = True
@@ -401,6 +445,14 @@ class Branch(models.Model):
     def author_count(self):
         return Author.objects.filter(revision__branch=self).distinct().count()
 
+    def first_revision(self):
+        revisions = self.revision_set.all().order_by("revision_date__date")
+
+        if revisions.count() == 0:
+            return None
+
+        return revisions[0]
+
     def revisions(self, author=None):
         revisions = Revision.objects.filter(branch=self)
 
@@ -534,6 +586,9 @@ class Revision(models.Model):
             return self.previous.all()[0]
 
         return None
+
+    def represents(self, identifier):
+        return self.identifier == identifier
 
     def modified_files(self):
         return self.file_set.filter(change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])

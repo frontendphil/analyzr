@@ -32,7 +32,9 @@ urlpatterns = patterns('parsr.views',
     url(r'^branch/(?P<branch_id>\d+)/author/(?P<author_id>\d+)/punchcard$', "punchcard"),
     url(r'^branch/(?P<branch_id>\d+)/punchcard$', "punchcard"),
     url(r"^branch/(?P<branch_id>\d+)/analyze$", "analyze"),
+    url(r"^branch/(?P<branch_id>\d+)/analyze/resume$", "resume_analyze"),
     url(r"^branch/(?P<branch_id>\d+)/measure$", "measure"),
+    url(r"^branch/(?P<branch_id>\d+)/measure/resume$", "resume_measure"),
 
     url(r"^author/(?P<author_id>\d+)$", "author"),
 

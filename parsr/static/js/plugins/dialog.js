@@ -4,15 +4,13 @@ var Dialog;
 
 	Dialog = Mask.extend({
 
-		init: function(text) {
-			this._super("body", text);
+		init: function(attrs) {
+			this.attrs = attrs;
+
+			this._super("body", attrs.text);
 		},
 
-		render: function() {
-			this._super();
-
-			this.dom.addClass("dialog");
-
+		standardButton: function() {
 			var dismiss = $("<button class='btn btn-default'>Dismiss</button>");
 
 			var that = this;
@@ -22,6 +20,39 @@ var Dialog;
 			});
 
 			this.dom.find(".info").append(dismiss);
+		},
+
+		render: function() {
+			this._super();
+
+			this.dom.addClass("dialog");
+
+			if(!this.attrs.waiting) {
+				this.dom.find(".icon-spinner").hide();
+			}
+
+			if(!this.attrs.actions || this.attrs.actions.length === 0) {
+				this.standardButton();
+
+				return;
+			}
+
+			var that = this;
+
+			$.each(this.attrs.actions, function() {
+				var button = $("<button class='btn btn-default'>" + this.text + "</button>");
+				var action = this;
+
+				button.click(function() {
+					return action.handler(that);
+				});
+
+				if(this.cls) {
+					button.addClass(this.cls);
+				}
+
+				that.dom.find(".info").append(button);
+			});
 		}
 
 	});

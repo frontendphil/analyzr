@@ -62,10 +62,13 @@ class Analyzer(object):
 
             f.add_churn(code_churn)
 
-    def start(self):
+    def start(self, revision=None):
         self.connector.switch_to(self.branch)
 
-        for revision in self.branch.revisions():
+        if not revision:
+            revision = self.branch.first_revision()
+
+        while revision:
             try:
                 self.connector.checkout(revision)
                 self.measure(revision)
@@ -75,6 +78,8 @@ class Analyzer(object):
 
             revision.measured = True
             revision.save()
+
+            revision = revision.next
 
 
 class BaseAnalyzer(object):
@@ -102,8 +107,6 @@ class BaseAnalyzer(object):
         return (config_path, result_path)
 
     def cleanup(self, config_path, result_path):
-        return
-
         shutil.rmtree(config_path)
         shutil.rmtree(result_path)
 
@@ -113,9 +116,6 @@ class BaseAnalyzer(object):
         for cls in self.checkers:
             checker = cls(config_path, result_path)
             checker.configure(self.files, revision, connector)
-
-            print "Running %s" % checker
-
             checker.run()
 
             results = checker.parse(connector)

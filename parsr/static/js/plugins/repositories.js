@@ -153,6 +153,97 @@ var Repositories;
             });
         },
 
+        reload: function() {
+            window.setTimeout(function() {
+                window.location.reload();
+            }, 100);
+        },
+
+        showResumeDialog: function(link) {
+            var that = this;
+
+            var dialog = new Dialog({
+                text: "This action has been interrupted before. " +
+                    "Would you like to resume where you left off, or start over?",
+                actions: [
+                    {
+                        text: "Cancel",
+                        handler: function(dialog) {
+                            dialog.remove();
+                        }
+                    },
+                    {
+                        text: "Restart",
+                        handler: function() {
+                            that.request(link.data("rel"));
+                            that.reload();
+                        }
+                    },
+                    {
+                        text: "Resume",
+                        cls: "btn-primary",
+                        handler: function() {
+                            that.request(link.data("rel") + "/resume");
+                            that.reload();
+                        }
+                    }
+                ]
+            });
+
+            dialog.show();
+        },
+
+        createLink: function(branch, action, clb) {
+            var that = this;
+
+            var link = $(
+                "<a href='#' data-rel='" + branch.href + "/" + action + "'>" +
+                    branch.name +
+                "</a>"
+            );
+
+            link.click(function() {
+                var url = $(this).data("rel");
+
+                if(clb && !clb($(this), branch)) {
+                    return false;
+                }
+
+                that.request(url);
+                that.reload();
+
+                return false;
+            });
+
+            return link;
+        },
+
+        createAction: function(title, action, branches) {
+            var that = this;
+
+            return this.createDropdown(title, branches, function(branch) {
+                var link = that.createLink(branch, action, function(link, branch) {
+                    if(!branch[action].interrupted) {
+                        return true;
+                    }
+
+                    that.showResumeDialog(link);
+
+                    return false;
+                });
+
+                if(branch[action].finished) {
+                    link.append(that.icon("icon-ok"));
+                }
+
+                if(branch[action].interrupted) {
+                    link.append(that.icon("icon-warning-sign"));
+                }
+
+                return link;
+            });
+        },
+
         createActions: function(repo) {
             if(repo.busy) {
                 var status = repo.status;
@@ -164,55 +255,15 @@ var Repositories;
                 return this.wrap("Measuring branch " + status.rep.name + "...");
             }
 
-            var that = this;
-
-            var createLink = function(branch, action) {
-                var link = $(
-                    "<a href='#' data-rel='" + branch.href + "/" + action + "'>" +
-                        branch.name +
-                    "</a>"
-                );
-
-                link.click(function() {
-                    that.request($(this).data("rel"));
-
-                    window.setTimeout(function() {
-                        window.location.href = window.location.href;
-                    }, 100);
-
-                    return false;
-                });
-
-                return link;
-            };
-
-            var wrap = this.wrap(this.createDropdown("Analyze", repo.branches, function(branch) {
-                var link = createLink(branch, "analyze");
-
-                if(branch.analyzed) {
-                    link.append(that.icon("icon-ok"));
-                }
-
-                return link;
-            }));
+            var wrap = this.wrap(this.createAction("Analyze", "analyze", repo.branches));
 
             if(!repo.measurable) {
                 return wrap;
             }
 
-            wrap.append(this.createDropdown("Measure", repo.branches, function(branch) {
-                if(!branch.analyzed) {
-                    return;
-                }
-
-                var link = createLink(branch, "measure");
-
-                if(branch.measured) {
-                    link.append(that.icon("icon-ok"));
-                }
-
-                return link;
-            }));
+            wrap.append(this.createAction("Measure", "measure", $.grep(repo.branches, function(branch) {
+                return branch.analyze.finished;
+            })));
 
             return wrap;
         },
@@ -283,7 +334,7 @@ var Repositories;
             var updateProgress = function() {
                 $.ajax(branch.href + "/info", {
                     success: function(data) {
-                        if(!data.activity) {
+                        if(typeof data.activity.progress === "undefined") {
                             container.fadeOut(function() {
                                 that.load();
                             });

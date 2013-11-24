@@ -69,7 +69,7 @@ class Connector(object):
     def create_repo(self, repo):
         raise NotImplementedError
 
-    def analyze(self, branch):
+    def analyze(self, branch, resume_at=None):
         raise NotImplementedError
 
     def checkout(self, revision):
@@ -170,7 +170,7 @@ class Git(Connector):
                 revision.add_file(filename, Action.ADD)
                 revision.save()
 
-            return
+            return revision
 
         diffs = parent.diff(commit)
 
@@ -202,24 +202,34 @@ class Git(Connector):
         return revision
 
 
-    def analyze(self, branch):
+    def analyze(self, branch, resume_at=None):
         last_commit = None
-        last_revision = None
+        last_revision = resume_at.next if resume_at else None
 
         self.switch_to(branch)
 
         for commit in self.repo.iter_commits():
+            if resume_at and not resume_at.represents(commit.hexsha):
+                last_commit = commit
+
+                continue
+
             revision = self.parse(branch, commit, last_commit)
 
             if revision:
                 revision.next = last_revision
                 revision.save()
 
-            last_revision = revision
+                last_revision = revision
+
             last_commit = commit
 
         # create initial commit
-        self.parse(branch, None, last_commit)
+        revision = self.parse(branch, None, last_commit)
+
+        if revision:
+            revision.next = last_revision
+            revision.save()
 
     def get_branches(self):
         result = []
@@ -290,8 +300,6 @@ class SVN(Connector):
     def get_churn(self, revision, filename):
         previous = revision.get_previous()
 
-        print previous
-
         if not previous:
             return
 
@@ -326,14 +334,7 @@ class SVN(Connector):
                 discover_changed_paths=True,
                 limit=0)
         except:
-            try:
-                log = self.repo.log("%s" % self.info.url,
-                    revision_start=Revision(revision_kind.number, identifier),
-                    revision_end=Revision(revision_kind.number, identifier),
-                    discover_changed_paths=True,
-                    limit=0)
-            except:
-                return
+            return
 
         if len(log) == 0:
             # Revision does not affect current branch
@@ -359,20 +360,27 @@ class SVN(Connector):
 
         return revision
 
-    def analyze(self, branch):
+    def analyze(self, branch, resume_at=None):
         head = self.get_head_revision(branch)
 
         branch.revision_count = head
         branch.save()
 
-        last_revision = None
+        last_revision = resume_at.next if resume_at else None
 
         while head > 0:
-            revision = self.parse(branch, head)
-            revision.next = last_revision
-            revision.save()
+            if resume_at and not resume_at.represents(head):
+                head = head - 1
 
-            last_revision = revision
+                continue
+
+            revision = self.parse(branch, head)
+
+            if revision:
+                revision.next = last_revision
+                revision.save()
+
+                last_revision = revision
 
             head = head - 1
 

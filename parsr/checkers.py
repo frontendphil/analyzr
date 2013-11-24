@@ -175,7 +175,8 @@ class JHawk(Checkstyle):
         ])
 
         if not returncode == 0:
-            raise Exception("Error running analyzer script")
+            print "JHAWK ERROR --- %s" % self.configuration
+            raise Exception("Error in analyzer script")
 
         # Don't allow multiple runs with the same configuration
         self.configuration = None
