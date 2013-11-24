@@ -14,6 +14,9 @@ from pysvn import wc_status_kind as svn_status
 
 from analyzr.settings import CHECKOUT_PATH
 
+# The following code is needed in order for the SVN lib to work
+# correctly accross systems. It would otherwise crash if non-standard
+# characters are used in file names
 language_code, encoding = locale.getdefaultlocale()
 
 if language_code is None:

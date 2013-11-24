@@ -1,4 +1,4 @@
-<project>
+<project default="measure">
 
     <path id="classpath">
         <fileset dir="{{ project_path }}/lib/{{ checker }}">

@@ -171,8 +171,7 @@ class JHawk(Checkstyle):
         returncode = subprocess.call([
             "ant",
             "-lib", "%s/lib/%s/JHawkCommandLine.jar" % (PROJECT_PATH, self.name),
-            "-f", self.configuration,
-            "measure"
+            "-f", self.configuration
         ])
 
         if not returncode == 0:
