@@ -541,12 +541,16 @@ class Revision(models.Model):
     def includes(self, filename):
         package, filename = File.parse_name(filename)
 
-        return not self.file_set.filter(name=filename, package__endswith=package).count() == 0
+        return not self.file_set.filter(name=filename,
+                                        package__endswith=package,
+                                        change_type__in=Action.readable()).count() == 0
 
     def get_file(self, filename):
         package, filename = File.parse_name(filename)
 
-        return self.file_set.get(name=filename, package__endswith=package, change_type__in=Action.readable())
+        return self.file_set.get(name=filename,
+                                 package__endswith=package,
+                                 change_type__in=Action.readable())
 
 
 class RevisionDate(models.Model):

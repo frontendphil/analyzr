@@ -306,10 +306,10 @@ class ComplexityReport(Checker):
             with open(path) as result:
                 contents = json.load(result)
 
-                if not contents:
+                if not contents or not "reports" in contents or not contents["reports"]:
                     continue
 
-                data = contents[0]
+                data = contents["reports"][0]
 
                 halstead = data["aggregate"]["complexity"]["halstead"]
 

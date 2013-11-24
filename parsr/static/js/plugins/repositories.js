@@ -283,6 +283,14 @@ var Repositories;
             var updateProgress = function() {
                 $.ajax(branch.href + "/info", {
                     success: function(data) {
+                        if(!data.activity) {
+                            container.fadeOut(function() {
+                                that.load();
+                            });
+
+                            return;
+                        }
+
                         var progress = (100 *  data.activity.progress / data.activity.count);
 
                         container.find(".progress-bar").css({
