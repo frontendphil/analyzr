@@ -6,6 +6,7 @@ var Contributors;
 
     var LANGUAGE_MAPPINGS = {
         "x-java-source": "java",
+        "x-java": "java",
         "javascript": "js",
         "x-sql": "sql",
         "x-python": "py",

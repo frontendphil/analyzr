@@ -186,9 +186,6 @@ def metrics(request, branch_id, author_id):
 
     language = request.GET.get("language")
 
-    if language == "all":
-        language = None
-
     start = request.GET.get("from")
     end = request.GET.get("to")
 

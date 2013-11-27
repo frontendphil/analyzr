@@ -13,18 +13,22 @@ from analyzr.settings import CONFIG_PATH, PROJECT_PATH
 
 class CheckerException(Exception):
 
-    def __init__(self, checker, cmd, error):
+    def __init__(self, checker, cmd, stdout="", stderr=""):
         self.checker = checker
         self.cmd = cmd
-        self.error = error
+
+        self.stdout = stdout
+        self.stderr = stderr
 
         super(CheckerException, self).__init__(error)
 
     def __str__(self):
+        value = "STDOUT:\n%s\n\nSTDERR:\n%s" % (self.stdout, self.stderr)
+
         return "%s raised an error while running command:\n\n%s\n\n%s" % (
             self.checker,
             " ".join(self.cmd),
-            self.error
+            value
         )
 
     def __repr__(self):
@@ -57,9 +61,7 @@ class Checker(object):
         stdout, stderr = proc.communicate()
 
         if not proc.returncode == 0:
-            value = "STDOUT:\n%s\n\nSTDERR:\n%s" % (stdout, stderr)
-
-            raise CheckerException(self, cmd, value)
+            raise CheckerException(self, cmd, stdout=stdout, stderr=stderr)
 
     def configure(self, files, revision, connector):
         pass
@@ -316,7 +318,15 @@ class ComplexityReport(Checker):
             result = "%s_%s.json" % (self.result, f.get_identifier())
 
             cmd = ["cr", "-f", "json", "-o", result, path]
-            self.execute(cmd)
+
+            try:
+                self.execute(cmd)
+            except CheckerException, e:
+                if not e.stdout.startswith("Fatal error") or not e.stderr.startswith("Fatal error"):
+                    raise e
+
+                # Ignore syntax errors in checked files
+                pass
 
     def average(self, functions):
         # maybe use median here instead

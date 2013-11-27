@@ -475,6 +475,11 @@ class Branch(models.Model):
         if author:
             revisions = revisions.filter(author=author)
 
+        if language == "all":
+            # all is a special value for the language attribute
+            # which will reset it so that no filtering will take place
+            language = None
+
         if language:
             revisions = revisions.filter(file__mimetype=language)
 
