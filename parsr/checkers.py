@@ -209,6 +209,8 @@ class JHawk(Checkstyle):
         # Don't allow multiple runs with the same configuration
         self.configuration = None
 
+        return True
+
     def get_metrics(self, parent):
         for node in parent.childNodes:
             if node.localName == "Metrics":
@@ -326,7 +328,9 @@ class ComplexityReport(Checker):
                     raise e
 
                 # Ignore syntax errors in checked files
-                pass
+                return False
+
+        return True
 
     def average(self, functions):
         # maybe use median here instead

@@ -116,11 +116,11 @@ class BaseAnalyzer(object):
         for cls in self.checkers:
             checker = cls(config_path, result_path)
             checker.configure(self.files, revision, connector)
-            checker.run()
 
-            results = checker.parse(connector)
+            if checker.run():
+                results = checker.parse(connector)
 
-            self.store_results(results)
+                self.store_results(results)
 
         results = self.results
 
