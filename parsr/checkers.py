@@ -20,7 +20,7 @@ class CheckerException(Exception):
         self.stdout = stdout
         self.stderr = stderr
 
-        super(CheckerException, self).__init__(error)
+        super(CheckerException, self).__init__()
 
     def __str__(self):
         value = "STDOUT:\n%s\n\nSTDERR:\n%s" % (self.stdout, self.stderr)
