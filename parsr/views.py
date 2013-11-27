@@ -195,18 +195,15 @@ def churn(request, branch_id, author_id):
 def track_action(branch, action, abort):
     try:
         action()
-    except Exception:
-        abort()
-
-        # import pdb; pdb.set_trace()
-
+    except:
         tb = "".join(traceback.format_exc())
 
         lexer = PythonTracebackLexer()
         formatter = HtmlFormatter(noclasses=True)
 
-        branch.last_error = highlight(tb, lexer, formatter)
-        branch.save()
+        error = highlight(tb, lexer, formatter)
+
+        abort(error)
 
     return { "status": "ok" }
 
@@ -220,7 +217,7 @@ def get_branch(branch_id):
 def analyze(request, branch_id):
     branch = get_branch(branch_id)
 
-    return track_action(branch, lambda: branch.analyze(), lambda: branch.abort_analyze())
+    return track_action(branch, lambda: branch.analyze(), lambda x: branch.abort_analyze(x))
 
 
 @ajax_request
@@ -228,7 +225,7 @@ def analyze(request, branch_id):
 def resume_analyze(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
-    return track_action(branch, lambda: branch.analyze(resume=True), lambda: branch.abort_analyze())
+    return track_action(branch, lambda: branch.analyze(resume=True), lambda x: branch.abort_analyze(x))
 
 
 @ajax_request
@@ -236,7 +233,7 @@ def resume_analyze(request, branch_id):
 def measure(request, branch_id):
     branch = get_branch(branch_id)
 
-    return track_action(branch, lambda: branch.measure(), lambda: branch.abort_measure())
+    return track_action(branch, lambda: branch.measure(), lambda x: branch.abort_measure(x))
 
 
 @ajax_request
@@ -244,4 +241,4 @@ def measure(request, branch_id):
 def resume_measure(request, branch_id):
     branch = get_branch(branch_id)
 
-    return track_action(branch, lambda: branch.measure(resume=True), lambda: branch.abort_measure())
+    return track_action(branch, lambda: branch.measure(resume=True), lambda x: branch.abort_measure(x))

@@ -31,6 +31,9 @@ class Checker(object):
     def get_decimal(self, value):
         return Decimal("%d" % round(float(value), 2))
 
+    def execute(self, cmd):
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
+
     def configure(self, files, revision, connector):
         pass
 
@@ -79,10 +82,8 @@ class Checkstyle(Checker):
         if not self.configuration:
             return
 
-        returncode = subprocess.call(["ant", "-f", self.configuration, "measure"])
-
-        if not returncode == 0:
-            raise Exception("Error running analyzer script")
+        cmd = ["ant", "-f", self.configuration, "measure"]
+        self.execute(cmd)
 
         # Don't allow multiple runs with the same configuration
         self.configuration = None
@@ -168,15 +169,13 @@ class JHawk(Checkstyle):
         if not self.configuration:
             return
 
-        returncode = subprocess.call([
+        cmd = [
             "ant",
             "-lib", "%s/lib/%s/JHawkCommandLine.jar" % (PROJECT_PATH, self.name),
             "-f", self.configuration
-        ])
+        ]
 
-        if not returncode == 0:
-            print "JHAWK ERROR --- %s" % self.configuration
-            raise Exception("Error in analyzer script")
+        self.execute(cmd)
 
         # Don't allow multiple runs with the same configuration
         self.configuration = None
@@ -289,10 +288,8 @@ class ComplexityReport(Checker):
             path = self.get_file_path(f)
             result = "%s_%s.json" % (self.result, f.get_identifier())
 
-            returncode = subprocess.call(["cr", "-f", "json", "-o", result, path])
-
-            if not returncode == 0:
-                raise Exception("Error running analyzer script")
+            cmd = ["cr", "-f", "json", "-o", result, path]
+            self.execute(cmd)
 
     def average(self, functions):
         # maybe use median here instead

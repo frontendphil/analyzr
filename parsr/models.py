@@ -201,7 +201,8 @@ class Branch(models.Model):
     measuring = models.BooleanField(default=False)
 
     revision_count = models.IntegerField(default=0)
-    last_error = models.TextField(null=True, blank=True)
+    last_analyze_error = models.TextField(null=True, blank=True)
+    last_measure_error = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
         return "Branch %s at %s" % (self.name, self.path)
@@ -224,16 +225,17 @@ class Branch(models.Model):
             "rep": {
                 "name": self.name,
                 "path": self.path,
-                "lastError": self.last_error,
                 "analyze": {
                     "running": self.analyzing,
                     "finished": self.analyzed,
-                    "interrupted": self.analyzing_interrupted()
+                    "interrupted": self.analyzing_interrupted(),
+                    "lastError": self.last_analyze_error
                 },
                 "measure": {
                     "running": self.measuring,
                     "finished": self.measured,
-                    "interrupted": self.measuring_interrupted()
+                    "interrupted": self.measuring_interrupted(),
+                    "lastError": self.last_measure_error
                 },
                 "activity": info
             }
@@ -261,6 +263,8 @@ class Branch(models.Model):
         sql.execute(query)
 
     def analyze(self, resume=False):
+        self.last_analyze_error = None
+
         self.analyzed = False
         self.analyzing = True
 
@@ -284,9 +288,11 @@ class Branch(models.Model):
         self.analyzed_date = datetime.now(self.repo.timezone)
         self.save()
 
-    def abort_analyze(self):
+    def abort_analyze(self, error):
         self.analyzed = False
         self.analyzing = False
+
+        self.last_analyze_error = error
 
         self.save()
 
@@ -302,6 +308,8 @@ class Branch(models.Model):
         return revisions[0]
 
     def measure(self, resume=False):
+        self.last_measure_error = None
+
         self.measured = False
         self.measuring = True
         self.save()
@@ -321,9 +329,11 @@ class Branch(models.Model):
         self.measured = True
         self.save()
 
-    def abort_measure(self):
+    def abort_measure(self, error):
         self.measured = False
         self.measuring = False
+
+        self.last_measure_error = error
 
         self.save()
 

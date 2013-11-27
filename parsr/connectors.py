@@ -214,8 +214,9 @@ class Git(Connector):
 
                 continue
 
-            # this revision is being recreated. so it has to go!
-            resume_at.delete()
+            if resume_at:
+                # this revision is being recreated. so it has to go!
+                resume_at.delete()
 
             revision = self.parse(branch, commit, last_commit)
 

@@ -230,11 +230,11 @@ var Repositories;
 
             return this.createDropdown(title, branches, function(branch) {
                 var link = that.createLink(branch, action, function(link, branch) {
-                    if(!branch.rep[action].interrupted) {
+                    if(!branch.rep[action].interrupted && !branch.rep[action].lastError) {
                         return true;
                     }
 
-                    that.showResumeDialog(link, branch.rep.lastError);
+                    that.showResumeDialog(link, branch.rep[action].lastError);
 
                     return false;
                 });
@@ -243,7 +243,7 @@ var Repositories;
                     link.append(that.icon("icon-ok"));
                 }
 
-                if(branch.rep[action].interrupted) {
+                if(branch.rep[action].interrupted || branch.rep[action].lastError) {
                     link.append(that.icon("icon-warning-sign"));
                 }
 
