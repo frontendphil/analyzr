@@ -4,11 +4,31 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from xml.dom import minidom
 from decimal import Decimal
+from cStringIO import StringIO
 
 from parsr.metrics import Metric
 
 from analyzr.settings import CONFIG_PATH, PROJECT_PATH
 
+
+class CheckerException(Exception):
+
+    def __init__(self, checker, cmd, error):
+        self.checker = checker
+        self.cmd = cmd
+        self.error = error
+
+        super(CheckerException, self).__init__(error)
+
+    def __str__(self):
+        return "%s raised an error while running command:\n\n%s\n\n%s" % (
+            self.checker,
+            " ".join(self.cmd),
+            self.error
+        )
+
+    def __repr__(self):
+        return self.__unicode__()
 
 class Checker(object):
 
@@ -32,7 +52,15 @@ class Checker(object):
         return Decimal("%d" % round(float(value), 2))
 
     def execute(self, cmd):
-        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
+        f = StringIO()
+
+        try:
+            subprocess.check_call(cmd, stdout=f)
+        except:
+            value = f.get_value()
+            f.close()
+
+            raise CheckerException(self, cmd, value)
 
     def configure(self, files, revision, connector):
         pass
