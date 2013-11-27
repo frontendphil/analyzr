@@ -322,7 +322,7 @@ class ComplexityReport(Checker):
             try:
                 self.execute(cmd)
             except CheckerException, e:
-                if not e.stdout.startswith("Fatal error") or not e.stderr.startswith("Fatal error"):
+                if not e.stdout.startswith("Fatal error") and not e.stderr.startswith("Fatal error"):
                     raise e
 
                 # Ignore syntax errors in checked files
