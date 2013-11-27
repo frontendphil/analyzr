@@ -57,7 +57,7 @@ class Checker(object):
         try:
             subprocess.check_call(cmd, stdout=f)
         except:
-            value = f.get_value()
+            value = f.getvalue()
             f.close()
 
             raise CheckerException(self, cmd, value)
