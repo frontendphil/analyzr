@@ -4,7 +4,7 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from xml.dom import minidom
 from decimal import Decimal
-from cStringIO import StringIO
+from tempfile import TemporaryFile
 
 from parsr.metrics import Metric
 
@@ -52,16 +52,14 @@ class Checker(object):
         return Decimal("%d" % round(float(value), 2))
 
     def execute(self, cmd):
-        out = StringIO()
-        err = StringIO()
+        f = TemporaryFile()
 
         try:
-            subprocess.check_call(cmd, stdout=out, stderr=err)
+            subprocess.check_call(cmd, stdout=f, stderr=subprocess.STDOUT)
         except:
-            value = "STDOUT:\n%s\n\nSTDERR:\n%s" % (out.getvalue(), err.getvalue())
+            value = f.read()
 
-            out.close()
-            err.close()
+            f.close()
 
             raise CheckerException(self, cmd, value)
 
