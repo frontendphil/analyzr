@@ -52,13 +52,16 @@ class Checker(object):
         return Decimal("%d" % round(float(value), 2))
 
     def execute(self, cmd):
-        f = StringIO()
+        out = StringIO()
+        err = StringIO()
 
         try:
-            subprocess.check_call(cmd, stdout=f)
+            subprocess.check_call(cmd, stdout=out, stderr=err)
         except:
-            value = f.getvalue()
-            f.close()
+            value = "STDOUT:\n%s\n\nSTDERR:\n%s" % (out.getvalue(), err.getvalue())
+
+            out.close()
+            err.close()
 
             raise CheckerException(self, cmd, value)
 
