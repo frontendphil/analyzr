@@ -34,7 +34,9 @@ var CodeChurn;
                 });
         },
 
-        handleData: function(svg, data) {
+        handleData: function(svg, response) {
+            var data = response.data;
+
             data.forEach(function(d) {
                 d.date = new Date(d.date);
             });

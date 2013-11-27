@@ -94,12 +94,12 @@ var Repositories;
         },
 
         getRepoLink: function(repo) {
-            if(repo.busy || !repo.analyzed) {
-                return this.wrap(repo.name);
+            if(repo.rep.busy || !repo.rep.analyzed) {
+                return this.wrap(repo.rep.name);
             }
 
             return this.wrap($(
-                "<a href='" + repo.href + "'>" + repo.name + "</a>"
+                "<a href='" + repo.href + "'>" + repo.rep.name + "</a>"
             ));
         },
 
@@ -159,12 +159,19 @@ var Repositories;
             }, 100);
         },
 
-        showResumeDialog: function(link) {
+        showResumeDialog: function(link, error) {
             var that = this;
 
+            var text = "This action has been interrupted before. " +
+                    "Would you like to resume where you left off, or start over?";
+
+            if(error) {
+                text += error;
+            }
+
             var dialog = new Dialog({
-                text: "This action has been interrupted before. " +
-                    "Would you like to resume where you left off, or start over?",
+                width: 500,
+                text: text,
                 actions: [
                     {
                         text: "Cancel",
@@ -198,7 +205,7 @@ var Repositories;
 
             var link = $(
                 "<a href='#' data-rel='" + branch.href + "/" + action + "'>" +
-                    branch.name +
+                    branch.rep.name +
                 "</a>"
             );
 
@@ -223,20 +230,20 @@ var Repositories;
 
             return this.createDropdown(title, branches, function(branch) {
                 var link = that.createLink(branch, action, function(link, branch) {
-                    if(!branch[action].interrupted) {
+                    if(!branch.rep[action].interrupted) {
                         return true;
                     }
 
-                    that.showResumeDialog(link);
+                    that.showResumeDialog(link, branch.rep.lastError);
 
                     return false;
                 });
 
-                if(branch[action].finished) {
+                if(branch.rep[action].finished) {
                     link.append(that.icon("icon-ok"));
                 }
 
-                if(branch[action].interrupted) {
+                if(branch.rep[action].interrupted) {
                     link.append(that.icon("icon-warning-sign"));
                 }
 
@@ -249,10 +256,10 @@ var Repositories;
                 var status = repo.status;
 
                 if(status.action === "analyzing") {
-                    return this.wrap("Analyzing branch " + status.rep.name + "...");
+                    return this.wrap("Analyzing branch " + status.rep.rep.name + "...");
                 }
 
-                return this.wrap("Measuring branch " + status.rep.name + "...");
+                return this.wrap("Measuring branch " + status.rep.rep.name + "...");
             }
 
             var wrap = this.wrap(this.createAction("Analyze", "analyze", repo.branches));
@@ -262,7 +269,7 @@ var Repositories;
             }
 
             wrap.append(this.createAction("Measure", "measure", $.grep(repo.branches, function(branch) {
-                return branch.analyze.finished;
+                return branch.rep.analyze.finished;
             })));
 
             return wrap;
@@ -272,22 +279,24 @@ var Repositories;
             var that = this;
             var repo = $("<tr data-href='" + info.href + "' />");
 
-            repo.append(this.getAnalyzingState(info));
-            repo.append(this.getMeasuringState(info));
+            var rep = info.rep;
+
+            repo.append(this.getAnalyzingState(rep));
+            repo.append(this.getMeasuringState(rep));
             repo.append(this.getRepoLink(info));
-            repo.append(this.wrap(this.getRepoStatus(info), {
+            repo.append(this.wrap(this.getRepoStatus(rep), {
                 "class": "status"
             }));
 
-            repo.append(this.wrap(info.kind));
-            repo.append(this.wrap(info.branchCount));
-            repo.append(this.wrap(info.authorCount));
+            repo.append(this.wrap(rep.kind));
+            repo.append(this.wrap(rep.branchCount));
+            repo.append(this.wrap(rep.authorCount));
 
-            repo.append(this.createActions(info));
+            repo.append(this.createActions(rep));
 
             var edit = "", remove = "";
 
-            if(!info.busy) {
+            if(!rep.busy) {
                 edit = $("<a href='" + info.href + "/edit' />");
                 edit.append(this.icon("icon-edit"));
 
@@ -317,7 +326,7 @@ var Repositories;
         },
 
         createStatusIndicator: function(repo, branch, action) {
-            if(branch.activity.action !== action) {
+            if(branch.rep.activity.action !== action) {
                 return;
             }
 
@@ -333,8 +342,8 @@ var Repositories;
 
             var updateProgress = function() {
                 $.ajax(branch.href + "/info", {
-                    success: function(data) {
-                        if(typeof data.activity.progress === "undefined") {
+                    success: function(branch) {
+                        if(typeof branch.rep.activity.progress === "undefined") {
                             container.fadeOut(function() {
                                 that.load();
                             });
@@ -342,7 +351,7 @@ var Repositories;
                             return;
                         }
 
-                        var progress = (100 *  data.activity.progress / data.activity.count);
+                        var progress = (100 *  branch.rep.activity.progress / branch.rep.activity.count);
 
                         container.find(".progress-bar").css({
                             width: progress + "%"
@@ -389,8 +398,8 @@ var Repositories;
                         var repo = that.createRepo(this);
                         body.append(repo);
 
-                        if(this.status.action !== "ready") {
-                            var progess = that.createStatusIndicator(repo, this.status.rep, this.status.action);
+                        if(this.rep.status.action !== "ready") {
+                            var progess = that.createStatusIndicator(repo, this.rep.status.rep, this.rep.status.action);
                             body.append(progess);
                         }
                     });

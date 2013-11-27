@@ -214,6 +214,9 @@ class Git(Connector):
 
                 continue
 
+            # this revision is being recreated. so it has to go!
+            resume_at.delete()
+
             revision = self.parse(branch, commit, last_commit)
 
             if revision:
@@ -382,6 +385,7 @@ class SVN(Connector):
 
             last_revision = resume_at.next
 
+            # this revision is being recreated. so it has to go!
             resume_at.delete()
 
         while head > 0:

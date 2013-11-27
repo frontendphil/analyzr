@@ -320,14 +320,14 @@ class ComplexityReport(Checker):
                 results[f.full_path()] = [
                     {
                         "kind": "CyclomaticComplexity",
-                        "value": Decimal("%d" % self.average(data["functions"]))
+                        "value": self.get_decimal(self.average(data["functions"]))
                     },
                     {
                         "kind": "Halstead",
                         "value": {
-                            "volume": Decimal("%d" % round(halstead["volume"], 2)),
-                            "difficulty": Decimal("%d" % round(halstead["difficulty"], 2)),
-                            "effort": Decimal("%d" % round(halstead["effort"], 2))
+                            "volume": self.get_decimal(halstead["volume"]),
+                            "difficulty": self.get_decimal(halstead["difficulty"]),
+                            "effort": self.get_decimal(halstead["effort"])
                         }
                     }
                 ]

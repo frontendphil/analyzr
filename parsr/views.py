@@ -2,6 +2,10 @@ import json
 import traceback
 import sys
 
+from pygments import highlight
+from pygments.lexers import PythonTracebackLexer
+from pygments.formatters import HtmlFormatter
+
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse, HttpResponseRedirect
@@ -188,13 +192,21 @@ def churn(request, branch_id, author_id):
     return branch.churn(author)
 
 
-def track_action(action, abort):
+def track_action(branch, action, abort):
     try:
         action()
     except Exception:
-        traceback.print_exc(file=sys.stdout)
-
         abort()
+
+        # import pdb; pdb.set_trace()
+
+        tb = "".join(traceback.format_exc())
+
+        lexer = PythonTracebackLexer()
+        formatter = HtmlFormatter(noclasses=True)
+
+        branch.last_error = highlight(tb, lexer, formatter)
+        branch.save()
 
     return { "status": "ok" }
 
@@ -208,7 +220,7 @@ def get_branch(branch_id):
 def analyze(request, branch_id):
     branch = get_branch(branch_id)
 
-    return track_action(lambda: branch.analyze(), lambda: branch.abort_analyze())
+    return track_action(branch, lambda: branch.analyze(), lambda: branch.abort_analyze())
 
 
 @ajax_request
@@ -216,7 +228,7 @@ def analyze(request, branch_id):
 def resume_analyze(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
-    return track_action(lambda: branch.analyze(resume=True), lambda: branch.abort_analyze())
+    return track_action(branch, lambda: branch.analyze(resume=True), lambda: branch.abort_analyze())
 
 
 @ajax_request
@@ -224,7 +236,7 @@ def resume_analyze(request, branch_id):
 def measure(request, branch_id):
     branch = get_branch(branch_id)
 
-    return track_action(lambda: branch.measure(), lambda: branch.abort_measure())
+    return track_action(branch, lambda: branch.measure(), lambda: branch.abort_measure())
 
 
 @ajax_request
@@ -232,4 +244,4 @@ def measure(request, branch_id):
 def resume_measure(request, branch_id):
     branch = get_branch(branch_id)
 
-    return track_action(lambda: branch.measure(resume=True), lambda: branch.abort_measure())
+    return track_action(branch, lambda: branch.measure(resume=True), lambda: branch.abort_measure())

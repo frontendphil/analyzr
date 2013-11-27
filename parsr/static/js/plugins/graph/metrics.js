@@ -37,8 +37,13 @@ var Metrics;
 
         addYAxis: function() {},
 
-        createSelect: function(files) {
-            var select = $("<select />");
+        createFileSelector: function(files) {
+            var select = $(
+                "<select>" +
+                    "<option value='all'>All</option>" +
+                    "<option value='invalid'>----</option>" +
+                "</select>"
+            );
 
             $.each(files, function() {
                 var deleted = "";
@@ -50,6 +55,25 @@ var Metrics;
                 select.append(
                     "<option value='" + this.name + "'>" +
                         this.name + " (" + this.count + ")" + deleted +
+                    "</option>"
+                );
+            });
+
+            return select;
+        },
+
+        createLanguageSelector: function(languages) {
+            var select = $(
+                "<select>" +
+                    "<option value='all'>All</option>" +
+                    "<option value='invalid'>----</option>" +
+                "</select>"
+            );
+
+            $.each(languages, function() {
+                select.append(
+                    "<option value='" + this.toString() + "'>" +
+                        this.toString() +
                     "</option>"
                 );
             });
@@ -375,10 +399,10 @@ var Metrics;
             });
         },
 
-        handleData: function(svg, data) {
+        handleData: function(svg, response) {
             var that = this;
 
-            var files = this.parse(data);
+            var files = this.parse(response.data);
 
             if(files.length === 0) {
                 return;
@@ -395,9 +419,10 @@ var Metrics;
 
             this.prepareDiagram(files[0].metrics);
 
-            var select = this.createSelect(files);
+            var fileSelector = this.createFileSelector(files);
+            var languageSelector = this.createLanguageSelector(response.info.languages);
 
-            this.dom.append(select);
+            this.dom.append(languageSelector, fileSelector);
 
             var getFile = function(name) {
                 var result;
@@ -423,7 +448,11 @@ var Metrics;
 
             this.handleMouseLeave();
 
-            select.change(function() {
+            fileSelector.change(function() {
+                if(!this.value || this.value === "all") {
+                    return;
+                }
+
                 var file = getFile(this.value);
 
                 that.updateScale(that.svg, file.metrics);
@@ -450,7 +479,7 @@ var Metrics;
                 that.raise("file.change", file);
             });
 
-            select.change();
+            fileSelector.change();
         }
     });
 }());

@@ -124,7 +124,7 @@ var Graph;
                 that.unmask();
                 that.prepareData(response);
                 that.createDomain(response, that.getMinValue, that.getMaxValue);
-                that.handleData(that.svg, response.data);
+                that.handleData(that.svg, response);
                 that.addAxis(that.svg);
             });
         }

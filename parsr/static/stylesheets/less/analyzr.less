@@ -49,7 +49,7 @@
     .info {
         padding: 15px 20px;
 
-        width: 20%;
+        max-width: 50%;
 
         background: #fff;
 
@@ -63,9 +63,22 @@
 
         text-align: center;
 
-        button {
-            margin-left: 5px;
+        .actions {
             margin-top: 20px;
+
+            button {
+                margin-left: 5px;
+            }
+        }
+
+        pre {
+            max-height: 400px;
+            margin-top: 20px;
+
+            text-align: left;
+            font-size: 11px;
+
+            overflow: scroll;
         }
     }
 }

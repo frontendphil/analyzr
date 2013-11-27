@@ -1,7 +1,8 @@
 Django==1.6
-GitPython==0.3.1-beta2
+GitPython==0.3.1
 Jinja2==2.7.1
 MarkupSafe==0.18
+Pygments==1.6
 South==0.8.3
 async==0.6.1
 django-annoying==0.7.7

@@ -8,6 +8,16 @@ var Dialog;
 			this.attrs = attrs;
 
 			this._super("body", attrs.text);
+
+			this.width(attrs.width);
+		},
+
+		width: function(width) {
+			if(!width) {
+				return;
+			}
+
+			this.dom.find(".info").width(width);
 		},
 
 		standardButton: function() {
@@ -19,7 +29,7 @@ var Dialog;
 				that.remove();
 			});
 
-			this.dom.find(".info").append(dismiss);
+			this.dom.find(".actions").append(dismiss);
 		},
 
 		render: function() {
@@ -27,9 +37,14 @@ var Dialog;
 
 			this.dom.addClass("dialog");
 
+			var dialog = this.dom.find(".info");
+
 			if(!this.attrs.waiting) {
 				this.dom.find(".icon-spinner").hide();
 			}
+
+			var actions = $("<div class='actions' />");
+			dialog.append(actions);
 
 			if(!this.attrs.actions || this.attrs.actions.length === 0) {
 				this.standardButton();
@@ -51,7 +66,11 @@ var Dialog;
 					button.addClass(this.cls);
 				}
 
-				that.dom.find(".info").append(button);
+				actions.append(button);
+			});
+
+			dialog.css({
+				"marginTop": ($("body").height() / 2) - (dialog.height() / 2)
 			});
 		}
 

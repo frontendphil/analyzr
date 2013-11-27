@@ -119,19 +119,21 @@ class Repo(models.Model):
     def json(self):
         return {
             "href": self.href(),
-            "name": self.url,
-            "kind": self.kind,
-            "busy": self.busy(),
-            "status": self.get_status(),
-            "anonymous": self.anonymous,
-            "analyzed": self.analyzed(),
-            "analyzing": self.analyzing(),
-            "measurable": self.measurable(),
-            "measured": self.measured(),
-            "measuring": self.measuring(),
-            "branchCount": self.branch_count(),
-            "authorCount": self.author_count(),
-            "branches": [branch.json() for branch in self.branch_set.all()]
+            "rep": {
+                "name": self.url,
+                "kind": self.kind,
+                "busy": self.busy(),
+                "status": self.get_status(),
+                "anonymous": self.anonymous,
+                "analyzed": self.analyzed(),
+                "analyzing": self.analyzing(),
+                "measurable": self.measurable(),
+                "measured": self.measured(),
+                "measuring": self.measuring(),
+                "branchCount": self.branch_count(),
+                "authorCount": self.author_count(),
+                "branches": [branch.json() for branch in self.branch_set.all()]
+            }
         }
 
 
@@ -199,6 +201,7 @@ class Branch(models.Model):
     measuring = models.BooleanField(default=False)
 
     revision_count = models.IntegerField(default=0)
+    last_error = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
         return "Branch %s at %s" % (self.name, self.path)
@@ -218,19 +221,22 @@ class Branch(models.Model):
 
         return {
             "href": self.href(),
-            "name": self.name,
-            "path": self.path,
-            "analyze": {
-                "running": self.analyzing,
-                "finished": self.analyzed,
-                "interrupted": self.analyzing_interrupted()
-            },
-            "measure": {
-                "running": self.measuring,
-                "finished": self.measured,
-                "interrupted": self.measuring_interrupted()
-            },
-            "activity": info
+            "rep": {
+                "name": self.name,
+                "path": self.path,
+                "lastError": self.last_error,
+                "analyze": {
+                    "running": self.analyzing,
+                    "finished": self.analyzed,
+                    "interrupted": self.analyzing_interrupted()
+                },
+                "measure": {
+                    "running": self.measuring,
+                    "finished": self.measured,
+                    "interrupted": self.measuring_interrupted()
+                },
+                "activity": info
+            }
         }
 
     def analyzing_interrupted(self):
@@ -467,10 +473,18 @@ class Branch(models.Model):
             identifier=identifier
         )
 
+    def get_languages(self):
+        languages = File.objects\
+            .filter(revision__branch=self, mimetype__in=Analyzer.parseable_types())\
+            .values("mimetype").distinct()
+
+        return [language["mimetype"] for language in languages]
+
     def metrics(self, author):
         result = {
             "info": {
-                "dates": []
+                "dates": [],
+                "languages": self.get_languages()
             },
             "data": {}
         }
