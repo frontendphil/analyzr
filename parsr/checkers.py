@@ -52,14 +52,12 @@ class Checker(object):
         return Decimal("%d" % round(float(value), 2))
 
     def execute(self, cmd):
-        f = TemporaryFile()
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        try:
-            subprocess.check_call(cmd, stdout=f, stderr=subprocess.STDOUT)
-        except:
-            value = f.read()
+        stdout, stderr = proc.communicate()
 
-            f.close()
+        if not proc.returncode == 0:
+            value = "STDOUT:\n%s\n\nSTDERR:\n%s" % (stdout, stderr)
 
             raise CheckerException(self, cmd, value)
 
