@@ -6,8 +6,27 @@ var Metrics;
 
         init: function(target, attrs) {
             this.scales = {};
+            this.params = {};
 
             this._super("metrics", target, attrs);
+
+            var that = this;
+
+            this.dom.find(".update-filters").click(function() {
+                var params = [];
+
+                $.each(that.params, function(key, value) {
+                    params.push(key + "=" + value);
+                });
+
+                that.setup(that.url + "?" + params.join("&"), that.branch);
+
+                return false;
+            });
+
+            this.on("file.selected", function(value) {
+                that.handleFileSelect(value);
+            });
         },
 
         updateScale: function(svg, metrics) {
@@ -37,48 +56,115 @@ var Metrics;
 
         addYAxis: function() {},
 
-        createFileSelector: function(files) {
-            var select = $(
-                "<select>" +
-                    "<option value='all'>All</option>" +
-                    "<option value='invalid'>----</option>" +
-                "</select>"
-            );
+        createSelect: function(kind, values, clb) {
+            var cls = "filter-" + kind.replace(" ", "-").toLowerCase();
 
-            $.each(files, function() {
-                var deleted = "";
+            var container = this.dom.find("." + cls);
+            var select = container.find("select");
 
-                if(this.deleted) {
-                    deleted = " - DELETED";
+            if(container.length === 0) {
+                container = $("<div class='input-group col-lg-1 col-md-3 " + cls + "' />");
+                select = $(
+                    "<select class='form-control'>" +
+                        "<option value=''>" + kind.capitalize() + "</option>" +
+                        "<option value=''>----</option>" +
+                        "<option value='all'>All</option>" +
+                    "</select>"
+                );
+
+                container.append(select);
+            }
+
+            select.find("option").each(function() {
+                var option = $(this);
+                var value = option.attr("value");
+
+                if(value && value !== "all") {
+                    option.remove();
+                }
+            });
+
+            $.each(values, function() {
+                var item = clb(this);
+
+                if(!item) {
+                    return;
                 }
 
                 select.append(
-                    "<option value='" + this.name + "'>" +
-                        this.name + " (" + this.count + ")" + deleted +
+                    "<option value='" + item.value + "'>" +
+                        item.text +
                     "</option>"
                 );
+            });
+
+            container.val = function() {
+                select.val.apply(select, arguments);
+            };
+
+            container.change = function() {
+                select.change.apply(select, arguments);
+            };
+
+            return container;
+        },
+
+        createFileSelector: function(files) {
+            var select = this.createSelect("file", files, function(file) {
+                var deleted = "";
+
+                if(file.deleted) {
+                    deleted = " - DELETED";
+                }
+
+                return {
+                    value: file.name,
+                    text: file.name + " (" + file.count + ")" + deleted
+                };
+            });
+
+            if(files.length === 0) {
+                select.remove();
+
+                return;
+            }
+
+            var that = this;
+
+            select.change(function() {
+                that.raise("file.selected", this.value);
             });
 
             return select;
         },
 
-        createLanguageSelector: function(languages) {
-            var select = $(
-                "<select>" +
-                    "<option value='all'>All</option>" +
-                    "<option value='invalid'>----</option>" +
-                "</select>"
-            );
+        createLanguageSelector: function(languages, value) {
+            var select = this.createSelect("language", languages, function(language) {
+                return {
+                    value: language.toString(),
+                    text: language.toString()
+                };
+            });
 
-            $.each(languages, function() {
-                select.append(
-                    "<option value='" + this.toString() + "'>" +
-                        this.toString() +
-                    "</option>"
-                );
+            if(value) {
+                select.val(value);
+            }
+
+            var that = this;
+
+            select.change(function() {
+                if(!this.value) {
+                    return;
+                }
+
+                that.changeParam("language", this.value);
             });
 
             return select;
+        },
+
+        changeParam: function(key, value) {
+            this.params[key] = value;
         },
 
         parse: function(data) {
@@ -399,13 +485,110 @@ var Metrics;
             });
         },
 
+        formatDate: function(date) {
+            return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getUTCFullYear();
+        },
+
+        createDatePicker: function(info) {
+            var that = this;
+            var options = info.options;
+
+            var createPicker = function(element, value, clb) {
+                var date = that.formatDate(new Date(value));
+
+                element.find("input").val(date);
+
+                var button = element.find(".input-group-addon");
+                button.data("date", date);
+                button.datepicker({
+                    format: "dd/mm/yyyy",
+                    viewMode: "years"
+                });
+                button.on("changeDate", function(event) {
+                    if(event.viewMode !== "days") {
+                        return;
+                    }
+
+                    element.find("input").val(that.formatDate(event.date));
+
+                    clb(event.date);
+                });
+
+                that.changeParam(element.data("rel"), date);
+            };
+
+            createPicker($(".date-from"), options.startDate || options.minDate, function(date) {
+                that.changeParam("from", date.toISOString());
+            });
+            createPicker($(".date-to"), options.endDate || options.maxDate, function(date) {
+                that.changeParam("to", date.toISOString());
+            });
+        },
+
+        addFilters: function(files, info) {
+            this.createDatePicker(info);
+
+            var fileSelector = this.createFileSelector(files);
+            var languageSelector = this.createLanguageSelector(info.languages, info.options.language);
+
+            this.dom.find(".filters").append(languageSelector, fileSelector);
+        },
+
+        getFile: function(name) {
+            var result;
+
+            $.each(this.files, function() {
+                if(result || this.name !== name) {
+                    return;
+                }
+
+                result = this;
+            });
+
+            return result;
+        },
+
+        handleFileSelect: function(value) {
+            if(!value || value === "all") {
+                return;
+            }
+
+            var file = this.getFile(value);
+
+            this.updateScale(this.svg, file.metrics);
+
+            this.scale.x = d3.time.scale().range([0, this.width]);
+            this.scale.x.domain(d3.extent(file.metrics[0].values, function(d) {
+                return d.date;
+            }));
+
+            var domain = this.scale.x.domain();
+
+            var axis = d3.svg.axis()
+                .scale(this.scale.x)
+                .orient("bottom")
+                .ticks(d3.time.days(domain[0], domain[1]).length)
+                .tickSize(-this.getInnerHeight());
+
+            this.svg.select(".x.axis")
+                .call(axis)
+                .selectAll("text")
+                    .style("text-anchor", "end")
+                    .attr("transform", "rotate(-65)");
+
+            this.raise("file.change", file);
+        },
+
         handleData: function(svg, response) {
             var that = this;
 
-            var files = this.parse(response.data);
+            this.files = this.parse(response.data);
+            var metrics = [];
 
-            if(files.length === 0) {
-                return;
+            this.addFilters(this.files, response.info);
+
+            if(this.files.length > 0) {
+                metrics = this.files[0].metrics;
             }
 
             this.svg.append("line")
@@ -417,26 +600,7 @@ var Metrics;
                 .attr("y1", this.height)
                 .style("stroke", "#000");
 
-            this.prepareDiagram(files[0].metrics);
-
-            var fileSelector = this.createFileSelector(files);
-            var languageSelector = this.createLanguageSelector(response.info.languages);
-
-            this.dom.append(languageSelector, fileSelector);
-
-            var getFile = function(name) {
-                var result;
-
-                $.each(files, function() {
-                    if(this.name !== name) {
-                        return;
-                    }
-
-                    result = this;
-                });
-
-                return result;
-            };
+            this.prepareDiagram(metrics);
 
             this.svg.select(".background")
                 .on("mouseenter", function() {
@@ -447,39 +611,6 @@ var Metrics;
                 });
 
             this.handleMouseLeave();
-
-            fileSelector.change(function() {
-                if(!this.value || this.value === "all") {
-                    return;
-                }
-
-                var file = getFile(this.value);
-
-                that.updateScale(that.svg, file.metrics);
-
-                that.scale.x = d3.time.scale().range([0, that.width]);
-                that.scale.x.domain(d3.extent(file.metrics[0].values, function(d) {
-                    return d.date;
-                }));
-
-                var domain = that.scale.x.domain();
-
-                var axis = d3.svg.axis()
-                    .scale(that.scale.x)
-                    .orient("bottom")
-                    .ticks(d3.time.days(domain[0], domain[1]).length)
-                    .tickSize(-that.getInnerHeight());
-
-                that.svg.select(".x.axis")
-                    .call(axis)
-                    .selectAll("text")
-                        .style("text-anchor", "end")
-                        .attr("transform", "rotate(-65)");
-
-                that.raise("file.change", file);
-            });
-
-            fileSelector.change();
         }
     });
 }());

@@ -469,11 +469,20 @@ class Branch(models.Model):
 
         return revisions[0]
 
-    def revisions(self, author=None):
+    def revisions(self, author=None, language=None, start=None, end=None):
         revisions = Revision.objects.filter(branch=self)
 
         if author:
             revisions = revisions.filter(author=author)
+
+        if language:
+            revisions = revisions.filter(file__mimetype=language)
+
+        if start:
+            revisions = revisions.filter(revision_date__date__gte=start)
+
+        if end:
+            revisions = revisions.filter(revision_date__date__lte=end)
 
         return revisions.order_by("revision_date__date")
 
@@ -490,16 +499,35 @@ class Branch(models.Model):
 
         return [language["mimetype"] for language in languages]
 
-    def metrics(self, author):
-        result = {
+    def get_earliest_revision(self):
+        return self.revision_set.order_by("revision_date__date")[0:1][0]
+
+    def get_latest_revision(self):
+        return self.revision_set.order_by("-revision_date__date")[0:1][0]
+
+    def metrics_stub(self, language=None, start=None, end=None):
+        return {
             "info": {
                 "dates": [],
-                "languages": self.get_languages()
+                "languages": self.get_languages(),
+                "options": {
+                    "language": language,
+                    "startDate": start.isoformat() if start else None,
+                    "endDate": end.isoformat() if end else None,
+                    "minDate": self.get_earliest_revision().date().isoformat(),
+                    "maxDate": self.get_latest_revision().date().isoformat()
+                }
             },
             "data": {}
         }
 
-        for revision in self.revisions(author):
+    def metrics(self, author, language=None, start=None, end=None):
+        result = self.metrics_stub(language=language, start=start, end=end)
+
+        if not language:
+            return result
+
+        for revision in self.revisions(author, language=language, start=start, end=end):
             files = File.objects.filter(
                 revision=revision,
                 mimetype__in=Analyzer.parseable_types(),

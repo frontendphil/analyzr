@@ -2,6 +2,8 @@ import json
 import traceback
 import sys
 
+from dateutil import parser
+
 from pygments import highlight
 from pygments.lexers import PythonTracebackLexer
 from pygments.formatters import HtmlFormatter
@@ -182,7 +184,18 @@ def commits(request, branch_id, author_id=None):
 def metrics(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
-    return branch.metrics(author)
+    language = request.GET.get("language")
+
+    if language == "all":
+        language = None
+
+    start = request.GET.get("from")
+    end = request.GET.get("to")
+
+    start = parser.parse(start) if start else None
+    end = parser.parse(end) if end else None
+
+    return branch.metrics(author, language=language, start=start, end=end)
 
 
 @ajax_request

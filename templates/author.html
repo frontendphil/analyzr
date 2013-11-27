@@ -37,7 +37,30 @@
         <div
             class='metrics'
             data-author="{{ author.href }}"
-            data-branch="{{ branch.href }}"></div>
+            data-branch="{{ branch.href }}">
+
+            <form class='form-inline' role='form'>
+                <div class='filters col-lg-11 col-md-10'>
+                    <div class='input-group date-from col-lg-1 col-md-3' data-rel='from' >
+                        <input type='text' id='date-from' class='form-control' readonly/>
+                        <span class='input-group-addon'>
+                            <i class='icon-calendar'></i>
+                        </span>
+                    </div>
+
+                    <div class='input-group date-to col-lg-1 col-md-3' data-rel='to'>
+                        <input type='text' class='form-control' readonly/>
+                        <span class='input-group-addon'>
+                            <i class='icon-calendar'></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class='col-lg-1 col-md-2'>
+                    <button class='btn btn-default update-filters'>Update</button>
+                </div>
+            </form>
+        </div>
 
         <hr />
 
