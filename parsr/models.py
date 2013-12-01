@@ -648,7 +648,7 @@ class Revision(models.Model):
         return self.identifier == identifier
 
     def modified_files(self):
-        return self.file_set.filter(change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])
+        return self.file_set.filter(change_type__in=Action.readable())
 
     def includes(self, filename):
         package, filename = File.parse_name(filename)

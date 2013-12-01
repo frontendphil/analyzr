@@ -110,6 +110,9 @@ class BaseAnalyzer(object):
         shutil.rmtree(config_path)
         shutil.rmtree(result_path)
 
+        self.files = []
+        self.results = {}
+
     def measure(self, revision, connector):
         config_path, result_path = self.setup_paths(connector)
 
@@ -123,9 +126,6 @@ class BaseAnalyzer(object):
                 self.store_results(results)
 
         results = self.results
-
-        self.files = []
-        self.results = {}
 
         self.cleanup(config_path, result_path)
 
