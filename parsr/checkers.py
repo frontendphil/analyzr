@@ -4,7 +4,6 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from xml.dom import minidom
 from decimal import Decimal
-from tempfile import TemporaryFile
 
 from parsr.metrics import Metric
 

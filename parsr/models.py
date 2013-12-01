@@ -660,9 +660,12 @@ class Revision(models.Model):
     def get_file(self, filename):
         package, filename = File.parse_name(filename)
 
-        return self.file_set.get(name=filename,
-                                 package__endswith=package,
-                                 change_type__in=Action.readable())
+        try:
+            return self.file_set.get(name=filename,
+                                     package__endswith=package,
+                                     change_type__in=Action.readable())
+        except File.DoesNotExist:
+            raise Exception("Could not find file using package: %s and filename: %s" % (package, filename))
 
 
 class RevisionDate(models.Model):
