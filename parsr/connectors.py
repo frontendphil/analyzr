@@ -301,16 +301,23 @@ class SVN(Connector):
         if status == svn_status.added:
             return Action.ADD
 
+    def full_path(self, revision, filename):
+        branch = revision.branch
+        repo = branch.repo
+
+        return "%s/%s/%s" % (repo.url, branch.path, filename)
+
     def get_churn(self, revision, filename):
+        return
         previous = revision.get_previous()
 
         if not previous:
             return
 
         summary = self.repo.diff_summarize(
-            "%s/%s" % (previous.branch.path, filename),
+            self.full_path(previous, filename),
             Revision(revision_kind.number, previous.identifier),
-            "%s/%s" % (revision.branch.path, filename),
+            self.full_path(revision, filename),
             Revision(revision_kind.number, revision.identifier),
             ignore_ancestry=True
             )
@@ -318,7 +325,7 @@ class SVN(Connector):
         added = 0
         removed = 0
 
-        for line in summary.split("\n"):
+        for line in summary:
             if line.startswith("+"):
                 added = added + 1
 

@@ -24,6 +24,8 @@ var Metrics;
                 return false;
             });
 
+            this.addStaticContent();
+
             this.on("file.selected", function(value) {
                 that.handleFileSelect(value);
             });
@@ -55,6 +57,7 @@ var Metrics;
         },
 
         addYAxis: function() {},
+        addXAxis: function() {},
 
         createSelect: function(kind, values, clb) {
             var cls = "filter-" + kind.replace(" ", "-").toLowerCase();
@@ -261,7 +264,7 @@ var Metrics;
                 });
         },
 
-        prepareDiagram: function(data) {
+        prepareDiagram: function(data, options) {
             var that = this;
 
             var color = d3.scale.category10();
@@ -269,7 +272,7 @@ var Metrics;
                 return d.id;
             }));
 
-            this.createAxis(data, color);
+            this.createAxis(data, color, options);
 
             var metric = that.svg.selectAll(".metric")
                 .data(data)
@@ -326,14 +329,38 @@ var Metrics;
 
             that.updateScale(that.svg, data);
 
+            // remove old background
+            this.svg.select(".background").remove();
+
             this.svg.append("rect")
                 .attr("class", "background")
                 .attr("width", this.width)
                 .attr("height", this.height);
         },
 
-        createAxis: function(data, color) {
+        createAxis: function(data, color, options) {
             var that = this;
+
+            this.svg.selectAll(".x.axis").remove();
+
+            var x = d3.time.scale().range([0, this.width]);
+            x.domain([new Date(options.startDate), new Date(options.endDate)]);
+
+            var domain = x.domain();
+
+            var axis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom")
+                .tickValues(d3.time.days(domain[0], domain[1], 1))
+                .tickSize(-this.getInnerHeight());
+
+            this.svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + this.height + ")")
+                .call(axis)
+                .selectAll("text")
+                    .style("text-anchor", "end")
+                    .attr("transform", "rotate(-65)");
 
             $.each(data, function(index) {
                 that.setScale(this, d3.scale.linear().range([that.height, 0]));
@@ -342,6 +369,9 @@ var Metrics;
 
                 var xOffset = index % 2 === 0 ? 0 : (that.width - 5);
                 xOffset = xOffset + (index % 2 === 0 ? -1 : 1) * index * 25;
+
+                // remove old axis
+                that.svg.selectAll(".axis-" + this.id).remove();
 
                 that.svg.append("g")
                     .attr("class", "y axis axis-" + this.id)
@@ -557,18 +587,17 @@ var Metrics;
 
             this.updateScale(this.svg, file.metrics);
 
-            this.scale.x = d3.time.scale().range([0, this.width]);
-            this.scale.x.domain(d3.extent(file.metrics[0].values, function(d) {
-                return d.date;
-            }));
+            this.raise("file.change", file);
+        },
 
-            var domain = this.scale.x.domain();
-
+        addStaticContent: function() {
+            var x = d3.time.scale().range([0, this.width]);
             var axis = d3.svg.axis()
-                .scale(this.scale.x)
+                .scale(x)
                 .orient("bottom")
-                .ticks(d3.time.days(domain[0], domain[1]).length)
                 .tickSize(-this.getInnerHeight());
+
+            this.scale.x = x;
 
             this.svg.select(".x.axis")
                 .call(axis)
@@ -576,33 +605,33 @@ var Metrics;
                     .style("text-anchor", "end")
                     .attr("transform", "rotate(-65)");
 
-            this.raise("file.change", file);
+            this.svg.select(".position").remove();
+            this.svg.append("line")
+                .attr("class", "position")
+                .attr("opacity", 0)
+                .attr("x0", 0)
+                .attr("x1", 0)
+                .attr("y0", 0)
+                .attr("y1", this.height)
+                .style("stroke", "#000");
         },
 
         handleData: function(svg, response) {
             var that = this;
 
             this.files = this.parse(response.data);
-            var metrics = [];
 
             this.addFilters(this.files, response.info);
 
-            if(this.files.length > 0) {
-                metrics = this.files[0].metrics;
+            if(this.files.length === 0) {
+                return;
             }
 
-            this.svg.append("line")
-                .attr("class", "position")
-                .attr("opacity", 0.2)
-                .attr("x0", 0)
-                .attr("x1", 0)
-                .attr("y0", 0)
-                .attr("y1", this.height)
-                .style("stroke", "#000");
+            var metrics = this.files[0].metrics;
 
-            this.prepareDiagram(metrics);
+            this.prepareDiagram(metrics, response.info.options);
 
-            this.svg.select(".background")
+            this.svg.selectAll(".background")
                 .on("mouseenter", function() {
                     that.handleMouseEnter();
                 })

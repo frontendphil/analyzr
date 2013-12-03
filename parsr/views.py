@@ -224,15 +224,6 @@ def get_branch(branch_id):
     return get_object_or_404(Branch, pk=branch_id)
 
 
-def test_mail(request):
-    try:
-        raise Exception("foo")
-    except:
-        tb = "".join(traceback.format_exc())
-
-        send_mail(tb)
-
-
 @ajax_request
 @require_POST
 def analyze(request, branch_id):

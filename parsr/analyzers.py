@@ -38,7 +38,13 @@ class Analyzer(object):
 
         return Analyzer.analyzers[mimetype]
 
+    def cleanup(self):
+        for mimetype, analyzer in self.analyzers.iteritems():
+            analyzer.clear()
+
     def measure(self, revision):
+        self.cleanup()
+
         for f in revision.modified_files():
             analyzer = self.get_specific_analyzer(f.mimetype)
 
@@ -110,6 +116,9 @@ class BaseAnalyzer(object):
         shutil.rmtree(config_path)
         shutil.rmtree(result_path)
 
+        self.clear()
+
+    def clear(self):
         self.files = []
         self.results = {}
 
