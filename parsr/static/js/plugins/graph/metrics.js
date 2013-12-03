@@ -31,10 +31,58 @@ var Metrics;
             });
         },
 
+        getTickValues: function(start, end) {
+            var span = start.to(end);
+
+            if(span.years > 0) {
+                return d3.time.months(start, end, span.years);
+            }
+
+            if(span.months > 0) {
+                return d3.time.weeks(start, end, span.months);
+            }
+
+            if(span.weeks > 0) {
+                return d3.time.days(start, end, span.weeks);
+            }
+
+            if(span.days > 0) {
+                return d3.time.hours(start, end, Math.floor(span.hours / 2));
+            }
+
+            if(span.hours > 0) {
+                return d3.time.minutes(start, end, span.hours);
+            }
+
+            return d3.time.minutes(start, end, 1);
+        },
+
+        updateXScale: function(svg, values) {
+            var x = d3.time.scale().range([0, this.width]);
+            x.domain(d3.extent(values, function(d) {
+                return d.date;
+            }));
+
+            this.scale.x = x;
+
+            var domain = x.domain();
+
+            var axis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom")
+                .tickValues(this.getTickValues(domain[0], domain[1]))
+                .tickSize(-this.getInnerHeight());
+
+            svg.select(".x.axis")
+                .call(axis);
+        },
+
         updateScale: function(svg, metrics) {
             var that = this;
 
             var first = true;
+
+            this.updateXScale(svg, metrics[0].values);
 
             $.each(metrics, function(index) {
                 var y = that.setScale(this, d3.scale.linear().range([that.height, 0]));
@@ -357,10 +405,7 @@ var Metrics;
             this.svg.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + this.height + ")")
-                .call(axis)
-                .selectAll("text")
-                    .style("text-anchor", "end")
-                    .attr("transform", "rotate(-65)");
+                .call(axis);
 
             $.each(data, function(index) {
                 that.setScale(this, d3.scale.linear().range([that.height, 0]));
@@ -640,6 +685,8 @@ var Metrics;
                 });
 
             this.handleMouseLeave();
+
+            this.raise("file.selected", this.files[0].name);
         }
     });
 }());
