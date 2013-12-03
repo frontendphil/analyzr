@@ -40,4 +40,6 @@ urlpatterns = patterns('parsr.views',
 
     url(r"^create$", "create"),
     url(r"^create/save$", "save"),
+
+    url(r"^mail$", "test_mail"),
 )

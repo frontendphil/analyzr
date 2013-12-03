@@ -19,6 +19,7 @@ from annoying.functions import get_object_or_None
 
 from parsr.models import Repo, Author, Branch
 from parsr.forms import RepoForm
+from parsr.utils import send_mail
 
 
 def get_branch_and_author(branch_id, author_id):
@@ -214,12 +215,22 @@ def track_action(branch, action, abort):
         error = highlight(tb, lexer, formatter)
 
         abort(error)
+        send_mail(tb)
 
     return { "status": "ok" }
 
 
 def get_branch(branch_id):
     return get_object_or_404(Branch, pk=branch_id)
+
+
+def test_mail(request):
+    try:
+        raise Exception("foo")
+    except:
+        tb = "".join(traceback.format_exc())
+
+        send_mail(tb)
 
 
 @ajax_request
