@@ -16,7 +16,19 @@ var Graph;
             this.svg = this.prepareSVG();
 
             this._super(base, target);
+
+            var that = this;
+
+            this.filter = new Filter(this.dom, function() {
+                that.setup(that.url + "?" + this.toQueryString(), that.branch);
+            });
+
+            this.filter.on("file.selected", function(value) {
+                that.handleFileSelect(value);
+            });
         },
+
+        handleFileSelect: function() {},
 
         createMargins: function(margins) {
             return {
@@ -25,6 +37,16 @@ var Graph;
                 bottom: margins.bottom || 0,
                 right: margins.right || 0
             };
+        },
+
+        updateFilters: function(files, info) {
+            this.filter.update({
+                files: files,
+                languages: info.languages,
+                langauge: info.options.language,
+                startDate: info.options.startDate || info.options.minDate,
+                endDate: info.options.endDate || info.options.maxDate
+            });
         },
 
         getInnerWidth: function() {

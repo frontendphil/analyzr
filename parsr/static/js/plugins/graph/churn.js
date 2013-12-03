@@ -62,10 +62,4 @@ var CodeChurn;
 
     });
 
-    CodeChurn.auto = function(target, attrs) {
-        $(target || ".churn").each(function() {
-            new CodeChurn(this, attrs);
-        });
-    };
-
 }());

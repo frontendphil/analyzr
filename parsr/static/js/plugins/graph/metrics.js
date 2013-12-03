@@ -6,29 +6,10 @@ var Metrics;
 
         init: function(target, attrs) {
             this.scales = {};
-            this.params = {};
 
             this._super("metrics", target, attrs);
 
-            var that = this;
-
-            this.dom.find(".update-filters").click(function() {
-                var params = [];
-
-                $.each(that.params, function(key, value) {
-                    params.push(key + "=" + value);
-                });
-
-                that.setup(that.url + "?" + params.join("&"), that.branch);
-
-                return false;
-            });
-
             this.addStaticContent();
-
-            this.on("file.selected", function(value) {
-                that.handleFileSelect(value);
-            });
         },
 
         getTickValues: function(start, end) {
@@ -106,117 +87,6 @@ var Metrics;
 
         addYAxis: function() {},
         addXAxis: function() {},
-
-        createSelect: function(kind, values, clb) {
-            var cls = "filter-" + kind.replace(" ", "-").toLowerCase();
-
-            var container = this.dom.find("." + cls);
-            var select = container.find("select");
-
-            if(container.length === 0) {
-                container = $("<div class='input-group col-lg-1 col-md-3 " + cls + "' />");
-                select = $(
-                    "<select class='form-control'>" +
-                        "<option value=''>" + kind.capitalize() + "</option>" +
-                        "<option value=''>----</option>" +
-                        "<option value='all'>All</option>" +
-                    "</select>"
-                );
-
-                container.append(select);
-            }
-
-            select.find("option").each(function() {
-                var option = $(this);
-                var value = option.attr("value");
-
-                if(value && value !== "all") {
-                    option.remove();
-                }
-            });
-
-            $.each(values, function() {
-                var item = clb(this);
-
-                if(!item) {
-                    return;
-                }
-
-                select.append(
-                    "<option value='" + item.value + "'>" +
-                        item.text +
-                    "</option>"
-                );
-            });
-
-            container.val = function() {
-                select.val.apply(select, arguments);
-            };
-
-            container.change = function() {
-                select.change.apply(select, arguments);
-            };
-
-            return container;
-        },
-
-        createFileSelector: function(files) {
-            var select = this.createSelect("file", files, function(file) {
-                var deleted = "";
-
-                if(file.deleted) {
-                    deleted = " - DELETED";
-                }
-
-                return {
-                    value: file.name,
-                    text: file.name + " (" + file.count + ")" + deleted
-                };
-            });
-
-            if(files.length === 0) {
-                select.remove();
-
-                return;
-            }
-
-            var that = this;
-
-            select.change(function() {
-                that.raise("file.selected", this.value);
-            });
-
-            return select;
-        },
-
-        createLanguageSelector: function(languages, value) {
-            var select = this.createSelect("language", languages, function(language) {
-                return {
-                    value: language.toString(),
-                    text: language.toString()
-                };
-            });
-
-            if(value) {
-                select.val(value);
-            }
-
-            var that = this;
-
-            select.change(function() {
-                if(!this.value) {
-                    return;
-                }
-
-                that.changeParam("language", this.value);
-            });
-
-            return select;
-        },
-
-        changeParam: function(key, value) {
-            this.params[key] = value;
-        },
 
         parse: function(data) {
             return d3.keys(data)
@@ -560,55 +430,6 @@ var Metrics;
             });
         },
 
-        formatDate: function(date) {
-            return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getUTCFullYear();
-        },
-
-        createDatePicker: function(info) {
-            var that = this;
-            var options = info.options;
-
-            var createPicker = function(element, value, clb) {
-                var date = that.formatDate(new Date(value));
-
-                element.find("input").val(date);
-
-                var button = element.find(".input-group-addon");
-                button.data("date", date);
-                button.datepicker({
-                    format: "dd/mm/yyyy",
-                    viewMode: "years"
-                });
-                button.on("changeDate", function(event) {
-                    if(event.viewMode !== "days") {
-                        return;
-                    }
-
-                    element.find("input").val(that.formatDate(event.date));
-
-                    clb(event.date);
-                });
-
-                that.changeParam(element.data("rel"), date);
-            };
-
-            createPicker($(".date-from"), options.startDate || options.minDate, function(date) {
-                that.changeParam("from", date.toISOString());
-            });
-            createPicker($(".date-to"), options.endDate || options.maxDate, function(date) {
-                that.changeParam("to", date.toISOString());
-            });
-        },
-
-        addFilters: function(files, info) {
-            this.createDatePicker(info);
-
-            var fileSelector = this.createFileSelector(files);
-            var languageSelector = this.createLanguageSelector(info.languages, info.options.language);
-
-            this.dom.find(".filters").append(languageSelector, fileSelector);
-        },
-
         getFile: function(name) {
             var result;
 
@@ -631,8 +452,6 @@ var Metrics;
             var file = this.getFile(value);
 
             this.updateScale(this.svg, file.metrics);
-
-            this.raise("file.change", file);
         },
 
         addStaticContent: function() {
@@ -666,7 +485,7 @@ var Metrics;
 
             this.files = this.parse(response.data);
 
-            this.addFilters(this.files, response.info);
+            this.updateFilters(this.files, response.info);
 
             if(this.files.length === 0) {
                 return;
@@ -685,8 +504,6 @@ var Metrics;
                 });
 
             this.handleMouseLeave();
-
-            this.raise("file.selected", this.files[0].name);
         }
     });
 }());
