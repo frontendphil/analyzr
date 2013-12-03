@@ -665,7 +665,13 @@ class Revision(models.Model):
                                      package__endswith=package,
                                      change_type__in=Action.readable())
         except File.DoesNotExist:
-            raise Exception("Could not find file using package: %s and filename: %s" % (package, filename))
+            message = "Could not find file using package: %s and filename: %s.\nRevision: %s" % (
+                package,
+                filename,
+                self
+            )
+
+            raise Exception(message)
 
 
 class RevisionDate(models.Model):
