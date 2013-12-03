@@ -299,6 +299,11 @@ class JHawk(Checkstyle):
 
 class ComplexityReport(Checker):
 
+    def __init__(self, config_path, result_path):
+        super(ComplexityReport, self).__init__(config_path, result_path)
+
+        self.files = []
+
     def __unicode__(self):
         return "Complexity Report JavaScript Checker"
 
