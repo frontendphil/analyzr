@@ -35,7 +35,7 @@
 
     {% if branch.measured %}
         <div
-            class='metrics'
+            class='metrics centered'
             data-author="{{ author.href }}"
             data-branch="{{ branch.href }}">
 
@@ -45,7 +45,7 @@
         <hr />
 
         <div
-            class='churn'
+            class='churn centered'
             data-author="{{ author.href }}"
             data-branch="{{ branch.href }}">
 
@@ -56,9 +56,12 @@
     {% endif %}
 
     <div
-        class="commits"
+        class="commits centered"
         data-author="{{ author.href }}"
-        data-branch="{{ branch.href }}"></div>
+        data-branch="{{ branch.href }}">
+
+        <h3>Commit Activity</h3>
+    </div>
 
     <hr />
 

@@ -190,8 +190,8 @@ def metrics(request, branch_id, author_id):
     start = request.GET.get("from")
     end = request.GET.get("to")
 
-    start = parser.parse(start) if start else None
-    end = parser.parse(end) if end else None
+    start = parser.parse(start, tzinfos=[branch.repo.timezone]) if start else None
+    end = parser.parse(end, tzinfos=[branch.repo.timezone]) if end else None
 
     return branch.metrics(author, language=language, start=start, end=end)
 

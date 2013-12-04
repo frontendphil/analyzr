@@ -5,8 +5,6 @@ from jinja2 import Environment, FileSystemLoader
 from xml.dom import minidom
 from decimal import Decimal
 
-from parsr.metrics import Metric
-
 from analyzr.settings import CONFIG_PATH, PROJECT_PATH
 
 
@@ -32,6 +30,7 @@ class CheckerException(Exception):
 
     def __repr__(self):
         return self.__unicode__()
+
 
 class Checker(object):
 
@@ -72,15 +71,13 @@ class Checker(object):
         return {}
 
 
-class Checkstyle(Checker):
+class JHawk(Checker):
 
     def __init__(self, config_path, result_path):
-        self.name = "checkstyle"
+        super(JHawk, self).__init__(config_path, result_path)
 
-        super(Checkstyle, self).__init__(config_path, result_path)
-
-    def __unicode__(self):
-        return "Checkstyle Checker"
+        self.name = "jhawk"
+        self.files = []
 
     def configure(self, files, revision, connector):
         self.measures = {}
@@ -95,7 +92,7 @@ class Checkstyle(Checker):
             "project_path": PROJECT_PATH,
             "base_path": connector.get_repo_path(),
             "target": result_file,
-            "files": files
+            "filepattern": "|".join([f.full_path() for f in files])
         }
 
         with open(filename, "wb") as f:
@@ -103,95 +100,10 @@ class Checkstyle(Checker):
 
         self.configuration = filename
         self.results = result_file
-
-        return filename, result_file
-
-    def run(self):
-        if not self.configuration:
-            return
-
-        cmd = ["ant", "-f", self.configuration, "measure"]
-        self.execute(cmd)
-
-        # Don't allow multiple runs with the same configuration
-        self.configuration = None
-
-    def parse_violation(self, filename, violation):
-        source = violation.attributes["source"].value
-
-        kind = source.replace("com.puppycrawl.tools.checkstyle.checks.metrics.", "")\
-                     .replace("Check", "")
-
-        metric = Metric.get(kind)
-
-        if not metric:
-            return
-
-        value = metric.parse(violation)
-
-        if not filename in self.measures:
-            self.measures[filename] = []
-
-        self.measures[filename].append({
-            "kind": kind,
-            "value": value
-        })
-
-    def aggregate_values(self, filename):
-        if not filename in self.measures:
-            return
-
-        metrics = {}
-
-        for measure in self.measures[filename]:
-            if not measure["kind"] in metrics:
-                metrics["kind"] = []
-
-            metrics["kind"].append(measure["value"])
-
-        self.measures[filename] = []
-
-        for metric, values in metrics.iteritems():
-            self.measures[filename].append({
-                "kind": metric,
-                "value": sum(values) / len(values)
-            })
-
-    def parse(self, connector):
-        if not self.results:
-            return
-
-        xml_doc = minidom.parse(self.results)
-        files = xml_doc.getElementsByTagName("file")
+        self.revision = revision
 
         for f in files:
-            # replace leading / as files are internally stored without it.
-            name = f.attributes["name"].value.replace(connector.get_repo_path(), "")\
-                                             .replace("/", "", 1)
-
-            violations = f.getElementsByTagName("error")
-
-            for violation in violations:
-                self.parse_violation(name, violation)
-
-            self.aggregate_values(name)
-
-        # Parse results only once
-        self.results = None
-
-        return self.measures
-
-class JHawk(Checkstyle):
-
-    def __init__(self, config_path, result_path):
-        super(JHawk, self).__init__(config_path, result_path)
-
-        self.name = "jhawk"
-
-    def configure(self, files, revision, connector):
-        super(JHawk, self).configure(files, revision, connector)
-
-        self.revision = revision
+            self.files.append(f.full_path())
 
     def run(self):
         if not self.configuration:
@@ -207,6 +119,8 @@ class JHawk(Checkstyle):
 
         # Don't allow multiple runs with the same configuration
         self.configuration = None
+
+        raise Exception("foo")
 
         return True
 
@@ -237,6 +151,13 @@ class JHawk(Checkstyle):
             }
         })
 
+    def includes(self, filename):
+        for f in self.files:
+            if f.endswith(filename):
+                return True
+
+        return False
+
     def parse(self, connector):
         if not self.results:
             return
@@ -261,7 +182,7 @@ class JHawk(Checkstyle):
 
                 filename = "%s/%s.java" % (path, class_name)
 
-                if not self.revision.includes(filename):
+                if not self.includes(filename):
                     # JHawk analyzes _everything_ therefore we must
                     # filter files, which are not present in the current revision
                     continue

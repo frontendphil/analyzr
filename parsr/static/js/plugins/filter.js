@@ -154,7 +154,7 @@ var Filter;
             var select = container.find("select");
 
             if(container.length === 0) {
-                container = $("<div class='input-group col-lg-1 col-md-3 " + cls + "' />");
+                container = $("<div class='input-group col-lg-3 col-md-3 " + cls + "' />");
                 select = $(
                     "<select class='form-control'>" +
                         "<option value=''>" + kind.capitalize() + "</option>" +

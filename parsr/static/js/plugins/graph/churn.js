@@ -37,6 +37,8 @@ var CodeChurn;
         handleData: function(svg, response) {
             var data = response.data;
 
+            // this.updateFilters()
+
             data.forEach(function(d) {
                 d.date = new Date(d.date);
             });

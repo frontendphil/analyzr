@@ -300,7 +300,7 @@ class Branch(models.Model):
         return self.revision_set.get(previous=None)
 
     def last_measured_revision(self):
-        revisions = self.revision_set.filter(measured=True).order_by("-revision_date__date")
+        revisions = self.revision_set.filter(measured=True).order_by("-date")
 
         if revisions.count() == 0:
             return None
@@ -341,27 +341,28 @@ class Branch(models.Model):
         if not self.analyzed or self.revision_set.count() == 0:
             return "n/a"
 
-        start = self.revision_set.order_by("revision_date__date")[0:1][0]
-        end = self.revision_set.order_by("-revision_date__date")[0:1][0]
+        start = self.revision_set.order_by("date")[0:1][0]
+        end = self.revision_set.order_by("-date")[0:1][0]
 
-        return end.date() - start.date()
+        return end.date - start.date
 
     def punchcard(self, author=None):
-        revisions = Revision.objects.filter(branch=self)
+        filters = {
+            "branch": self
+        }
 
         if author:
-            revisions = revisions.filter(author=author)
+            filters["author"] = author
 
         response = {}
 
-        result = revisions.values("revision_date__weekday", "revision_date__hour")\
-                          .annotate(count=Count("revision_date__hour"))
+        result = Revision.objects.filter(**filters).values("weekday", "hour").annotate(count=Count("hour"))
 
         hour_max = 0
 
         for revision in result:
-            weekday = revision["revision_date__weekday"]
-            hour = revision["revision_date__hour"]
+            weekday = revision["weekday"]
+            hour = revision["hour"]
             count = revision["count"]
 
             hour_max = max(count, hour_max)
@@ -377,14 +378,18 @@ class Branch(models.Model):
 
     def file_statistics(self, author=None):
         result = []
-
-        files = File.objects.filter(revision__branch=self)
+        filters = {
+            "revision__branch": self
+        }
 
         if author:
             # Author specific stats need to consider all files and changes to them
             # but not deletes
-            files = files.filter(mimetype__in=Analyzer.parseable_types())
-            files = files.filter(revision__author=author, change_type__in=[Action.ADD, Action.MODIFY, Action.MOVE])
+            filters["mimetype__in"] = Analyzer.parseable_types()
+            filters["revision__author"] = author
+            filters["change_type__in"] = [Action.ADD, Action.MODIFY, Action.MOVE]
+
+            files = File.objects.filter(**filters)
 
             count = files.values("mimetype").count()
 
@@ -398,9 +403,9 @@ class Branch(models.Model):
 
         # raw query processing seems to work a little different. that is why we need to
         # manually put the strings into quotes.
-        files = files.filter(mimetype__in=["'%s'" % t for t in Analyzer.parseable_types()])
+        filters["mimetype__in"] = ["'%s'" % t for t in Analyzer.parseable_types()]
 
-        query = sql.newest_files(str(files.query))
+        query = sql.newest_files(str(File.objects.filter(**filters).query))
         count = File.objects.raw(sql.count_entries(query))[0].count
 
         # Order by
@@ -413,26 +418,27 @@ class Branch(models.Model):
         return result
 
     def commit_history(self, author=None):
-        revisions = Revision.objects.filter(branch=self)
+        filters = {
+            "branch": self
+        }
 
         if author:
-            revisions = revisions.filter(author=author)
+            filters["author"] = author
 
         response = {
             "data": {}
         }
 
-        result = revisions.values("revision_date__year", "revision_date__month", "revision_date__day")\
-                          .annotate(count=Count("revision_date__day"))
+        result = Revision.objects.filter(**filters).values("year", "month", "day").annotate(count=Count("day"))
 
         count_max = 0
 
         for revision in result:
             count_max = max(revision["count"], count_max)
 
-            year = revision["revision_date__year"]
-            month = revision["revision_date__month"]
-            day = revision["revision_date__day"]
+            year = revision["year"]
+            month = revision["month"]
+            day = revision["day"]
             count = revision["count"]
 
             if not year in response["data"]:
@@ -442,11 +448,11 @@ class Branch(models.Model):
                 response["data"][year][month] = {}
 
             response["data"][year][month][day] = {
-                "commits": count
-                # "files": File.objects.filter(revision__revision_date__day=day,
-                #                              revision__revision_date__month=month,
-                #                              revision__revision_date__year=year,
-                #                              revision__branch=self).count()
+                "commits": count,
+                "files": File.objects.filter(revision__day=day,
+                                             revision__month=month,
+                                             revision__year=year,
+                                             revision__branch=self).count()
             }
 
         response["upper"] = count_max
@@ -462,7 +468,7 @@ class Branch(models.Model):
         return Author.objects.filter(revision__branch=self).distinct().count()
 
     def first_revision(self):
-        revisions = self.revision_set.all().order_by("revision_date__date")
+        revisions = self.revision_set.all().order_by("date")
 
         if revisions.count() == 0:
             return None
@@ -470,10 +476,12 @@ class Branch(models.Model):
         return revisions[0]
 
     def revisions(self, author=None, language=None, start=None, end=None):
-        revisions = Revision.objects.filter(branch=self)
+        filters = {
+            "branch": self
+        }
 
         if author:
-            revisions = revisions.filter(author=author)
+            filters["author"] = author
 
         if language == "all":
             # all is a special value for the language attribute
@@ -481,15 +489,15 @@ class Branch(models.Model):
             language = None
 
         if language:
-            revisions = revisions.filter(file__mimetype=language)
+            filters["file__mimetype"] = language
 
         if start:
-            revisions = revisions.filter(revision_date__date__gte=start)
+            filters["date__gte"] = start
 
         if end:
-            revisions = revisions.filter(revision_date__date__lte=end)
+            filters["date__lte"] = end
 
-        return revisions.order_by("revision_date__date")
+        return Revision.objects.filter(**filters).order_by("date")
 
     def create_revision(self, identifier):
         return Revision.objects.create(
@@ -505,10 +513,10 @@ class Branch(models.Model):
         return [language["mimetype"] for language in languages]
 
     def get_earliest_revision(self):
-        return self.revision_set.order_by("revision_date__date")[0:1][0]
+        return self.revision_set.order_by("date")[0:1][0]
 
     def get_latest_revision(self):
-        return self.revision_set.order_by("-revision_date__date")[0:1][0]
+        return self.revision_set.order_by("-date")[0:1][0]
 
     def metrics_stub(self, language=None, start=None, end=None):
         return {
@@ -519,8 +527,8 @@ class Branch(models.Model):
                     "language": language,
                     "startDate": start.isoformat() if start else None,
                     "endDate": end.isoformat() if end else None,
-                    "minDate": self.get_earliest_revision().date().isoformat(),
-                    "maxDate": self.get_latest_revision().date().isoformat()
+                    "minDate": self.get_earliest_revision().date.isoformat(),
+                    "maxDate": self.get_latest_revision().date.isoformat()
                 }
             },
             "data": {}
@@ -541,14 +549,14 @@ class Branch(models.Model):
             if not files:
                 continue
 
-            result["info"]["dates"].append(revision.date().isoformat())
+            result["info"]["dates"].append(revision.date.isoformat())
 
             for f in files:
                 if not f.full_path() in result["data"]:
                     result["data"][f.full_path()] = []
 
                 result["data"][f.full_path()].append({
-                    "date": revision.date().isoformat(),
+                    "date": revision.date.isoformat(),
                     "deleted": f.change_type == Action.DELETE,
                     "Cyclomatic Complexity": float(f.cyclomatic_complexity),
                     "Halstead Volume": float(f.halstead_volume),
@@ -568,19 +576,16 @@ class Branch(models.Model):
 
         for revision in self.revisions(author):
             files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
-                                .aggregate(
-                                    added=Sum("lines_added"),
-                                    removed=Sum("lines_removed")
-                                )
+                                .aggregate(added=Sum("lines_added"), removed=Sum("lines_removed"))
 
             if not files["added"]:
                 # code churn not measured for this revision
                 continue
 
-            result["info"]["dates"].append(revision.date().isoformat())
+            result["info"]["dates"].append(revision.date.isoformat())
 
             result["data"].append({
-                "date": revision.date().isoformat(),
+                "date": revision.date.isoformat(),
                 "added": files["added"],
                 "removed": files["removed"]
             })
@@ -593,14 +598,22 @@ class Revision(models.Model):
 
     branch = models.ForeignKey("Branch", null=True)
     author = models.ForeignKey("Author", null=True)
-    revision_date = models.ForeignKey("RevisionDate", null=True)
 
     next = models.ForeignKey("Revision", related_name='previous', null=True)
 
     measured = models.BooleanField(default=False)
 
+    date = models.DateTimeField(null=True)
+
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    day = models.IntegerField(null=True)
+    hour = models.IntegerField(null=True)
+    minute = models.IntegerField(null=True)
+    weekday = models.IntegerField(null=True)
+
     def __unicode__(self):
-        return "%s created by %s in branch %s of %s" % (self.identifier, self.author, self.branch, self.branch.repo)
+        return "%s created by %s in %s of %s" % (self.identifier, self.author, self.branch, self.branch.repo)
 
     def add_file(self, filename, action, original=None):
         package, filename = File.parse_name(filename)
@@ -613,7 +626,7 @@ class Revision(models.Model):
         if original:
             original = File.objects\
                            .filter(name=filename, package=package, revision__branch=self.branch)\
-                           .order_by("-revision__revision_date__date")[0:1]
+                           .order_by("-revision__date")[0:1]
 
         File.objects.create(
             revision=self,
@@ -632,11 +645,26 @@ class Revision(models.Model):
 
         self.author = author
 
-    def set_date(self, date):
-        self.revision_date = RevisionDate.from_date(date, self.branch.repo.timezone)
+    def normalize_date(self, date, tzinfo):
+        return datetime(
+            year=date.year,
+            month=date.month,
+            day=date.day,
+            hour=date.hour,
+            minute=date.minute,
+            tzinfo=tzinfo
+        )
 
-    def date(self):
-        return self.revision_date.date
+    def set_date(self, date):
+        date = self.normalize_date(date, self.branch.repo.timezone)
+
+        self.date = date
+        self.year = date.year
+        self.month = date.month
+        self.day = date.day
+        self.weekday = date.weekday()
+        self.hour = date.hour
+        self.minute = date.minute
 
     def get_previous(self):
         if self.previous.all().count() > 0:
@@ -672,49 +700,6 @@ class Revision(models.Model):
             )
 
             raise Exception(message)
-
-
-class RevisionDate(models.Model):
-
-    date = models.DateTimeField()
-
-    year = models.IntegerField()
-    month = models.IntegerField()
-    day = models.IntegerField()
-    hour = models.IntegerField()
-    minute = models.IntegerField()
-
-    weekday = models.IntegerField()
-
-    @classmethod
-    def normalize(cls, date, tzinfo):
-        return datetime(
-            year=date.year,
-            month=date.month,
-            day=date.day,
-            hour=date.hour,
-            minute=date.minute,
-            tzinfo=tzinfo
-        )
-
-    @classmethod
-    def from_date(cls, date, tzinfo):
-        date = cls.normalize(date, tzinfo)
-
-        revision_date, created = cls.objects.get_or_create(
-            date=date,
-            year=date.year,
-            month=date.month,
-            day=date.day,
-            weekday=date.weekday(),
-            hour=date.hour,
-            minute=date.minute
-        )
-
-        return revision_date
-
-    def __unicode__(self):
-        return self.date.strftime("%d/%m/%Y - %H:%M")
 
 
 class File(models.Model):
@@ -773,13 +758,11 @@ class File(models.Model):
             return None
 
         try:
-            return File.objects.filter(name=self.name,
-                                       revision__revision_date__date__lt=self.revision.date())\
-                               .order_by("-revision__revision_date__date")[0]
+            return File.objects.filter(name=self.name, revision__date__lt=self.revision.date)\
+                               .order_by("-revision__date")[0]
         except:
-            files = File.objects.filter(name=self.name,
-                                        revision__revision_date__date__lte=self.revision.date())\
-                                .order_by("-revision__revision_date__date")
+            files = File.objects.filter(name=self.name, revision__date__lte=self.revision.date)\
+                                .order_by("-revision__date")
 
             if files.count() > 1:
                 # multiple edits in one minute. we pick something.
