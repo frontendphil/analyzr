@@ -120,8 +120,6 @@ class JHawk(Checker):
         # Don't allow multiple runs with the same configuration
         self.configuration = None
 
-        raise Exception("foo")
-
         return True
 
     def get_metrics(self, parent):
