@@ -55,7 +55,7 @@ class Checker(object):
         return Decimal("%d" % round(float(value), 2))
 
     def execute(self, cmd):
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
         stdout, stderr = proc.communicate()
 
