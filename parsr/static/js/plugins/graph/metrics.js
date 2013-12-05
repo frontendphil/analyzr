@@ -49,8 +49,6 @@ var Metrics;
                 svg.select(".axis-" + this.id)
                     .call(axis);
             });
-
-            that.createDataPreview(metrics);
         },
 
         addYAxis: function() {},
@@ -203,7 +201,7 @@ var Metrics;
                     return color(d.id);
                 });
 
-            this.on("file.change", function(file) {
+            this.on("file.changed", function(file) {
                 that.svg.selectAll(".line")
                     .data(file.metrics)
                     .transition()
@@ -401,6 +399,9 @@ var Metrics;
             var file = this.getFile(value);
 
             this.updateScale(this.svg, file.metrics);
+            this.createDataPreview(file.metrics);
+
+            this.raise("file.changed", file);
         },
 
         addStaticContent: function() {
@@ -422,9 +423,9 @@ var Metrics;
 
             this.files = this.parse(response.data);
 
-            this.updateFilters(response.info, this.files);
-
             if(this.files.length === 0) {
+                this.updateFilters(response.info, this.files);
+
                 return;
             }
 
@@ -441,6 +442,7 @@ var Metrics;
                 });
 
             this.handleMouseLeave();
+            this.updateFilters(response.info, this.files);
         }
     });
 }());

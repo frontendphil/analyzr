@@ -81,7 +81,7 @@ var Filter;
 
             var that = this;
 
-            button.on("click", function() {
+            button.find("button").click(function() {
                 clb.apply(that);
 
                 return false;
@@ -259,6 +259,11 @@ var Filter;
                 select.hide();
             } else {
                 select.show();
+
+                var value = files[0].name;
+                select.val(value);
+
+                this.raise("file.selected", value);
             }
         }
 
