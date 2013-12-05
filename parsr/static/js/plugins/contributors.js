@@ -73,15 +73,15 @@ var Contributors;
             return i;
         },
 
-        createPages: function(pagination, data, branch) {
-            var back = this.getLookBehind(data.page, LOOK_AROUND);
-            var forward = this.getLookAhead(data.page, data.pages, back < 3 ? LOOK_AROUND + (LOOK_AROUND - back) : LOOK_AROUND);
+        createPages: function(pagination, info, branch) {
+            var back = this.getLookBehind(info.page, LOOK_AROUND);
+            var forward = this.getLookAhead(info.page, info.pages, back < 3 ? LOOK_AROUND + (LOOK_AROUND - back) : LOOK_AROUND);
 
             var i, page, length;
-            for(i = data.page - back, length = data.page + forward; i < length; i = i + 1) {
+            for(i = info.page - back, length = info.page + forward; i < length; i = i + 1) {
                 page = this.createListEntry(i + 1, i + 1);
 
-                if(data.page === i + 1) {
+                if(info.page === i + 1) {
                     page.addClass("disabled");
                 }
 
@@ -91,32 +91,32 @@ var Contributors;
             }
         },
 
-        createPagination: function(data, branch) {
+        createPagination: function(info, branch) {
             var pagination = $("<ul class='pagination' />");
 
             var first = this.createListEntry(0, "<i class='icon-double-angle-left'></i>");
-            var previous = this.createListEntry(data.page - 1, "<i class='icon-angle-left'></i>");
+            var previous = this.createListEntry(info.page - 1, "<i class='icon-angle-left'></i>");
 
-            if(!data.hasPrevious) {
+            if(!info.hasPrevious) {
                 previous.addClass("disabled");
                 first.addClass("disabled");
             }
 
-            this.createClickHandler(previous, data.page - 1);
+            this.createClickHandler(previous, info.page - 1);
 
             pagination.append(first, previous);
 
-            this.createPages(pagination, data, branch);
+            this.createPages(pagination, info, branch);
 
-            var next = this.createListEntry(data.page + 1, "<i class='icon-angle-right'></i>");
-            var last = this.createListEntry(data.pages, "<i class='icon-double-angle-right'></i>");
+            var next = this.createListEntry(info.page + 1, "<i class='icon-angle-right'></i>");
+            var last = this.createListEntry(info.pages, "<i class='icon-double-angle-right'></i>");
 
-            if(!data.hasNext) {
+            if(!info.hasNext) {
                 next.addClass("disabled");
                 last.addClass("disabled");
             }
 
-            this.createClickHandler(next, branch, data.page + 1);
+            this.createClickHandler(next, branch, info.page + 1);
 
             pagination.append(next, last);
 
@@ -127,7 +127,7 @@ var Contributors;
             this.dom.html("");
         },
 
-        createTable: function(data, branch) {
+        createTable: function(authors, info, branch) {
             var table = $(
                 "<table class='table table-hover'>" +
                     "<thead>" +
@@ -145,24 +145,24 @@ var Contributors;
             var body = $("<tbody />");
             table.append(body);
 
-            $.each(data.authors, function(index) {
+            $.each(authors, function(index) {
                 var language = "N/A";
 
-                if(this.primeLanguage) {
-                    language = LANGUAGE_MAPPINGS[this.primeLanguage.mimetype];
+                if(this.rep.primeLanguage) {
+                    language = LANGUAGE_MAPPINGS[this.rep.primeLanguage.mimetype];
                 }
 
                 var entry = $(
                     "<tr>" +
-                        "<td class='rank'>" + ((data.perPage * (data.page - 1)) + index + 1) + "</td>" +
+                        "<td class='rank'>" + ((info.perPage * (info.page - 1)) + index + 1) + "</td>" +
                         "<td class='lang'>" +
                             (language || "") +
                         "</td>" +
-                        "<td class='avatar' style='background-image:url(" + this.icon + ")'></td>" +
+                        "<td class='avatar' style='background-image:url(" + this.rep.icon + ")'></td>" +
                         "<td>" +
-                            "<a href='" + branch + this.href + "'>" + this.name + "</a>" +
+                            "<a href='" + branch + this.rel + "/" + this.rep.id + "'>" + this.rep.name + "</a>" +
                         "</td>" +
-                        "<td>" + this.count + "</td>" +
+                        "<td>" + this.rep.count + "</td>" +
                     "</tr>"
                 );
 
@@ -172,21 +172,14 @@ var Contributors;
             return table;
         },
 
-        handleData: function(data, branch) {
+        handleData: function(response, branch) {
             this.clear();
 
-            var table = this.createTable(data, branch);
-            var pagination = this.createPagination(data, branch);
+            var table = this.createTable(response.data, response.info, branch);
+            var pagination = this.createPagination(response.info, branch);
 
             this.dom.append(table, pagination);
         }
 
     });
-
-    Contributors.auto = function(target) {
-        $(target || ".contributors").each(function() {
-            new Contributors(this);
-        });
-    };
-
 }());

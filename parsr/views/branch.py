@@ -149,27 +149,6 @@ def churn(request, branch_id, author_id):
 def contributors(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
-    PER_PAGE = 10
-
-    paginator = Paginator(branch.authors(), PER_PAGE)
     page = request.GET.get("page")
 
-    try:
-        authors = paginator.page(page)
-    except PageNotAnInteger:
-        page = 1
-        authors = paginator.page(1)
-    except EmptyPage:
-        page = paginator.num_pages
-        authors = paginator.page(paginator.num_pages)
-
-    response = {
-        "hasNext": not page == paginator.num_pages,
-        "hasPrevious": not page == 1,
-        "page": int(page),
-        "pages": paginator.num_pages,
-        "perPage": PER_PAGE,
-        "authors": [author.json(branch) for author in authors]
-    }
-
-    return response
+    return branch.contributors(page=page)

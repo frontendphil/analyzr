@@ -15,6 +15,8 @@ CHECKOUT_PATH = '%s/repos' % PROJECT_PATH
 RESULT_PATH = '%s/results' % PROJECT_PATH
 CONFIG_PATH = '%s/templates/config' % PROJECT_PATH
 
+CONTRIBUTORS_PER_PAGE = 10
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.

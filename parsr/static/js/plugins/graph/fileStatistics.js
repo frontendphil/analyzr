@@ -97,11 +97,4 @@ var FileStatistics;
         },
 
     });
-
-    FileStatistics.auto = function(target) {
-        $(target || ".statistics").each(function() {
-            new FileStatistics(this);
-        });
-    };
-
 }());

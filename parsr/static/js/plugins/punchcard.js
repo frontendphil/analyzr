@@ -18,9 +18,11 @@ var Punchcard;
             this._super("punchcard", target);
         },
 
-        handleData: function(data) {
+        handleData: function(response) {
             var table = $("<table class='table' />");
             var that = this;
+            var data = response.data;
+            var info = response.info;
 
             this.createHeader(table);
 
@@ -38,7 +40,7 @@ var Punchcard;
                     var hourContainer = $("<td class='hour' />");
 
                     if(data[day]) {
-                        hourContainer.append(that.createCircle(data[day][hour], data.max));
+                        hourContainer.append(that.createCircle(data[day][hour], info.max));
                     }
 
                     dayContainer.append(hourContainer);

@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Count, Sum
 from django.db.models.signals import post_save, pre_save, pre_delete
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.dispatch import receiver
 
 from timezone_field import TimeZoneField
@@ -17,7 +18,7 @@ from parsr.connectors import Connector, Action
 from parsr.analyzers import Analyzer
 from parsr import sql
 
-from analyzr.settings import TIME_ZONE
+from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE
 
 
 class Repo(models.Model):
@@ -119,7 +120,9 @@ class Repo(models.Model):
     def json(self):
         return {
             "href": self.href(),
+            "rel": "repo",
             "rep": {
+                "id": self.id,
                 "name": self.url,
                 "kind": self.kind,
                 "busy": self.busy(),
@@ -222,7 +225,9 @@ class Branch(models.Model):
 
         return {
             "href": self.href(),
+            "rel": "branch",
             "rep": {
+                "id": self.id,
                 "name": self.name,
                 "path": self.path,
                 "analyze": {
@@ -345,6 +350,30 @@ class Branch(models.Model):
         end = self.revision_set.order_by("-date")[0:1][0]
 
         return end.date - start.date
+
+    def contributors(self, page=None):
+        response = self.response_stub()
+
+        paginator = Paginator(self.authors(), CONTRIBUTORS_PER_PAGE)
+
+        try:
+            authors = paginator.page(page)
+        except PageNotAnInteger:
+            page = 1
+            authors = paginator.page(1)
+        except EmptyPage:
+            page = paginator.num_pages
+            authors = paginator.page(paginator.num_pages)
+
+        response["data"] = [author.json(self) for author in authors]
+
+        response["info"]["hasNext"] = not page == paginator.num_pages
+        response["info"]["hasPrevious"] = not page == 1
+        response["info"]["page"] = int(page)
+        response["info"]["pages"] = paginator.num_pages
+        response["info"]["perPage"] = CONTRIBUTORS_PER_PAGE
+
+        return response
 
     def punchcard(self, author=None, language=None, start=None, end=None):
         filters = {
@@ -859,8 +888,12 @@ class Author(models.Model):
     def json(self, branch):
         return {
             "href": self.href(),
-            "name": str(self),
-            "icon": self.get_icon(),
-            "count": self.revision_count(branch),
-            "primeLanguage": self.get_prime_language(branch)
+            "rel": "author",
+            "rep": {
+                "id": self.id,
+                "name": str(self),
+                "icon": self.get_icon(),
+                "count": self.revision_count(branch),
+                "primeLanguage": self.get_prime_language(branch)
+            }
         }
