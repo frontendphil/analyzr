@@ -14,6 +14,7 @@ var Graph;
 
             this.dom = $(target);
             this.svg = this.prepareSVG();
+            this.addAxis(this.svg);
 
             this._super(base, target);
 
@@ -30,6 +31,75 @@ var Graph;
 
         handleFileSelect: function() {},
 
+        getTickValues: function(start, end) {
+            var span = start.to(end);
+
+            if(span.years > 0) {
+                return d3.time.months(start, end, span.years);
+            }
+
+            if(span.months > 0) {
+                return d3.time.weeks(start, end, span.months);
+            }
+
+            if(span.weeks > 0) {
+                return d3.time.days(start, end, span.weeks);
+            }
+
+            if(span.days > 0) {
+                return d3.time.hours(start, end, Math.floor(span.hours / 2));
+            }
+
+            if(span.hours > 0) {
+                return d3.time.minutes(start, end, span.hours);
+            }
+
+            return d3.time.minutes(start, end, 1);
+        },
+
+        updateXScale: function(svg, info) {
+            var start = info.options.startDate || info.options.minDate;
+            var end = info.options.endDate || info.options.maxDate;
+
+            var x = d3.time.scale().range([0, this.width]);
+            x.domain([start, end]);
+
+            this.scale.x = x;
+
+            var axis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom")
+                .tickValues(this.getTickValues(start, end))
+                .tickSize(-this.getInnerHeight());
+
+            this.axis.x = axis;
+
+            svg.select(".x.axis")
+                .call(axis);
+        },
+
+        updateYScale: function(svg, info) {
+            var y = d3.scale.linear().range([this.height, 0]);
+            y.domain([info.options.lowerBound, info.options.upperBound]);
+
+            this.scale.y = y;
+
+            var axis = d3.svg.axis()
+                .scale(y)
+                .orient("left")
+                .tickSize(-this.getInnerWidth());
+
+            this.axis.y = axis;
+
+            svg.select(".y.axis")
+                .call(axis);
+        },
+
+        updateScales: function(svg, info) {
+            this.updateXScale(svg, info);
+            this.updateYScale(svg, info);
+        },
+
         createMargins: function(margins) {
             return {
                 top: margins.top || 0,
@@ -39,7 +109,7 @@ var Graph;
             };
         },
 
-        updateFilters: function(files, info) {
+        updateFilters: function(info, files) {
             this.filter.update({
                 files: files,
                 languages: info.languages,
@@ -129,8 +199,24 @@ var Graph;
             return d.value;
         },
 
-        prepareData: function(response) {
-            response.info.dates = response.info.dates.map(function(date) {
+        parseInfos: function(info) {
+            if(info.options.startDate) {
+                info.options.startDate = new Date(info.options.startDate);
+            }
+
+            if(info.options.endDate) {
+                info.options.endDate = new Date(info.options.endDate);
+            }
+
+            if(info.options.minDate) {
+                info.options.minDate = new Date(info.options.minDate);
+            }
+
+            if(info.options.maxDate) {
+                info.options.maxDate = new Date(info.options.maxDate);
+            }
+
+            info.dates = info.dates.map(function(date) {
                 return new Date(date);
             });
         },
@@ -144,10 +230,9 @@ var Graph;
 
             d3.json(url, function(response) {
                 that.unmask();
-                that.prepareData(response);
+                that.parseInfos(response.info);
                 that.createDomain(response, that.getMinValue, that.getMaxValue);
                 that.handleData(that.svg, response);
-                that.addAxis(that.svg);
             });
         }
 

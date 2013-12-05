@@ -12,58 +12,12 @@ var Metrics;
             this.addStaticContent();
         },
 
-        getTickValues: function(start, end) {
-            var span = start.to(end);
-
-            if(span.years > 0) {
-                return d3.time.months(start, end, span.years);
-            }
-
-            if(span.months > 0) {
-                return d3.time.weeks(start, end, span.months);
-            }
-
-            if(span.weeks > 0) {
-                return d3.time.days(start, end, span.weeks);
-            }
-
-            if(span.days > 0) {
-                return d3.time.hours(start, end, Math.floor(span.hours / 2));
-            }
-
-            if(span.hours > 0) {
-                return d3.time.minutes(start, end, span.hours);
-            }
-
-            return d3.time.minutes(start, end, 1);
-        },
-
-        updateXScale: function(svg, values) {
-            var x = d3.time.scale().range([0, this.width]);
-            x.domain(d3.extent(values, function(d) {
-                return d.date;
-            }));
-
-            this.scale.x = x;
-
-            var domain = x.domain();
-
-            var axis = d3.svg.axis()
-                .scale(x)
-                .orient("bottom")
-                .tickValues(this.getTickValues(domain[0], domain[1]))
-                .tickSize(-this.getInnerHeight());
-
-            svg.select(".x.axis")
-                .call(axis);
-        },
-
-        updateScale: function(svg, metrics) {
+        updateScale: function(svg, metrics, info) {
             var that = this;
 
             var first = true;
 
-            this.updateXScale(svg, metrics[0].values);
+            this.updateXScale(svg, info);
 
             $.each(metrics, function(index) {
                 var y = that.setScale(this, d3.scale.linear().range([that.height, 0]));
@@ -182,7 +136,7 @@ var Metrics;
                 });
         },
 
-        prepareDiagram: function(data, options) {
+        prepareDiagram: function(data, info) {
             var that = this;
 
             var color = d3.scale.category10();
@@ -190,7 +144,7 @@ var Metrics;
                 return d.id;
             }));
 
-            this.createAxis(data, color, options);
+            this.createAxis(data, info, color);
 
             var metric = that.svg.selectAll(".metric")
                 .data(data)
@@ -245,7 +199,7 @@ var Metrics;
                     });
             });
 
-            that.updateScale(that.svg, data);
+            that.updateScale(that.svg, data, info);
 
             // remove old background
             this.svg.select(".background").remove();
@@ -256,13 +210,13 @@ var Metrics;
                 .attr("height", this.height);
         },
 
-        createAxis: function(data, color, options) {
+        createAxis: function(data, info, color) {
             var that = this;
 
             this.svg.selectAll(".x.axis").remove();
 
             var x = d3.time.scale().range([0, this.width]);
-            x.domain([new Date(options.startDate), new Date(options.endDate)]);
+            x.domain([new Date(info.options.startDate), new Date(info.options.endDate)]);
 
             var domain = x.domain();
 
@@ -485,7 +439,7 @@ var Metrics;
 
             this.files = this.parse(response.data);
 
-            this.updateFilters(this.files, response.info);
+            this.updateFilters(response.info, this.files);
 
             if(this.files.length === 0) {
                 return;
@@ -493,7 +447,7 @@ var Metrics;
 
             var metrics = this.files[0].metrics;
 
-            this.prepareDiagram(metrics, response.info.options);
+            this.prepareDiagram(metrics, response.info);
 
             this.svg.selectAll(".background")
                 .on("mouseenter", function() {

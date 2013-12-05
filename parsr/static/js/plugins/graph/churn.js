@@ -6,12 +6,35 @@ var CodeChurn;
 
         init: function(target, attrs) {
             this._super("churn", target, attrs);
+
+            this.svg.append("path")
+                .attr("class", "area added");
+
+            this.svg.append("path")
+                .attr("class", "area removed");
         },
 
-        beforeRequest: function() {
+        handleData: function(svg, response) {
+            var data = [];
+
+            this.updateFilters(response.info);
+
+            $.each(response.data, function(date, value) {
+                value.date = new Date(date);
+
+                data.push(value);
+            });
+
+            this.updateScales(svg, response.info);
+            this.updateDiagram(svg, data.sort(function(a, b) {
+                return a.date - b.date;
+            }));
+        },
+
+        updateDiagram: function(svg, data) {
             var that = this;
 
-            this.added = d3.svg.area()
+            var added = d3.svg.area()
                 .x(function(d) {
                     return that.scale.x(d.date);
                 })
@@ -22,7 +45,11 @@ var CodeChurn;
                     return that.scale.y(0);
                 });
 
-            this.removed = d3.svg.area()
+            svg.selectAll(".area.added")
+                .datum(data)
+                .attr("d", added);
+
+            var removed = d3.svg.area()
                 .x(function(d) {
                     return that.scale.x(d.date);
                 })
@@ -32,26 +59,10 @@ var CodeChurn;
                 .y0(function(d) {
                     return that.scale.y(-1 * d.removed);
                 });
-        },
 
-        handleData: function(svg, response) {
-            var data = response.data;
-
-            // this.updateFilters()
-
-            data.forEach(function(d) {
-                d.date = new Date(d.date);
-            });
-
-            svg.append("path")
+            svg.selectAll(".area.removed")
                 .datum(data)
-                .attr("class", "area added")
-                .attr("d", this.added);
-
-            svg.append("path")
-                .datum(data)
-                .attr("class", "area removed")
-                .attr("d", this.removed);
+                .attr("d", removed);
         },
 
         getMaxValue: function(d) {

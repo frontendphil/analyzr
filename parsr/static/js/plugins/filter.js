@@ -14,7 +14,7 @@ var Filter;
         },
 
         update: function(options) {
-            var files = options.files;
+            var files = options.files || [];
 
             this.updateFileSelector(files);
             this.updateLanguageSelector(options.languages, options.language);
@@ -136,11 +136,11 @@ var Filter;
         updateDatePicker: function(start, end) {
             var that = this;
 
-            this.createPicker($(".date-from"), start, function(date) {
+            this.createPicker(this.dom.find(".date-from"), start, function(date) {
                 that.changeParam("from", date.toISOString());
             });
 
-            this.createPicker($(".date-to"), end, function(date) {
+            this.createPicker(this.dom.find(".date-to"), end, function(date) {
                 that.changeParam("to", date.toISOString());
             });
         },

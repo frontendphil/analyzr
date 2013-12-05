@@ -2,12 +2,13 @@ import traceback
 
 from dateutil import parser
 
+from datetime import datetime
+
 from pygments import highlight
 from pygments.lexers import PythonTracebackLexer
 from pygments.formatters import HtmlFormatter
 
 from django.shortcuts import get_object_or_404
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponseRedirect
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
@@ -45,6 +46,36 @@ def track_action(branch, action, abort):
 
 def get_branch(branch_id):
     return get_object_or_404(Branch, pk=branch_id)
+
+
+def get_tzinfo(timezone):
+    now = datetime.now()
+    tz_abbr = timezone.tzname(now)
+
+    tzinfo = {}
+    tzinfo[tz_abbr] = timezone.zone
+
+    return tzinfo
+
+
+def parse_filters(request, branch):
+    language = request.GET.get("language")
+
+    start, end = parse_date_range(request, branch)
+
+    return language, start, end
+
+
+def parse_date_range(request, branch):
+    start = request.GET.get("from")
+    end = request.GET.get("to")
+
+    tzinfo = get_tzinfo(branch.repo.timezone)
+
+    start = parser.parse(start, tzinfos=tzinfo) if start else None
+    end = parser.parse(end, tzinfos=tzinfo) if end else None
+
+    return start, end
 
 
 def index(request, branch_id):
@@ -127,13 +158,7 @@ def commits(request, branch_id, author_id=None):
 def metrics(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
-    language = request.GET.get("language")
-
-    start = request.GET.get("from")
-    end = request.GET.get("to")
-
-    start = parser.parse(start, tzinfos=[branch.repo.timezone]) if start else None
-    end = parser.parse(end, tzinfos=[branch.repo.timezone]) if end else None
+    language, start, end = parse_filters(request, branch)
 
     return branch.metrics(author, language=language, start=start, end=end)
 
@@ -142,7 +167,9 @@ def metrics(request, branch_id, author_id):
 def churn(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
-    return branch.churn(author)
+    language, start, end = parse_filters(request, branch)
+
+    return branch.churn(author, language=language, start=start, end=end)
 
 
 @ajax_request

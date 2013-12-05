@@ -587,31 +587,37 @@ class Branch(models.Model):
 
         return result
 
-    def churn(self, author):
-        result = {
-            "info": {
-                "dates": []
-            },
-            "data": []
-        }
+    def churn(self, author, language=None, start=None, end=None):
+        response = self.response_stub(language=language, start=start, end=end)
 
-        for revision in self.revisions(author):
+        if not language:
+            return response
+
+        max_added = 0
+        max_removed = 0
+
+        for revision in self.revisions(author, language=language, start=start, end=end):
             files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
                                 .aggregate(added=Sum("lines_added"), removed=Sum("lines_removed"))
 
-            if not files["added"]:
+            if not files["added"] and not files["added"] == 0:
                 # code churn not measured for this revision
                 continue
 
-            result["info"]["dates"].append(revision.date.isoformat())
+            response["info"]["dates"].append(revision.date.isoformat())
 
-            result["data"].append({
-                "date": revision.date.isoformat(),
+            max_added = max(max_added, files["added"])
+            max_removed = max(max_removed, files["removed"])
+
+            response["data"][revision.date.isoformat()] = {
                 "added": files["added"],
                 "removed": files["removed"]
-            })
+            }
 
-        return result
+        response["info"]["options"]["upperBound"] = max_added
+        response["info"]["options"]["lowerBound"] = -1 * max_removed
+
+        return response
 
 class Revision(models.Model):
 
@@ -850,7 +856,7 @@ class Author(models.Model):
         return self.name
 
     def href(self):
-        return reverse("parsr.views.app.author", kwargs={"author_id": self.id})
+        return reverse("parsr.views.author.index", kwargs={"author_id": self.id})
 
     def revision_count(self, branch):
         revisions = Revision.objects.filter(author=self, branch=branch).distinct()

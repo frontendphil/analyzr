@@ -16,8 +16,8 @@ urlpatterns = patterns('',
 
     url(r"^repo/create$", "parsr.views.repo.create"),
     url(r"^repo/create/save$", "parsr.views.repo.save"),
-    url(r"^repo/(?P<repo_id>\d+)/", include("parsr.urls.repo")),
+    url(r"^repo/(?P<repo_id>\d+)", include("parsr.urls.repo")),
 
-    url(r"^branch/(?P<branch_id>\d+)/", include("parsr.urls.branch")),
-    url(r"^author/(?P<author_id>\d+)$", "parsr.views.app.author"),
+    url(r"^branch/(?P<branch_id>\d+)", include("parsr.urls.branch")),
+    url(r"^author/(?P<author_id>\d+)", include("parsr.urls.author")),
 )

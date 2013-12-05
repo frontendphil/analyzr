@@ -93,6 +93,12 @@ class Connector(object):
     def update(self, path):
         pass
 
+    def lock(self, revision):
+        pass
+
+    def unlock(self):
+        pass
+
     def parse_date(self, timestamp):
         return datetime.fromtimestamp(int(timestamp))
 
@@ -140,9 +146,17 @@ class Git(Connector):
 
         return git.Repo.clone_from(repo.url, folder)
 
+    def lock(self, revision):
+        self.commit = self.repo.commit(revision.identifier)
+
+    def unlock(self):
+        self.commit = None
+
     def get_churn(self, revision, filename):
-        commit = self.repo.commit(revision.identifier)
-        stats = commit.stats.files
+        if not self.commit:
+            return
+
+        stats = self.commit.stats.files
 
         if not filename in stats:
             return

@@ -60,13 +60,17 @@ class Analyzer(object):
                 self.store_results(revision, results)
 
     def store_results(self, revision, results):
+        self.connector.lock(revision)
+
         for filename, measures in results.iteritems():
             f = revision.get_file(filename)
             f.add_measures(measures)
 
-            code_churn = self.connector.get_churn(revision, filename)
+            code_churn = self.connector.get_churn(revision, f.full_path())
 
             f.add_churn(code_churn)
+
+        self.connector.unlock()
 
     def start(self, revision=None):
         self.connector.switch_to(self.branch)

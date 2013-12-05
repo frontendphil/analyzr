@@ -20,7 +20,7 @@ var Contributors;
         },
 
         getUrl: function(action, branch, page) {
-            var url = branch + action;
+            var url = branch + "/" + action;
 
             if(!page) {
                 return url;
@@ -160,7 +160,7 @@ var Contributors;
                         "</td>" +
                         "<td class='avatar' style='background-image:url(" + this.rep.icon + ")'></td>" +
                         "<td>" +
-                            "<a href='" + branch + this.rel + "/" + this.rep.id + "'>" + this.rep.name + "</a>" +
+                            "<a href='" + branch + this.href + "'>" + this.rep.name + "</a>" +
                         "</td>" +
                         "<td>" + this.rep.count + "</td>" +
                     "</tr>"
