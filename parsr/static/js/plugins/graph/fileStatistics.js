@@ -37,13 +37,21 @@ var FileStatistics;
             return mimetype.slice(index + 1);
         },
 
-        handleData: function(statistics) {
+        handleData: function(response) {
             var legend = $("<div class='legend' />");
             var parts = $("<div class='parts' />");
 
             this.dom.append(parts, legend);
 
             var line;
+            var statistics = [];
+
+            $.each(response.data, function(mimetype, share) {
+                statistics.push({
+                    mimetype: mimetype,
+                    share: share
+                });
+            });
 
             statistics = statistics.sort(function(a, b) {
                 return a.share - b.share;

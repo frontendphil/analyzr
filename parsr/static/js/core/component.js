@@ -22,7 +22,7 @@ var Component;
                 url = url + author;
             }
 
-            return url + "/" + action;
+            return url + action;
         },
 
         mask: function(text) {

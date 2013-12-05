@@ -20,7 +20,7 @@ var Contributors;
         },
 
         getUrl: function(action, branch, page) {
-            var url = branch + "/" + action;
+            var url = branch + action;
 
             if(!page) {
                 return url;

@@ -92,7 +92,7 @@ class JHawk(Checker):
             "project_path": PROJECT_PATH,
             "base_path": connector.get_repo_path(),
             "target": result_file,
-            "filepattern": "|".join([f.full_path() for f in files])
+            "filepattern": "|".join([".*/%s" % f.name for f in files])
         }
 
         with open(filename, "wb") as f:

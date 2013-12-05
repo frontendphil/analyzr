@@ -8,7 +8,7 @@
 
     <target name="measure">
         <jhawk
-            filepattern='.*\.java'
+            filepattern='{{ filepattern }}'
             propertiesfile="{{ project_path }}/lib/{{ checker }}/{{ checker }}.properties"
             recursive="true"
             outputlevels="cm"

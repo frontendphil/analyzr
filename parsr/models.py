@@ -43,7 +43,7 @@ class Repo(models.Model):
         return "%s repository at: %s" % (self.kind, self.url)
 
     def href(self):
-        return reverse("parsr.views.repo", kwargs={"repo_id": self.id})
+        return reverse("parsr.views.repo.index", kwargs={"repo_id": self.id})
 
     def busy(self):
         return self.analyzing() or self.measuring()
@@ -250,7 +250,7 @@ class Branch(models.Model):
         return measured > 0 and not measured == self.revision_set.all().count()
 
     def href(self):
-        return reverse("parsr.views.branch", kwargs={"branch_id": self.id})
+        return reverse("parsr.views.branch.index", kwargs={"branch_id": self.id})
 
     def cleanup(self):
         self.remove_all(File, File.objects.filter(revision__branch=self))
@@ -346,7 +346,7 @@ class Branch(models.Model):
 
         return end.date - start.date
 
-    def punchcard(self, author=None):
+    def punchcard(self, author=None, language=None, start=None, end=None):
         filters = {
             "branch": self
         }
@@ -354,7 +354,7 @@ class Branch(models.Model):
         if author:
             filters["author"] = author
 
-        response = {}
+        response = self.response_stub(language=language, start=start, end=end)
 
         result = Revision.objects.filter(**filters).values("weekday", "hour").annotate(count=Count("hour"))
 
@@ -367,17 +367,17 @@ class Branch(models.Model):
 
             hour_max = max(count, hour_max)
 
-            if not weekday in response:
-                response[weekday] = {}
+            if not weekday in response["data"]:
+                response["data"][weekday] = {}
 
-            response[weekday][hour] = count
+            response["data"][weekday][hour] = count
 
-        response["max"] = hour_max
+        response["info"]["max"] = hour_max
 
         return response
 
-    def file_statistics(self, author=None):
-        result = []
+    def file_statistics(self, author=None, language=None, start=None, end=None):
+        response = self.response_stub(language=language, start=start, end=end)
         filters = {
             "revision__branch": self
         }
@@ -394,12 +394,9 @@ class Branch(models.Model):
             count = files.values("mimetype").count()
 
             for stat in files.values("mimetype").annotate(count=Count("mimetype")).order_by("count"):
-                result.append({
-                    "mimetype": stat["mimetype"],
-                    "share": stat["count"] / (1.0 * count)
-                })
+                response["data"][stat["mimetype"]] = stat["count"] / (1.0 * count)
 
-            return result
+            return response
 
         # raw query processing seems to work a little different. that is why we need to
         # manually put the strings into quotes.
@@ -410,14 +407,11 @@ class Branch(models.Model):
 
         # Order by
         for stat in File.objects.raw(sql.mimetype_count(query)):
-            result.append({
-                "mimetype": stat.mimetype,
-                "share": stat.count / (1.0 * count)
-            })
+            response["data"][stat.mimetype] = stat.count / (1.0 * count)
 
-        return result
+        return response
 
-    def commit_history(self, author=None):
+    def commit_history(self, author=None, language=None, start=None, end=None):
         filters = {
             "branch": self
         }
@@ -425,9 +419,7 @@ class Branch(models.Model):
         if author:
             filters["author"] = author
 
-        response = {
-            "data": {}
-        }
+        response = self.response_stub()
 
         result = Revision.objects.filter(**filters).values("year", "month", "day").annotate(count=Count("day"))
 
@@ -518,7 +510,7 @@ class Branch(models.Model):
     def get_latest_revision(self):
         return self.revision_set.order_by("-date")[0:1][0]
 
-    def metrics_stub(self, language=None, start=None, end=None):
+    def response_stub(self, language=None, start=None, end=None):
         return {
             "info": {
                 "dates": [],
@@ -535,7 +527,7 @@ class Branch(models.Model):
         }
 
     def metrics(self, author, language=None, start=None, end=None):
-        result = self.metrics_stub(language=language, start=start, end=end)
+        result = self.response_stub(language=language, start=start, end=end)
 
         if not language:
             return result
@@ -829,7 +821,7 @@ class Author(models.Model):
         return self.name
 
     def href(self):
-        return reverse("parsr.views.author", kwargs={"author_id": self.id})
+        return reverse("parsr.views.app.author", kwargs={"author_id": self.id})
 
     def revision_count(self, branch):
         revisions = Revision.objects.filter(author=self, branch=branch).distinct()
