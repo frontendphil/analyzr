@@ -7,6 +7,8 @@ var Graph;
         init: function(base, target, attrs) {
             attrs = attrs || {};
 
+            this.baseName = base;
+
             this.margins = this.createMargins(attrs.margins || {});
 
             this.width = (attrs.width || $(target).width()) - this.margins.left - this.margins.right;
@@ -113,7 +115,7 @@ var Graph;
             this.filter.update({
                 files: files,
                 languages: info.languages,
-                langauge: info.options.language,
+                language: info.options.language,
                 startDate: info.options.startDate || info.options.minDate,
                 endDate: info.options.endDate || info.options.maxDate
             });
@@ -148,24 +150,20 @@ var Graph;
             this.prepareAxis(scale.x, scale.y);
 
             return d3.select(this.dom.get(0)).append("svg")
-                .attr("class", "chart")
+                .attr("class", "chart chart-" + this.baseName)
                 .attr("width", this.width + this.margins.left + this.margins.right)
                 .attr("height", this.height + this.margins.top + this.margins.bottom)
                 .append("g")
                 .attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
         },
 
-        createDomain: function(data, min, max) {
-            this.scale.x.domain(d3.extent(data.info.dates));
+        createDomain: function(svg, data, info) {
+            this.updateXScale(svg, info);
 
             this.scale.y.domain([
-                d3.min(data.data, min),
-                d3.max(data.data, max)
+                d3.min(data, this.getMinValue),
+                d3.max(data, this.getMaxValue)
             ]);
-
-            var domain = this.scale.x.domain();
-
-            this.axis.x.ticks(d3.time.days(domain[0], domain[1]).length);
         },
 
         addAxis: function(svg) {
@@ -231,7 +229,7 @@ var Graph;
             d3.json(url, function(response) {
                 that.unmask();
                 that.parseInfos(response.info);
-                that.createDomain(response, that.getMinValue, that.getMaxValue);
+                that.createDomain(that.svg, response.data, response.info);
                 that.handleData(that.svg, response);
             });
         }

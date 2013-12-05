@@ -112,7 +112,7 @@ var Filter;
                 clb(event.date);
             });
 
-            this.changeParam(element.data("rel"), date);
+            this.changeParam(element.data("rel"), value.toISOString());
         },
 
         createDatePicker: function(container) {

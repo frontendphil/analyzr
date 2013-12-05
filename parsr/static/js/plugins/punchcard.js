@@ -40,7 +40,7 @@ var Punchcard;
                     var hourContainer = $("<td class='hour' />");
 
                     if(data[day]) {
-                        hourContainer.append(that.createCircle(data[day][hour], info.max));
+                        hourContainer.append(that.createCircle(data[day][hour], info.options.max));
                     }
 
                     dayContainer.append(hourContainer);

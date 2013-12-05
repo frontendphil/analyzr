@@ -16,8 +16,22 @@ var Metrics;
             var that = this;
 
             var first = true;
+            var extent;
 
-            this.updateXScale(svg, info);
+            if(!info) {
+                extent = d3.extent(metrics[0].values, function(d) {
+                    return d.date;
+                });
+            } else {
+                extent = [info.options.startDate, info.options.endDate];
+            }
+
+            this.updateXScale(svg, info || {
+                options: {
+                    startDate: extent[0],
+                    endDate: extent[1]
+                }
+            });
 
             $.each(metrics, function(index) {
                 var y = that.setScale(this, d3.scale.linear().range([that.height, 0]));
@@ -40,7 +54,6 @@ var Metrics;
         },
 
         addYAxis: function() {},
-        addXAxis: function() {},
 
         parse: function(data) {
             return d3.keys(data)
@@ -212,24 +225,6 @@ var Metrics;
 
         createAxis: function(data, info, color) {
             var that = this;
-
-            this.svg.selectAll(".x.axis").remove();
-
-            var x = d3.time.scale().range([0, this.width]);
-            x.domain([new Date(info.options.startDate), new Date(info.options.endDate)]);
-
-            var domain = x.domain();
-
-            var axis = d3.svg.axis()
-                .scale(x)
-                .orient("bottom")
-                .tickValues(d3.time.days(domain[0], domain[1], 1))
-                .tickSize(-this.getInnerHeight());
-
-            this.svg.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + this.height + ")")
-                .call(axis);
 
             $.each(data, function(index) {
                 that.setScale(this, d3.scale.linear().range([that.height, 0]));
@@ -409,20 +404,6 @@ var Metrics;
         },
 
         addStaticContent: function() {
-            var x = d3.time.scale().range([0, this.width]);
-            var axis = d3.svg.axis()
-                .scale(x)
-                .orient("bottom")
-                .tickSize(-this.getInnerHeight());
-
-            this.scale.x = x;
-
-            this.svg.select(".x.axis")
-                .call(axis)
-                .selectAll("text")
-                    .style("text-anchor", "end")
-                    .attr("transform", "rotate(-65)");
-
             this.svg.select(".position").remove();
             this.svg.append("line")
                 .attr("class", "position")
@@ -436,6 +417,8 @@ var Metrics;
 
         handleData: function(svg, response) {
             var that = this;
+
+            this.updateXScale(this.svg, response.info);
 
             this.files = this.parse(response.data);
 

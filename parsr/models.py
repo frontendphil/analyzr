@@ -351,6 +351,10 @@ class Branch(models.Model):
 
         return end.date - start.date
 
+    def set_options(self, response, options):
+        for key, value in options.iteritems():
+            response["info"]["options"][key] = value
+
     def contributors(self, page=None):
         response = self.response_stub()
 
@@ -367,11 +371,13 @@ class Branch(models.Model):
 
         response["data"] = [author.json(self) for author in authors]
 
-        response["info"]["hasNext"] = not page == paginator.num_pages
-        response["info"]["hasPrevious"] = not page == 1
-        response["info"]["page"] = int(page)
-        response["info"]["pages"] = paginator.num_pages
-        response["info"]["perPage"] = CONTRIBUTORS_PER_PAGE
+        self.set_options(response, {
+            "hasNext": not page == paginator.num_pages,
+            "hasPrevious": not page == 1,
+            "page": int(page),
+            "pages": paginator.num_pages,
+            "perPage": CONTRIBUTORS_PER_PAGE
+        })
 
         return response
 
@@ -401,7 +407,9 @@ class Branch(models.Model):
 
             response["data"][weekday][hour] = count
 
-        response["info"]["max"] = hour_max
+        self.set_options(response, {
+            "max": hour_max
+        })
 
         return response
 
@@ -476,7 +484,9 @@ class Branch(models.Model):
                                              revision__branch=self).count()
             }
 
-        response["upper"] = count_max
+        self.set_options(response, {
+            "upper": count_max
+        })
 
         return response
 
@@ -561,6 +571,8 @@ class Branch(models.Model):
         if not language:
             return result
 
+        # TODO: No roundtrip to the DB for files of each revision
+
         for revision in self.revisions(author, language=language, start=start, end=end):
             files = File.objects.filter(
                 revision=revision,
@@ -591,31 +603,34 @@ class Branch(models.Model):
         response = self.response_stub(language=language, start=start, end=end)
 
         if not language:
+            self.set_options(response, {
+                "upperBound": 1,
+                "lowerBound": -1
+            })
+
             return response
 
         max_added = 0
         max_removed = 0
 
-        for revision in self.revisions(author, language=language, start=start, end=end):
-            files = File.objects.filter(revision=revision, mimetype__in=Analyzer.parseable_types())\
-                                .aggregate(added=Sum("lines_added"), removed=Sum("lines_removed"))
+        revisions = self.revisions(author, language=language, start=start, end=end)
+        revisions = revisions.annotate(added=Sum("file__lines_added"), removed=Sum("file__lines_removed"))
 
-            if not files["added"] and not files["added"] == 0:
-                # code churn not measured for this revision
-                continue
-
+        for revision in revisions:
             response["info"]["dates"].append(revision.date.isoformat())
 
-            max_added = max(max_added, files["added"])
-            max_removed = max(max_removed, files["removed"])
+            max_added = max(max_added, revision.added)
+            max_removed = max(max_removed, revision.removed)
 
             response["data"][revision.date.isoformat()] = {
-                "added": files["added"],
-                "removed": files["removed"]
+                "added": revision.added,
+                "removed": revision.removed
             }
 
-        response["info"]["options"]["upperBound"] = max_added
-        response["info"]["options"]["lowerBound"] = -1 * max_removed
+        self.set_options(response, {
+            "upperBound": max_added,
+            "lowerBound": -1 * max_removed
+        })
 
         return response
 
