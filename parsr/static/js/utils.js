@@ -174,6 +174,8 @@
             var overflowYears = span % YEARS_TO_MS(1);
             var weeks = Math.floor(MS_TO_WEEKS(overflowYears));
 
+            var months = Math.floor(weeks/4.3);
+
             var overflowWeeks = span % WEEKS_TO_MS(1);
             var days = Math.floor(MS_TO_DAYS(overflowWeeks));
 
@@ -192,6 +194,7 @@
                 hours: hours,
                 days: days,
                 weeks: weeks,
+                months: months,
                 years: years
             };
         };

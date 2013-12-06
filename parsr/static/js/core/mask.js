@@ -60,8 +60,13 @@ ns("core");
 		},
 
 		remove: function() {
+			var that = this;
+
 			this.dom.fadeOut(function() {
 				$(this).remove();
+				that.container.css({
+					"minHeight": ""
+				});
 			});
 		},
 

@@ -34,6 +34,31 @@
         }
     }
 }
+.container.content {
+    padding-bottom: 50px;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+
+    width: 100%;
+
+    background-color: #efefef;
+    @color: rgba(0, 0, 0, 0.5);
+
+    .container {
+        color: @color;
+        padding: 20px;
+
+        text-shadow: 1px 1px 0 #fff;
+        text-align: center;
+
+        a {
+            color: @color;
+        }
+    }
+}
 
 .centered {
     text-align: center;

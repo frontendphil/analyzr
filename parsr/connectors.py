@@ -319,27 +319,27 @@ class SVN(Connector):
         branch = revision.branch
         repo = branch.repo
 
-        return "%s/%s/%s" % (repo.url, branch.path, filename)
+        return "%s%s/%s" % (repo.url, branch.path, filename)
 
     def get_churn(self, revision, filename):
-        return
         previous = revision.get_previous()
 
         if not previous:
             return
 
-        summary = self.repo.diff_summarize(
+        diff = self.repo.diff("/tmp",
             self.full_path(previous, filename),
-            Revision(revision_kind.number, previous.identifier),
-            self.full_path(revision, filename),
-            Revision(revision_kind.number, revision.identifier),
-            ignore_ancestry=True
-            )
+            revision1=Revision(revision_kind.number, previous.identifier),
+            revision2=Revision(revision_kind.number, revision.identifier)
+        )
 
         added = 0
         removed = 0
 
-        for line in summary:
+        for line in diff.split("\n"):
+            if line.startswith("+++") or line.startswith("---"):
+                continue
+
             if line.startswith("+"):
                 added = added + 1
 

@@ -102,7 +102,8 @@ ns("plugins");
                 first.addClass("disabled");
             }
 
-            this.createClickHandler(previous, info.page - 1);
+            this.createClickHandler(previous, branch, info.page - 1);
+            this.createClickHandler(first, branch, 0);
 
             pagination.append(first, previous);
 
@@ -117,6 +118,7 @@ ns("plugins");
             }
 
             this.createClickHandler(next, branch, info.page + 1);
+            this.createClickHandler(last, branch, info.pages);
 
             pagination.append(next, last);
 
@@ -175,8 +177,8 @@ ns("plugins");
         handleData: function(response, branch) {
             this.clear();
 
-            var table = this.createTable(response.data, response.info, branch);
-            var pagination = this.createPagination(response.info, branch);
+            var table = this.createTable(response.data, response.info.options, branch);
+            var pagination = this.createPagination(response.info.options, branch);
 
             this.dom.append(table, pagination);
         }

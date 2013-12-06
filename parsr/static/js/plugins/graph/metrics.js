@@ -210,7 +210,7 @@ ns("plugins.graph");
                     });
             });
 
-            that.updateScale(that.svg, data, info);
+            // that.updateScale(that.svg, data, info);
 
             // remove old background
             this.svg.select(".background").remove();
@@ -419,7 +419,7 @@ ns("plugins.graph");
         handleData: function(svg, response) {
             var that = this;
 
-            this.updateXScale(this.svg, response.info);
+            // this.updateXScale(this.svg, response.info);
 
             this.files = this.parse(response.data, "complexity");
 

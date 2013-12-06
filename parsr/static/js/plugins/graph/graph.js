@@ -37,11 +37,15 @@ ns("plugins.graph");
             var span = start.to(end);
 
             if(span.years > 0) {
-                return d3.time.months(start, end, span.years);
+                return d3.time.months(start, end, span.years * 2);
             }
 
             if(span.months > 0) {
-                return d3.time.weeks(start, end, span.months);
+                return d3.time.months(start, end, 1);
+            }
+
+            if(span.weeks) {
+                return d3.time.weeks(start, end, span.weeks);
             }
 
             if(span.weeks > 0) {

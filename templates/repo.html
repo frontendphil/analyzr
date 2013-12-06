@@ -16,17 +16,6 @@
 {% endblock %}
 
 {% block content %}
-    <ul class='nav nav-pills'>
-        <li class='active'>
-            <a href='#' data-target='overview'>Overview</a>
-        </li>
-        <li>
-            <a href='#' data-target='contrib'>Contributors</a>
-        </li>
-    </ul>
-
-    <hr />
-
     <table class="table">
         <thead>
             <tr>
@@ -56,33 +45,26 @@
         </tbody>
     </table>
 
-    <div class='overview'>
-        <div
-            class='stats'
-            data-repo="{{ repo.href }}"
-            data-branch="{{ branch.href }}"></div>
+    <hr />
 
-        <hr />
+    <div
+        class='stats'
+        data-repo="{{ repo.href }}"
+        data-branch="{{ branch.href }}"></div>
 
-        <div
-            class='commits'
-            data-repo="{{ repo.href }}"
-            data-branch="{{ branch.href }}"></div>
-    </div>
+    <hr />
 
-    <div class='contrib'>
-        <div
-            class='contributors'
-            data-repo='{{ repo.href }}'
-            data-branch="{{ branch.href }}"></div>
+    <div
+        class='contributors'
+        data-repo='{{ repo.href }}'
+        data-branch="{{ branch.href }}"></div>
 
-        <hr />
+    <hr />
 
-        <div
-            class='punchcard'
-            data-repo='{{ repo.href }}'
-            data-branch="{{ branch.href }}"></div>
-    </div>
+    <div
+        class='punchcard'
+        data-repo='{{ repo.href }}'
+        data-branch="{{ branch.href }}"></div>
 {% endblock %}
 
 {% block specific %}
@@ -93,56 +75,6 @@
                 var repo = $(this).data("repo");
 
                 window.location.href = "/repo/" + repo + "/branch/" + branch;
-            });
-
-            var targets = [];
-
-            $(".nav li").each(function() {
-                var li = $(this);
-
-                var changeContent = function(target, targets) {
-                    $.each(targets, function() {
-                        $(this.toString()).hide();
-
-                        $(".nav li").removeClass("active");
-                    });
-
-                    $("." + target)
-                        .show();
-
-                    $("*[data-target=" + target + "]").parent("li").addClass("active");
-                };
-
-                li.find("a").each(function() {
-                    var a = $(this);
-
-                    var target = a.attr("data-target");
-
-                    if(!target) {
-                        return;
-                    }
-
-                    targets.push("." + target);
-
-                    a.click(function() {
-                        changeContent(target, targets);
-                        window.location.hash = target;
-
-                        return false;
-                    });
-
-                    $("." + target).hide();
-                });
-
-                if(window.location.hash) {
-                    var target = window.location.hash.replace("#", "");
-
-                    changeContent(target, targets);
-                }
-
-                if(li.hasClass("active")) {
-                    li.find("a").click();
-                }
             });
 
             var contributors = new analyzr.plugins.Contributors(".contributors");
@@ -159,16 +91,6 @@
 
             var stats = new analyzr.plugins.FileStatistics(".stats");
             stats.load();
-
-            // var history = new CommitHistory(".commits", {
-            //     height: 300,
-            //     margins: {
-            //         top: 50,
-            //         left: 40,
-            //         bottom: 20
-            //     }
-            // });
-            // history.load();
         });
     </script>
 {% endblock %}

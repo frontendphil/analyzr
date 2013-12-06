@@ -12,7 +12,7 @@
 <body>
     {% csrf_token %}
 
-    <div class="container">
+    <div class="container content">
         <ul class='nav nav-pills'>
             <li>
                 <a href='{% url "parsr.views.app.index" %}'>
@@ -29,6 +29,13 @@
 
         {% block content %}
         {% endblock %}
+    </div>
+
+    <div class='footer'>
+        <div class='container'>
+            <i class='icon-github'></i>
+            <a href='https://github.com/pxlplnt/analyzr'>analyzr</a>
+        </div>
     </div>
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery-2.0.3.min.js"></script>

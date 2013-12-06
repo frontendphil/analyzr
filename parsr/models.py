@@ -973,7 +973,7 @@ class Author(models.Model):
     def get_prime_language(self, branch):
         files = File.objects.filter(
                                 revision__branch=branch,
-                                revision__author=self,
+                                author=self,
                                 mimetype__in=File.KNOWN_LANGUAGES
                             )\
                             .values("mimetype")\
@@ -985,6 +985,30 @@ class Author(models.Model):
 
         return files[0]
 
+    def get_complexity_index(self, branch):
+        aggregate = File.objects.filter(revision__branch=branch, author=self)\
+                            .aggregate(
+                                cyclomatic=Sum("cyclomatic_complexity_delta"),
+                                halstead_difficulty=Sum("halstead_difficulty_delta"),
+                                halstead_effort=Sum("halstead_effort_delta"),
+                                halstead_volume=Sum("halstead_volume_delta")
+                            )
+
+        return {
+            "cyclomatic": float(aggregate["cyclomatic"]),
+            "halstead": {
+                "effort": float(aggregate["halstead_effort"]),
+                "volume": float(aggregate["halstead_volume"]),
+                "difficulty": float(aggregate["halstead_difficulty"])
+            },
+            "combined": float(
+                aggregate["cyclomatic"] +
+                aggregate["halstead_effort"] +
+                aggregate["halstead_volume"] +
+                aggregate["halstead_difficulty"]
+            )
+        }
+
     def json(self, branch):
         return {
             "href": self.href(),
@@ -994,6 +1018,9 @@ class Author(models.Model):
                 "name": str(self),
                 "icon": self.get_icon(),
                 "count": self.revision_count(branch),
-                "primeLanguage": self.get_prime_language(branch)
+                "primeLanguage": self.get_prime_language(branch),
+                "indicators": {
+                    "complexity": self.get_complexity_index(branch)
+                }
             }
         }
