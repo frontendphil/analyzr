@@ -53,12 +53,12 @@ ns("plugins.graph");
 
         addYAxis: function() {},
 
-        parse: function(data) {
+        parse: function(data, kind) {
             return d3.keys(data)
                 .map(function(file) {
                     var deleted = false;
 
-                    var metrics = d3.keys(data[file][0])
+                    var metrics = d3.keys(data[file][0][kind])
                         .sort()
                         .filter(function(key) {
                             return key !== "date" && key !== "deleted";
@@ -73,7 +73,7 @@ ns("plugins.graph");
                                     return {
                                         id: type.replace(" ", "_").toLowerCase(),
                                         date: new Date(d.date),
-                                        value: d[type]
+                                        value: d[kind][type]
                                     };
                                 })
                             };
@@ -421,7 +421,7 @@ ns("plugins.graph");
 
             this.updateXScale(this.svg, response.info);
 
-            this.files = this.parse(response.data);
+            this.files = this.parse(response.data, "complexity");
 
             if(this.files.length === 0) {
                 this.updateFilters(response.info, this.files);

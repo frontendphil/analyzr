@@ -11,7 +11,7 @@
             filepattern='{{ filepattern }}'
             propertiesfile="{{ project_path }}/lib/{{ checker }}/{{ checker }}.properties"
             recursive="true"
-            outputlevels="cm"
+            outputlevels="c"
             startpath="{{ base_path }}"
             xmlfilename="{{ target }}">
         </jhawk>

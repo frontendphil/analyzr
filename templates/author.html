@@ -40,7 +40,6 @@
             data-branch="{{ branch.href }}">
 
             <h3>Complexity Metrics</h3>
-            <button class='export-png'>Export</button>
         </div>
 
         <hr />
@@ -100,13 +99,6 @@
                 }
             });
             churn.load();
-
-            $(".export-png").click(function() {
-                var parent = $(this).parent();
-                var svg = parent.find("svg");
-
-                analyzr.utils.svgToPNG(svg);
-            });
         });
     </script>
 {% endblock %}

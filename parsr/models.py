@@ -530,6 +530,26 @@ class Branch(models.Model):
 
         return Revision.objects.filter(**filters).order_by("date")
 
+    def files(self, author=None, language=None, start=None, end=None):
+        filters = {
+            "revision__branch": self,
+            "change_type": Action.readable()
+        }
+
+        if author:
+            filters["author"] = author
+
+        if language:
+            filters["mimetype"] = language
+
+        if start:
+            filters["date__gte"] = start
+
+        if end:
+            filters["date__lte"] = end
+
+        return File.objects.filter(**filters).order_by("date")
+
     def create_revision(self, identifier):
         return Revision.objects.create(
             branch=self,
@@ -571,50 +591,54 @@ class Branch(models.Model):
         if not language:
             return result
 
-        # TODO: No roundtrip to the DB for files of each revision
+        files = self.files(author, language=language, start=start, end=end)
 
-        revisions = self.revisions(author, language=language, start=start, end=end)
+        for f in files:
+            date = f.date.isoformat()
 
-        for revision in revisions:
-            files = File.objects.filter(
-                revision=revision,
-                mimetype__in=Analyzer.parseable_types(),
-                change_type=Action.readable())
+            if not date in result["info"]["dates"]:
+                result["info"]["dates"].append(date)
 
-            if not files:
-                continue
+            path = f.full_path()
 
-            result["info"]["dates"].append(revision.date.isoformat())
+            if not path in result["data"]:
+                result["data"][path] = []
 
-            for f in files:
-                if not f.full_path() in result["data"]:
-                    result["data"][f.full_path()] = []
-
-                result["data"][f.full_path()].append({
-                    "date": revision.date.isoformat(),
-                    "deleted": f.change_type == Action.DELETE,
+            result["data"][path].append({
+                "date": date,
+                "deleted": f.change_type == Action.DELETE,
+                "complexity": {
                     "Cyclomatic Complexity": float(f.cyclomatic_complexity),
                     "Halstead Volume": float(f.halstead_volume),
                     "Halstead Difficulty": float(f.halstead_difficulty),
                     "Halstead Effort": float(f.halstead_effort)
-                })
+                },
+                "structure": {
+                    "Fan In": float(f.fan_in),
+                    "Fan Out": float(f.fan_out),
+                    "SLOC": f.sloc,
+                    "Information Flow": float(f.hk)
+                }
+            })
 
-            if not "all" in result["data"]:
-                result["data"]["all"] = []
+        files = files.values("date").annotate(
+            cyclomatic_complexity=Avg("cyclomatic_complexity"),
+            halstead_volume=Avg("halstead_volume"),
+            halstead_difficulty=Avg("halstead_difficulty"),
+            halstead_effort=Avg("halstead_effort")
+        )
 
-            aggregate = files.aggregate(
-                cyclomatic_complexity=Avg("cyclomatic_complexity"),
-                halstead_volume=Avg("halstead_volume"),
-                halstead_difficulty=Avg("halstead_difficulty"),
-                halstead_effort=Avg("halstead_effort")
-            )
+        result["data"]["all"] = []
 
+        for rev in files:
             result["data"]["all"].append({
-                "date": revision.date.isoformat(),
-                "Cyclomatic Complexity": aggregate["cyclomatic_complexity"],
-                "Halstead Volume": aggregate["halstead_volume"],
-                "Halstead Difficulty": aggregate["halstead_difficulty"],
-                "Halstead Effort": aggregate["halstead_effort"]
+                "date": rev["date"].isoformat(),
+                "complexity": {
+                    "Cyclomatic Complexity": rev["cyclomatic_complexity"],
+                    "Halstead Volume": rev["halstead_volume"],
+                    "Halstead Difficulty": rev["halstead_difficulty"],
+                    "Halstead Effort": rev["halstead_effort"]
+                }
             })
 
         return result
@@ -694,6 +718,8 @@ class Revision(models.Model):
 
         File.objects.create(
             revision=self,
+            author=self.author,
+            date=self.date,
             name=filename,
             package=package,
             mimetype=mimetype.split("/")[1] if mimetype else None,
@@ -792,6 +818,8 @@ class File(models.Model):
     ]
 
     revision = models.ForeignKey("Revision")
+    author = models.ForeignKey("Author", null=True)
+    date = models.DateTimeField(null=True)
 
     name = models.CharField(max_length=255)
     package = models.CharField(max_length=255)
@@ -810,6 +838,17 @@ class File(models.Model):
     halstead_difficulty_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     halstead_effort = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     halstead_effort_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    fan_in = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    fan_in_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    fan_out = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    fan_out_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    sloc = models.IntegerField(default=0)
+    sloc_delta = models.IntegerField(default=0)
+
+    hk = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    hk_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     lines_added = models.IntegerField(default=0)
     lines_removed = models.IntegerField(default=0)
@@ -839,13 +878,15 @@ class File(models.Model):
         previous = self.get_previous()
 
         for measure in measures:
-            if measure["kind"] == "CyclomaticComplexity":
+            kind = measure["kind"]
+
+            if kind == "CyclomaticComplexity":
                 self.cyclomatic_complexity = measure["value"]
 
                 if previous:
                     self.cyclomatic_complexity_delta = measure["value"] - previous.cyclomatic_complexity
 
-            if measure["kind"] == "Halstead":
+            if kind == "Halstead":
                 volume = measure["value"]["volume"]
                 difficulty = measure["value"]["difficulty"]
                 effort = measure["value"]["effort"]
@@ -859,9 +900,25 @@ class File(models.Model):
                     self.halstead_difficulty_delta = difficulty - previous.halstead_difficulty
                     self.halstead_effort_delta = effort - previous.halstead_effort
 
-            if measure["kind"] == "churn":
+            if kind == "churn":
                 self.lines_added = measure["value"]["added"]
                 self.lines_removed = measure["value"]["removed"]
+
+            if kind == "FanIn":
+                self.fan_in = measure["value"]
+                self.fan_in_delta = self.fan_in - previous.fan_in
+
+            if kind == "FanOut":
+                self.fan_out = measure["value"]
+                self.fan_out_delta = self.fan_out - previous.fan_out
+
+            if kind == "SLOC":
+                self.sloc = measure["value"]
+                self.sloc_delta = self.sloc - previous.sloc
+
+        if self.fan_in and self.fan_out and self.sloc:
+            self.hk = self.sloc * pow(self.fan_in * self.fan_out, 2)
+            self.hk_delta = self.hk - previous.hk
 
         self.save()
 

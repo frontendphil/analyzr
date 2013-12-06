@@ -190,21 +190,24 @@ class JHawk(Checker):
 
                 self.add_halstead_metrics(filename, class_metrics)
 
-                methods = cls.getElementsByTagName("Method")
-
-                complexities = []
-
-                for method in methods:
-                    method_metrics = self.get_metrics(method)
-
-                    complexities.append(self.get_node_value(method_metrics, "cyclomaticComplexity"))
-
-                if len(methods) == 0:
-                    continue
-
                 self.measures[filename].append({
                     "kind": "CyclomaticComplexity",
-                    "value": self.get_decimal(sum([float(complexity) for complexity in complexities]) / len(methods))
+                    "value": self.get_decimal(self.get_node_value(class_metrics, "avcc"))
+                })
+
+                self.measures[filename].append({
+                    "kind": "FanIn",
+                    "value": self.get_decimal(self.get_node_value(class_metrics, "fanIn"))
+                })
+
+                self.measures[filename].append({
+                    "kind": "FanOut",
+                    "value": self.get_decimal(self.get_node_value(class_metrics, "fanOut"))
+                })
+
+                self.measures[filename].append({
+                    "kind": "SLOC",
+                    "value": self.get_decimal(self.get_node_value(class_metrics, "loc"))
                 })
 
         return self.measures
@@ -259,6 +262,9 @@ class ComplexityReport(Checker):
         # maybe use median here instead
         return sum([function["cyclomatic"] for function in functions]) / len(functions)
 
+    def get_halstead_value(self, functions, value):
+        return sum([function["halstead"][value] for function in functions]) / len(functions)
+
     def parse(self, connector):
         results = {}
 
@@ -273,8 +279,6 @@ class ComplexityReport(Checker):
 
                 data = contents["reports"][0]
 
-                halstead = data["aggregate"]["halstead"]
-
                 if len(data["functions"]) == 0:
                     continue
 
@@ -284,11 +288,15 @@ class ComplexityReport(Checker):
                         "value": self.get_decimal(self.average(data["functions"]))
                     },
                     {
+                        "kind": "SLOC",
+                        "value": self.get_decimal(data["aggregate"]["sloc"]["logical"])
+                    },
+                    {
                         "kind": "Halstead",
                         "value": {
-                            "volume": self.get_decimal(halstead["volume"]),
-                            "difficulty": self.get_decimal(halstead["difficulty"]),
-                            "effort": self.get_decimal(halstead["effort"])
+                            "volume": self.get_decimal(self.get_halstead_value(functions, "volume")),
+                            "difficulty": self.get_decimal(self.get_halstead_value(functions, "difficulty")),
+                            "effort": self.get_decimal(self.get_halstead_value(functions, "effort"))
                         }
                     }
                 ]
