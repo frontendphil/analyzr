@@ -1,4 +1,4 @@
-var Contributors;
+ns("plugins");
 
 (function() {
 
@@ -13,7 +13,7 @@ var Contributors;
         "html": "html"
     };
 
-    Contributors = Component.extend({
+    analyzr.plugins.Contributors = analyzr.core.Component.extend({
 
         init: function(target) {
             this._super("contributors", target);

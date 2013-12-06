@@ -1,4 +1,4 @@
-var Punchcard;
+ns("plugins");
 
 (function() {
 
@@ -12,7 +12,7 @@ var Punchcard;
         "Sunday"
     ];
 
-    Punchcard = Component.extend({
+    analyzr.plugins.Punchcard = analyzr.core.Component.extend({
 
         init: function(target) {
             this._super("punchcard", target);

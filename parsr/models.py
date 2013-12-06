@@ -5,7 +5,7 @@ from shutil import rmtree
 
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Avg
 from django.db.models.signals import post_save, pre_save, pre_delete
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.dispatch import receiver
@@ -573,11 +573,13 @@ class Branch(models.Model):
 
         # TODO: No roundtrip to the DB for files of each revision
 
-        for revision in self.revisions(author, language=language, start=start, end=end):
+        revisions = self.revisions(author, language=language, start=start, end=end)
+
+        for revision in revisions:
             files = File.objects.filter(
                 revision=revision,
                 mimetype__in=Analyzer.parseable_types(),
-                change_type__in=Action.readable())
+                change_type=Action.readable())
 
             if not files:
                 continue
@@ -596,6 +598,24 @@ class Branch(models.Model):
                     "Halstead Difficulty": float(f.halstead_difficulty),
                     "Halstead Effort": float(f.halstead_effort)
                 })
+
+            if not "all" in result["data"]:
+                result["data"]["all"] = []
+
+            aggregate = files.aggregate(
+                cyclomatic_complexity=Avg("cyclomatic_complexity"),
+                halstead_volume=Avg("halstead_volume"),
+                halstead_difficulty=Avg("halstead_difficulty"),
+                halstead_effort=Avg("halstead_effort")
+            )
+
+            result["data"]["all"].append({
+                "date": revision.date.isoformat(),
+                "Cyclomatic Complexity": aggregate["cyclomatic_complexity"],
+                "Halstead Volume": aggregate["halstead_volume"],
+                "Halstead Difficulty": aggregate["halstead_difficulty"],
+                "Halstead Effort": aggregate["halstead_effort"]
+            })
 
         return result
 
@@ -628,6 +648,8 @@ class Branch(models.Model):
             }
 
         self.set_options(response, {
+            "startDate": revisions[0].date.isoformat(),
+            "endDate": revisions[len(revisions) - 1].date.isoformat(),
             "upperBound": max_added,
             "lowerBound": -1 * max_removed
         })
@@ -718,14 +740,14 @@ class Revision(models.Model):
         return self.identifier == identifier
 
     def modified_files(self):
-        return self.file_set.filter(change_type__in=Action.readable())
+        return self.file_set.filter(change_type=Action.readable(), mimetype__in=Analyzer.parseable_types())
 
     def includes(self, filename):
         package, filename = File.parse_name(filename)
 
         return not self.file_set.filter(name=filename,
                                         package__endswith=package,
-                                        change_type__in=Action.readable()).count() == 0
+                                        change_type=Action.readable()).count() == 0
 
     def get_file(self, filename):
         package, filename = File.parse_name(filename)
@@ -733,7 +755,7 @@ class Revision(models.Model):
         try:
             return self.file_set.get(name=filename,
                                      package__endswith=package,
-                                     change_type__in=Action.readable())
+                                     change_type=Action.readable())
         except File.DoesNotExist:
             message = "Could not find file using package: %s and filename: %s.\nRevision: %s" % (
                 package,

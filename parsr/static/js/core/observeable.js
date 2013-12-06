@@ -1,4 +1,4 @@
-var Observeable;
+ns("core");
 
 (function() {
 
@@ -13,7 +13,7 @@ var Observeable;
         return result;
     };
 
-    Observeable = Class.extend({
+    analyzr.core.Observeable = analyzr.core.Class.extend({
 
         init: function() {
             this.listeners = {};

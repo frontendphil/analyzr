@@ -1,8 +1,9 @@
-var Filter;
+
+ns("plugins");
 
 (function() {
 
-    Filter = Observeable.extend({
+    analyzr.plugins.Filter = analyzr.core.Observeable.extend({
 
         init: function(target, clb) {
             this._super();
@@ -46,7 +47,7 @@ var Filter;
         },
 
         initFilters: function() {
-            var container = $("<div class='filters col-lg-10 col-md-10' />");
+            var container = $("<div class='filters col-sm-10 col-lg-10 col-md-10' />");
 
             this.createDatePicker(container);
             var language = this.createLanguageSelector();
@@ -74,7 +75,7 @@ var Filter;
 
         createUpdateButton: function(clb) {
             var button = $(
-                "<div class='col-lg-2 col-md-2'>" +
+                "<div class='col-sm-2 col-lg-2 col-md-2'>" +
                     "<button class='btn btn-default update-filters'>Update</button>" +
                 "</div>"
             );
@@ -118,7 +119,7 @@ var Filter;
         createDatePicker: function(container) {
             var datepicker = function(rel) {
                 return $(
-                    "<div class='input-group date-" + rel + " col-lg-3 col-md-3' data-rel='" + rel + "' >" +
+                    "<div class='input-group date-" + rel + " col-sm-3 col-lg-3 col-md-3' data-rel='" + rel + "' >" +
                         "<input type='text' id='date-" + rel + "' class='form-control' readonly/>" +
                         "<span class='input-group-addon'>" +
                             "<i class='icon-calendar'></i>" +
@@ -154,12 +155,12 @@ var Filter;
             var select = container.find("select");
 
             if(container.length === 0) {
-                container = $("<div class='input-group col-lg-3 col-md-3 " + cls + "' />");
+                container = $("<div class='input-group col-sm-3 col-lg-3 col-md-3 " + cls + "' />");
                 select = $(
                     "<select class='form-control'>" +
                         "<option value=''>" + kind.capitalize() + "</option>" +
                         "<option value=''>----</option>" +
-                        "<option value='all'>All</option>" +
+                        // "<option value='all'>All</option>" +
                     "</select>"
                 );
 
@@ -170,7 +171,7 @@ var Filter;
                 var option = $(this);
                 var value = option.attr("value");
 
-                if(value && value !== "all") {
+                if(value) {
                     option.remove();
                 }
             });

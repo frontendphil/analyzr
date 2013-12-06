@@ -1,8 +1,8 @@
-var CodeChurn;
+ns("plugins.graph");
 
 (function() {
 
-    CodeChurn = Graph.extend({
+    analyzr.plugins.graph.CodeChurn = analyzr.plugins.graph.Graph.extend({
 
         init: function(target, attrs) {
             this._super("churn", target, attrs);

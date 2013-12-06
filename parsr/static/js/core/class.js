@@ -1,4 +1,4 @@
-var Class;
+ns("core");
 
 (function() {
 
@@ -12,8 +12,8 @@ var Class;
         fnTest = /.*/;
     }
 
-    Class = function() {};
-    Class.extend = function(base) {
+    analyzr.core.Class = function() {};
+    analyzr.core.Class.extend = function(base) {
         var _super = this.prototype;
 
         initializing = true;

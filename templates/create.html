@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<form class='add-repo form-horizontal' role='form' method='post' action='{% url "parsr.views.save" %}'>
+	<form class='add-repo form-horizontal' role='form' method='post' action='{% url "parsr.views.repo.save" %}'>
 		{% include "includes/repo_form.html" %}
 	</form>
 {% endblock %}
@@ -9,7 +9,7 @@
 {% block script %}
 	<script type="text/javascript">
 		$(document).ready(function() {
-			var form = new AddRepoForm(".add-repo", "#id_anonymous");
+			var form = new analyzr.plugins.AddRepoForm(".add-repo", "#id_anonymous");
 			form.update();
 		});
 	</script>

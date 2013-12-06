@@ -1,8 +1,8 @@
-var Metrics;
+ns("plugins.graph");
 
 (function() {
 
-    Metrics = Graph.extend({
+    analyzr.plugins.graph.Metrics = analyzr.plugins.graph.Graph.extend({
 
         init: function(target, attrs) {
             this.scales = {};
@@ -392,7 +392,7 @@ var Metrics;
         },
 
         handleFileSelect: function(value) {
-            if(!value || value === "all") {
+            if(!value) {
                 return;
             }
 

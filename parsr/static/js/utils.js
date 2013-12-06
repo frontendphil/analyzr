@@ -1,6 +1,109 @@
-var Utils;
-
 (function() {
+
+    if(!window.analyzr) {
+        window.analyzr = {};
+    }
+
+    window.ns = function(packages) {
+        packages = packages.split(".");
+
+        var createNS = function(packages, current) {
+            var pkg = packages.shift();
+
+            if(!pkg) {
+                return;
+            }
+
+            if(pkg === "analyzr") {
+                return createNS(packages, current);
+            }
+
+            if(!current) {
+                current = window.analyzr;
+            }
+
+            if(!current[pkg]) {
+                current[pkg] = {};
+            }
+
+            return createNS(packages, current[pkg]);
+        };
+
+        createNS(packages);
+    };
+
+    ns("utils");
+
+    analyzr.utils.svgToPNG = function(target) {
+        var canvas = $("<canvas />");
+
+        var element = target.clone();
+
+        var inlineStyles = function(parent) {
+            var styles = analyzr.utils.css(parent);
+            parent.css(styles);
+
+            $.each(parent.children(), function() {
+                inlineStyles($(this));
+            });
+        };
+
+        inlineStyles(element);
+
+        var ctx = canvas.get(0).getContext("2d");
+
+        $("body").append(canvas);
+
+        var serializer = new XMLSerializer();
+        var data = serializer.serializeToString(element.get(0));
+        var DOMURL = window.URL || window.webkitURL || window;
+
+        var img = new Image();
+        var svg = new Blob([data], { type: "image/svg+xml;charset=utf-8" });
+        var url = DOMURL.createObjectURL(svg);
+
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0);
+            DOMURL.revokeObjectURL(svg);
+        };
+
+        img.src= url;
+    };
+
+    analyzr.utils.css = function(a) {
+        var sheets = document.styleSheets, o = {};
+        for (var i in sheets) {
+            var rules = sheets[i].rules || sheets[i].cssRules;
+            for (var r in rules) {
+                if (a.is(rules[r].selectorText)) {
+                    o = $.extend(o, css2json(rules[r].style), css2json(a.attr('style')));
+                }
+            }
+        }
+        return o;
+    };
+
+    var css2json = function(css) {
+        var s = {}, i;
+        if (!css) {
+            return s;
+        }
+
+        if (css instanceof CSSStyleDeclaration) {
+            for (i in css) {
+                if ((css[i]).toLowerCase) {
+                    s[(css[i]).toLowerCase()] = (css[css[i]]);
+                }
+            }
+        } else if (typeof css === "string") {
+            css = css.split("; ");
+            for (i in css) {
+                var l = css[i].split(": ");
+                s[l[0].toLowerCase()] = (l[1]);
+            }
+        }
+        return s;
+    };
 
     if(!String.prototype.capitalize) {
         String.prototype.capitalize = function() {

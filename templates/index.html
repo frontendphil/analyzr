@@ -2,12 +2,13 @@
 
 {% block content %}
     <div class='repos'></div>
+    <a href='{% url "parsr.views.repo.create" %}'>Add Repository<a>
 {% endblock %}
 
 {% block script %}
     <script type="text/javascript">
         $(document).ready(function() {
-            var repositories = new Repositories(".repos");
+            var repositories = new analyzr.plugins.Repositories(".repos");
             repositories.load();
         });
     </script>

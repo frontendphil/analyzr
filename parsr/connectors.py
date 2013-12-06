@@ -39,7 +39,7 @@ class Action(object):
 
     @classmethod
     def readable(cls):
-        return [cls.ADD, cls.MODIFY]
+        return cls.MODIFY
 
 
 class Connector(object):

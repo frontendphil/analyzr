@@ -40,6 +40,7 @@
             data-branch="{{ branch.href }}">
 
             <h3>Complexity Metrics</h3>
+            <button class='export-png'>Export</button>
         </div>
 
         <hr />
@@ -79,7 +80,7 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-            var metrics = new Metrics(".metrics", {
+            var metrics = new analyzr.plugins.graph.Metrics(".metrics", {
                 height: 400,
                 margins: {
                     top: 40,
@@ -90,7 +91,7 @@
             });
             metrics.load();
 
-            var churn = new CodeChurn(".churn", {
+            var churn = new analyzr.plugins.graph.CodeChurn(".churn", {
                 height: 300,
                 margins: {
                     top: 20,
@@ -99,6 +100,13 @@
                 }
             });
             churn.load();
+
+            $(".export-png").click(function() {
+                var parent = $(this).parent();
+                var svg = parent.find("svg");
+
+                analyzr.utils.svgToPNG(svg);
+            });
         });
     </script>
 {% endblock %}

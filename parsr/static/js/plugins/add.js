@@ -1,8 +1,8 @@
-var AddRepoForm;
+ns("plugins");
 
 (function() {
 
-	AddRepoForm = Class.extend({
+	analyzr.plugins.AddRepoForm = analyzr.core.Class.extend({
 		init: function(target, toggle) {
 			this.form = $(target);
 
@@ -12,6 +12,10 @@ var AddRepoForm;
 
 			this.toggle.click(function() {
 				that.update();
+			});
+
+			this.form.find("input").each(function() {
+				$(this).attr("autocomplete", "off");
 			});
 
 			this.form.on("submit", function(e) {
@@ -45,7 +49,7 @@ var AddRepoForm;
 			event.preventDefault();
 
 			var that = this;
-			var mask = new Mask("body", "Creating repository. Please wait...");
+			var mask = new analyzr.core.Mask("body", "Creating repository. Please wait...");
 
 			$.ajax(this.form.attr("action"), {
 				method: "POST",
@@ -66,7 +70,7 @@ var AddRepoForm;
 					mask.remove();
 
 					if(data.responseJSON.repo) {
-						var dialog = new Dialog("There seems to be an error with the repo properties. Please check the URL, kind, and the credentials.");
+						var dialog = new analyzr.plugins.Dialog("There seems to be an error with the repo properties. Please check the URL, kind, and the credentials.");
 						dialog.show();
 					}
 				}

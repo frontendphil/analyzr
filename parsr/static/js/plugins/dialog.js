@@ -1,8 +1,8 @@
-var Dialog;
+ns("plugins");
 
 (function() {
 
-	Dialog = Mask.extend({
+	analyzr.plugins.Dialog = analyzr.core.Mask.extend({
 
 		init: function(attrs) {
 			this.attrs = attrs;

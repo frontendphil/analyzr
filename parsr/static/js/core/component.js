@@ -1,8 +1,8 @@
-var Component;
+ns("core");
 
 (function() {
 
-    Component = Observeable.extend({
+    analyzr.core.Component = analyzr.core.Observeable.extend({
 
         init: function(action, target) {
             this._super();
@@ -26,7 +26,7 @@ var Component;
         },
 
         mask: function(text) {
-            this.elementMask = new Mask(this.dom, text);
+            this.elementMask = new analyzr.core.Mask(this.dom, text);
             this.elementMask.show();
         },
 

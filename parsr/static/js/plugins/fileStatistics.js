@@ -1,10 +1,10 @@
-var FileStatistics;
+ns("plugins");
 
 (function() {
 
     var LINE_COUNT = 5;
 
-    FileStatistics = Component.extend({
+    analyzr.plugins.FileStatistics = analyzr.core.Component.extend({
 
         init: function(target) {
             this.start = {

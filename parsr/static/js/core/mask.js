@@ -1,8 +1,8 @@
-var Mask;
+ns("core");
 
 (function() {
 
-	Mask = Class.extend({
+	analyzr.core.Mask = analyzr.core.Class.extend({
 
 		init: function(target, text) {
 			this.container = $(target);

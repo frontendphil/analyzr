@@ -1,10 +1,10 @@
-var Repositories;
+ns("plugins");
 
 (function() {
 
     var REFRESH_INTERVAL = 30 * 1000;
 
-    Repositories = Observeable.extend({
+    analyzr.plugins.Repositories = analyzr.core.Observeable.extend({
 
         init: function(target) {
             this._super();
@@ -169,7 +169,7 @@ var Repositories;
                 text += error;
             }
 
-            var dialog = new Dialog({
+            var dialog = new analyzr.plugins.Dialog({
                 width: 500,
                 text: text,
                 actions: [

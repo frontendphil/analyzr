@@ -1,8 +1,8 @@
-var Graph;
+ns("plugins.graph");
 
 (function() {
 
-    Graph = Component.extend({
+    analyzr.plugins.graph.Graph = analyzr.core.Component.extend({
 
         init: function(base, target, attrs) {
             attrs = attrs || {};
@@ -22,7 +22,7 @@ var Graph;
 
             var that = this;
 
-            this.filter = new Filter(this.dom, function() {
+            this.filter = new analyzr.plugins.Filter(this.dom, function() {
                 that.setup(that.url + "?" + this.toQueryString(), that.branch);
             });
 

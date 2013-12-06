@@ -1,8 +1,8 @@
-var CommitHistory;
+ns("plugins.graph");
 
 (function() {
 
-    CommitHistory = Graph.extend({
+    analyzr.plugins.graph.CommitHistory = analyzr.plugins.graph.Graph.extend({
 
         init: function(target, attrs) {
             this._super("commits", target, attrs);
@@ -224,11 +224,4 @@ var CommitHistory;
         }
 
     });
-
-    CommitHistory.auto = function(target, attrs) {
-        $(target || ".commits").each(function() {
-            new CommitHistory(this, attrs);
-        });
-    };
-
 }());
