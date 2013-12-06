@@ -710,6 +710,11 @@ class Revision(models.Model):
             return
 
         mimetype, encoding = guess_type(filename)
+        mimetype = mimetype.split("/")[1] if mimetype else None
+
+        # reject all files that wouldn't be measurable anyways.
+        if not mimetype in Analyzer.parseable_types():
+            return
 
         if original:
             original = File.objects\
@@ -722,7 +727,7 @@ class Revision(models.Model):
             date=self.date,
             name=filename,
             package=package,
-            mimetype=mimetype.split("/")[1] if mimetype else None,
+            mimetype=mimetype,
             change_type=action,
             copy_of=original[0] if original else None
         )
