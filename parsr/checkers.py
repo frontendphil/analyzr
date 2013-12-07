@@ -79,7 +79,7 @@ class JHawk(Checker):
     # thi sis important as for revisions with a lot of files the
     # generated report might not fit into main memory or can't
     # be parsed.
-    FILE_BATCH_SIZE = 10
+    FILE_BATCH_SIZE = 50
 
     def __init__(self, config_path, result_path):
         super(JHawk, self).__init__(config_path, result_path)
