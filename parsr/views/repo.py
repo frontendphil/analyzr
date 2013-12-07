@@ -13,7 +13,7 @@ from parsr.forms import RepoForm
 
 
 @render_to("repo.html")
-def index(request, repo_id, branch_id=None):
+def view(request, repo_id, branch_id=None):
     repo = get_object_or_404(Repo, pk=repo_id)
     branch = get_object_or_404(Branch, pk=branch_id) if branch_id else repo.default_branch()
 

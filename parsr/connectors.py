@@ -39,7 +39,7 @@ class Action(object):
 
     @classmethod
     def readable(cls):
-        return cls.MODIFY
+        return [cls.ADD, cls.MODIFY]
 
 
 class Connector(object):
@@ -154,7 +154,7 @@ class Git(Connector):
 
     def get_churn(self, revision, filename):
         if not self.commit:
-            return
+            self.commit = self.repo.commit(revision.identifier)
 
         stats = self.commit.stats.files
 

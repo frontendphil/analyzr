@@ -20,4 +20,5 @@ urlpatterns = patterns('',
 
     url(r"^branch/(?P<branch_id>\d+)", include("parsr.urls.branch")),
     url(r"^author/(?P<author_id>\d+)", include("parsr.urls.author")),
+    url(r"^revision/(?P<identifier>\s+)$", include("parsr.urls.revision")),
 )

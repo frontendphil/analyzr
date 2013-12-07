@@ -78,7 +78,7 @@ def parse_date_range(request, branch):
     return start, end
 
 
-def index(request, branch_id):
+def view(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
     return HttpResponseRedirect(reverse("parsr.views.repo", kwargs={

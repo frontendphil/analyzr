@@ -2,12 +2,12 @@ from django.conf.urls import patterns, url
 
 urlpatterns = patterns('parsr.views.branch',
 
-    url(r"^$", "index"),
+    url(r"^$", "info"),
 
-    url(r"^/info$", "info"),
+    url(r"^/view$", "view"),
     url(r'^/contributors$', 'contributors'),
 
-    url(r'^/author/(?P<author_id>\d+)$', 'author'),
+    url(r'^/author/(?P<author_id>\d+)/view$', 'author'),
 
     url(r'^/author/(?P<author_id>\d+)/commits$', "commits"),
     url(r'^/commits$', "commits"),

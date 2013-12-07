@@ -162,7 +162,7 @@ ns("plugins");
                         "</td>" +
                         "<td class='avatar' style='background-image:url(" + this.rep.icon + ")'></td>" +
                         "<td>" +
-                            "<a href='" + branch + this.href + "'>" + this.rep.name + "</a>" +
+                            "<a href='" + branch + this.view + "'>" + this.rep.name + "</a>" +
                         "</td>" +
                         "<td>" + this.rep.count + "</td>" +
                     "</tr>"

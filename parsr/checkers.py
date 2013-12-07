@@ -1,5 +1,6 @@
 import subprocess
 import json
+import math
 
 from jinja2 import Environment, FileSystemLoader
 from xml.dom import minidom
@@ -28,6 +29,9 @@ class CheckerException(Exception):
             value
         )
 
+    def __unicode__(self):
+        return self.__str__()
+
     def __repr__(self):
         return self.__unicode__()
 
@@ -44,16 +48,14 @@ class Checker(object):
     def __str__(self):
         return self.__unicode__()
 
-    def config_file(self, revision):
-        return "%s/%s.xml" % (self.config_path, revision.identifier)
-
-    def result_file(self, revision):
-        return "%s/%s.xml" % (self.result_path, revision.identifier)
-
     def get_decimal(self, value):
         return Decimal("%d" % round(float(value), 2))
 
     def execute(self, cmd):
+        # close_fds must be true as python would otherwise reuse created
+        # files handles. this would cause a serious memeory leak.
+        # btw: the file handles are craeted because we pipe stdout and
+        # stderr to them.
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
         stdout, stderr = proc.communicate()
@@ -73,52 +75,79 @@ class Checker(object):
 
 class JHawk(Checker):
 
+    # determines how many files are analyzed at once
+    # thi sis important as for revisions with a lot of files the
+    # generated report might not fit into main memory or can't
+    # be parsed.
+    FILE_BATCH_SIZE = 10
+
     def __init__(self, config_path, result_path):
         super(JHawk, self).__init__(config_path, result_path)
 
         self.name = "jhawk"
         self.files = []
+        self.configurations = []
+        self.results = []
+
+    def config_file(self, revision, part):
+        return "%s/%s_%d.xml" % (self.config_path, revision.identifier, part)
+
+    def result_file(self, revision, part):
+        return "%s/%s_%d" % (self.result_path, revision.identifier, part)
 
     def configure(self, files, revision, connector):
         self.measures = {}
+        self.configurations = []
+        self.results = []
 
         template = self.env.get_template("%s.xml" % self.name)
 
-        filename = self.config_file(revision)
-        result_file = self.result_file(revision)
+        file_count = len(files)
+        chunks = int(math.ceil(file_count / self.FILE_BATCH_SIZE))
 
-        options = {
-            "checker": self.name,
-            "project_path": PROJECT_PATH,
-            "base_path": connector.get_repo_path(),
-            "target": result_file,
-            "filepattern": "|".join([".*/%s" % f.name for f in files])
-        }
+        if not file_count % self.FILE_BATCH_SIZE == 0:
+            chunks = chunks + 1
 
-        with open(filename, "wb") as f:
-            f.write(template.render(options))
+        for i in range(chunks):
+            start = i * self.FILE_BATCH_SIZE
+            end = min((i + 1) * self.FILE_BATCH_SIZE, file_count)
 
-        self.configuration = filename
-        self.results = result_file
+            chunk = files[start:end]
+
+            filename = self.config_file(revision, i)
+            result_file = self.result_file(revision, i)
+
+            options = {
+                "checker": self.name,
+                "project_path": PROJECT_PATH,
+                "base_path": connector.get_repo_path(),
+                "target": result_file,
+                "filepattern": "|".join([".*/%s" % f.name for f in chunk])
+            }
+
+            with open(filename, "wb") as f:
+                f.write(template.render(options))
+
+            self.configurations.append(filename)
+            self.results.append(result_file)
+
         self.revision = revision
 
         for f in files:
             self.files.append(f.full_path())
 
     def run(self):
-        if not self.configuration:
-            return
+        for configuration in self.configurations:
+            cmd = [
+                "ant",
+                "-lib", "%s/lib/%s/JHawkCommandLine.jar" % (PROJECT_PATH, self.name),
+                "-f", configuration
+            ]
 
-        cmd = [
-            "ant",
-            "-lib", "%s/lib/%s/JHawkCommandLine.jar" % (PROJECT_PATH, self.name),
-            "-f", self.configuration
-        ]
-
-        self.execute(cmd)
+            self.execute(cmd)
 
         # Don't allow multiple runs with the same configuration
-        self.configuration = None
+        self.configurations = []
 
         return True
 
@@ -157,67 +186,62 @@ class JHawk(Checker):
         return False
 
     def parse(self, connector):
-        if not self.results:
-            return
+        for result in self.results:
+            xml_doc = minidom.parse("%s.xml" % result)
+            packages = xml_doc.getElementsByTagName("Package")
 
-        xml_doc = minidom.parse("%s.xml" % self.results)
-        packages = xml_doc.getElementsByTagName("Package")
+            for package in packages:
+                name = self.get_name(package)
+                classes = package.getElementsByTagName("Class")
 
-        for package in packages:
-            name = self.get_name(package)
-            classes = package.getElementsByTagName("Class")
+                path = name.replace(".", "/")
 
-            path = name.replace(".", "/")
+                for cls in classes:
+                    class_metrics = self.get_metrics(cls)
+                    class_name = self.get_node_value(cls, "ClassName")
 
-            for cls in classes:
-                class_metrics = self.get_metrics(cls)
-                class_name = self.get_node_value(cls, "ClassName")
+                    if "$" in class_name:
+                        # private class inside of class
+                        # ignore!
+                        continue
 
-                if "$" in class_name:
-                    # private class inside of class
-                    # ignore!
-                    continue
+                    filename = "%s/%s.java" % (path, class_name)
 
-                filename = "%s/%s.java" % (path, class_name)
+                    if not self.includes(filename):
+                        # JHawk analyzes _everything_ therefore we must
+                        # filter files, which are not present in the current revision
+                        continue
 
-                if not self.includes(filename):
-                    # JHawk analyzes _everything_ therefore we must
-                    # filter files, which are not present in the current revision
-                    continue
+                    if not filename in self.measures:
+                        self.measures[filename] = []
 
-                if not filename in self.measures:
-                    self.measures[filename] = []
+                    self.add_halstead_metrics(filename, class_metrics)
 
-                self.add_halstead_metrics(filename, class_metrics)
+                    self.measures[filename].append({
+                        "kind": "CyclomaticComplexity",
+                        "value": self.get_decimal(self.get_node_value(class_metrics, "avcc"))
+                    })
 
-                self.measures[filename].append({
-                    "kind": "CyclomaticComplexity",
-                    "value": self.get_decimal(self.get_node_value(class_metrics, "avcc"))
-                })
+                    self.measures[filename].append({
+                        "kind": "FanIn",
+                        "value": self.get_decimal(self.get_node_value(class_metrics, "fanIn"))
+                    })
 
-                self.measures[filename].append({
-                    "kind": "FanIn",
-                    "value": self.get_decimal(self.get_node_value(class_metrics, "fanIn"))
-                })
+                    self.measures[filename].append({
+                        "kind": "FanOut",
+                        "value": self.get_decimal(self.get_node_value(class_metrics, "fanOut"))
+                    })
 
-                self.measures[filename].append({
-                    "kind": "FanOut",
-                    "value": self.get_decimal(self.get_node_value(class_metrics, "fanOut"))
-                })
-
-                self.measures[filename].append({
-                    "kind": "SLOC",
-                    "value": self.get_decimal(self.get_node_value(class_metrics, "loc"))
-                })
+                    self.measures[filename].append({
+                        "kind": "SLOC",
+                        "value": self.get_decimal(self.get_node_value(class_metrics, "loc"))
+                    })
 
         return self.measures
 
-
-    def result_file(self, revision):
-        return "%s/%s" % (self.result_path, revision.identifier)
-
     def __unicode__(self):
         return "JHawk Java Checker"
+
 
 class ComplexityReport(Checker):
 
@@ -294,9 +318,9 @@ class ComplexityReport(Checker):
                     {
                         "kind": "Halstead",
                         "value": {
-                            "volume": self.get_decimal(self.get_halstead_value(functions, "volume")),
-                            "difficulty": self.get_decimal(self.get_halstead_value(functions, "difficulty")),
-                            "effort": self.get_decimal(self.get_halstead_value(functions, "effort"))
+                            "volume": self.get_decimal(self.get_halstead_value(data["functions"], "volume")),
+                            "difficulty": self.get_decimal(self.get_halstead_value(data["functions"], "difficulty")),
+                            "effort": self.get_decimal(self.get_halstead_value(data["functions"], "effort"))
                         }
                     }
                 ]

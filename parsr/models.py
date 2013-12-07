@@ -1,3 +1,5 @@
+import os
+
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
@@ -41,10 +43,13 @@ class Repo(models.Model):
     password = models.CharField(max_length=255, null=True, blank=True)
 
     def __unicode__(self):
-        return "%s repository at: %s" % (self.kind, self.url)
+        return "%s (%s)" % (self.url, self.kind)
 
     def href(self):
-        return reverse("parsr.views.repo.index", kwargs={"repo_id": self.id})
+        return reverse("parsr.views.repo.info", kwargs={"repo_id": self.id})
+
+    def view(self):
+        return reverse("parsr.views.repo.view", kwargs={"repo_id": self.id})
 
     def busy(self):
         return self.analyzing() or self.measuring()
@@ -120,6 +125,7 @@ class Repo(models.Model):
     def json(self):
         return {
             "href": self.href(),
+            "view": self.view(),
             "rel": "repo",
             "rep": {
                 "id": self.id,
@@ -186,7 +192,9 @@ def remove_repo(sender, instance, **kwargs):
     connector = Connector.get(instance)
 
     path = connector.get_repo_path()
-    rmtree(path)
+
+    if os.path.exists(path):
+        rmtree(path)
 
 
 class Branch(models.Model):
@@ -208,7 +216,7 @@ class Branch(models.Model):
     last_measure_error = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return "Branch %s at %s" % (self.name, self.path)
+        return "%s at %s" % (self.name, self.path)
 
     def json(self):
         info = {}
@@ -225,11 +233,13 @@ class Branch(models.Model):
 
         return {
             "href": self.href(),
+            "view": self.view(),
             "rel": "branch",
             "rep": {
                 "id": self.id,
                 "name": self.name,
                 "path": self.path,
+                "repo": self.repo.href(),
                 "analyze": {
                     "running": self.analyzing,
                     "finished": self.analyzed,
@@ -255,7 +265,10 @@ class Branch(models.Model):
         return measured > 0 and not measured == self.revision_set.all().count()
 
     def href(self):
-        return reverse("parsr.views.branch.index", kwargs={"branch_id": self.id})
+        return reverse("parsr.views.branch.info", kwargs={"branch_id": self.id})
+
+    def view(self):
+        return reverse("parsr.views.branch.view", kwargs={"branch_id": self.id})
 
     def cleanup(self):
         self.remove_all(File, File.objects.filter(revision__branch=self))
@@ -533,7 +546,7 @@ class Branch(models.Model):
     def files(self, author=None, language=None, start=None, end=None):
         filters = {
             "revision__branch": self,
-            "change_type": Action.readable()
+            "change_type__in": Action.readable()
         }
 
         if author:
@@ -701,7 +714,42 @@ class Revision(models.Model):
     weekday = models.IntegerField(null=True)
 
     def __unicode__(self):
-        return "%s created by %s in %s of %s" % (self.identifier, self.author, self.branch, self.branch.repo)
+        return "id:\t\t%s\nauthor:\t\t%s\ndate:\t\t%s\nbranch:\t\t%s\nrepository:\t%s" % (
+            self.identifier,
+            self.author,
+            self.date,
+            self.branch,
+            self.branch.repo
+        )
+
+    def href(self):
+        return reverse("parsr.views.revision.info", kwargs={ "identifier": self.identifier })
+
+    def view(self):
+        return reverse("parsr.views.revision.view", kwargs={ "identifier": self.identifier })
+
+    def json(self):
+        return {
+            "href": self.href(),
+            "view": self.view(),
+            "rel": "revision",
+            "rep": {
+                "identifier": self.identifier,
+                "branch": self.branch.href(),
+                "author": self.author.href(),
+                "next": self.next.href() if self.next else None,
+                "measured": self.measured,
+                "date": self.date,
+                "complexDate": {
+                    "year": self.year,
+                    "month": self.month,
+                    "day": self.day,
+                    "hour": self.hour,
+                    "minute": self.minute,
+                    "weekday": self.weekday
+                }
+            }
+        }
 
     def add_file(self, filename, action, original=None):
         package, filename = File.parse_name(filename)
@@ -719,7 +767,7 @@ class Revision(models.Model):
         if original:
             original = File.objects\
                            .filter(name=filename, package=package, revision__branch=self.branch)\
-                           .order_by("-revision__date")[0:1]
+                           .order_by("-date")[0:1]
 
         File.objects.create(
             revision=self,
@@ -771,14 +819,14 @@ class Revision(models.Model):
         return self.identifier == identifier
 
     def modified_files(self):
-        return self.file_set.filter(change_type=Action.readable(), mimetype__in=Analyzer.parseable_types())
+        return self.file_set.filter(change_type__in=Action.readable(), mimetype__in=Analyzer.parseable_types())
 
     def includes(self, filename):
         package, filename = File.parse_name(filename)
 
         return not self.file_set.filter(name=filename,
                                         package__endswith=package,
-                                        change_type=Action.readable()).count() == 0
+                                        change_type__in=Action.readable()).count() == 0
 
     def get_file(self, filename):
         package, filename = File.parse_name(filename)
@@ -786,7 +834,7 @@ class Revision(models.Model):
         try:
             return self.file_set.get(name=filename,
                                      package__endswith=package,
-                                     change_type=Action.readable())
+                                     change_type__in=Action.readable())
         except File.DoesNotExist:
             message = "Could not find file using package: %s and filename: %s.\nRevision: %s" % (
                 package,
@@ -859,18 +907,23 @@ class File(models.Model):
     lines_removed = models.IntegerField(default=0)
 
     def __unicode__(self):
-        return self.name
+        return "name:\t\t%s\npackage:\t%s\nmimetype:\t%s\nchange type:\t%s" % (
+            self.name,
+            self.package,
+            self.mimetype,
+            self.change_type
+        )
 
     def get_previous(self):
         if self.change_type == Action.ADD:
             return None
 
         try:
-            return File.objects.filter(name=self.name, revision__date__lt=self.revision.date)\
-                               .order_by("-revision__date")[0]
+            return File.objects.filter(name=self.name, date__lt=self.revision.date)\
+                               .order_by("-date")[0]
         except:
-            files = File.objects.filter(name=self.name, revision__date__lte=self.revision.date)\
-                                .order_by("-revision__date")
+            files = File.objects.filter(name=self.name, date__lte=self.revision.date)\
+                                .order_by("-date")
 
             if files.count() > 1:
                 # multiple edits in one minute. we pick something.
@@ -911,19 +964,27 @@ class File(models.Model):
 
             if kind == "FanIn":
                 self.fan_in = measure["value"]
-                self.fan_in_delta = self.fan_in - previous.fan_in
+
+                if previous:
+                    self.fan_in_delta = self.fan_in - previous.fan_in
 
             if kind == "FanOut":
                 self.fan_out = measure["value"]
-                self.fan_out_delta = self.fan_out - previous.fan_out
+
+                if previous:
+                    self.fan_out_delta = self.fan_out - previous.fan_out
 
             if kind == "SLOC":
                 self.sloc = measure["value"]
-                self.sloc_delta = self.sloc - previous.sloc
+
+                if previous:
+                    self.sloc_delta = self.sloc - previous.sloc
 
         if self.fan_in and self.fan_out and self.sloc:
             self.hk = self.sloc * pow(self.fan_in * self.fan_out, 2)
-            self.hk_delta = self.hk - previous.hk
+
+            if previous:
+                self.hk_delta = self.hk - previous.hk
 
         self.save()
 
@@ -955,7 +1016,10 @@ class Author(models.Model):
         return self.name
 
     def href(self):
-        return reverse("parsr.views.author.index", kwargs={"author_id": self.id})
+        return reverse("parsr.views.author.info", kwargs={"author_id": self.id})
+
+    def view(self):
+        return reverse("parsr.views.author.view", kwargs={"author_id": self.id})
 
     def revision_count(self, branch):
         revisions = Revision.objects.filter(author=self, branch=branch).distinct()
@@ -999,24 +1063,30 @@ class Author(models.Model):
                                 halstead_volume=Sum("halstead_volume_delta")
                             )
 
+        cyclomatic = aggregate["cyclomatic"] or 0
+        halstead_effort = aggregate["halstead_effort"] or 0
+        halstead_volume = aggregate["halstead_volume"] or 0
+        halstead_difficulty = aggregate["halstead_difficulty"] or 0
+
         return {
-            "cyclomatic": float(aggregate["cyclomatic"]),
+            "cyclomatic": float(cyclomatic),
             "halstead": {
-                "effort": float(aggregate["halstead_effort"]),
-                "volume": float(aggregate["halstead_volume"]),
-                "difficulty": float(aggregate["halstead_difficulty"])
+                "effort": float(halstead_effort),
+                "volume": float(halstead_volume),
+                "difficulty": float(halstead_difficulty)
             },
             "combined": float(
-                aggregate["cyclomatic"] +
-                aggregate["halstead_effort"] +
-                aggregate["halstead_volume"] +
-                aggregate["halstead_difficulty"]
+                cyclomatic +
+                halstead_effort +
+                halstead_volume +
+                halstead_difficulty
             )
         }
 
     def json(self, branch):
         return {
             "href": self.href(),
+            "view": self.view(),
             "rel": "author",
             "rep": {
                 "id": self.id,

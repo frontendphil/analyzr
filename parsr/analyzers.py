@@ -8,6 +8,30 @@ from parsr.checkers import JHawk, ComplexityReport
 
 from analyzr.settings import RESULT_PATH
 
+
+class AnalyzeError(Exception):
+
+    def __init__(self, error, revision, f):
+        self.error = error
+        self.revision = revision
+        self.f = f
+
+        super(AnalyzeError, self).__init__()
+
+    def __str__(self):
+        return "%s\n\caused by revision\n\n%s\n\nprocessing file\n\n%s" % (
+            self.error,
+            self.revision,
+            self.f
+        )
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __repr__(self):
+        return self.__unicode__()
+
+
 class Analyzer(object):
 
     analyzers = {}
@@ -22,53 +46,55 @@ class Analyzer(object):
         return types
 
     @classmethod
-    def register(cls, mimetype, analyzer):
-        if mimetype in cls.analyzers:
-            raise "Analyzer already registered"
+    def register(cls, mimetype, checker):
+        if not mimetype in cls.analyzers:
+            cls.analyzers[mimetype] = []
 
-        cls.analyzers[mimetype] = analyzer()
+        cls.analyzers[mimetype].append(BaseAnalyzer(checker))
 
     def __init__(self, repo, branch):
         self.branch = branch
         self.connector = Connector.get(repo)
 
-    def get_specific_analyzer(self, mimetype):
+    def get_specific_analyzers(self, mimetype):
         if not mimetype in Analyzer.analyzers:
-            return None
+            return []
 
         return Analyzer.analyzers[mimetype]
 
     def cleanup(self):
-        for mimetype, analyzer in self.analyzers.iteritems():
-            analyzer.clear()
+        for mimetype, analyzers in self.analyzers.iteritems():
+            [analyzer.clear() for analyzer in analyzers]
 
     def measure(self, revision):
         self.cleanup()
 
         for f in revision.modified_files():
-            analyzer = self.get_specific_analyzer(f.mimetype)
+            for analyzer in self.get_specific_analyzers(f.mimetype):
+                analyzer.add_file(f)
 
-            if not analyzer:
-                continue
+        for mimetype, analyzers in self.analyzers.iteritems():
+            for analyzer in analyzers:
+                if not analyzer.empty():
+                    results = analyzer.measure(revision, self.connector)
 
-            analyzer.add_file(f)
-
-        for mimetype, analyzer in self.analyzers.iteritems():
-            if not analyzer.empty():
-                results = analyzer.measure(revision, self.connector)
-
-                self.store_results(revision, results)
+                    self.store_results(revision, results)
 
     def store_results(self, revision, results):
         self.connector.lock(revision)
 
         for filename, measures in results.iteritems():
-            f = revision.get_file(filename)
-            f.add_measures(measures)
+            try:
+                f = revision.get_file(filename)
+                f.add_measures(measures)
 
-            code_churn = self.connector.get_churn(revision, f.full_path())
+                code_churn = self.connector.get_churn(revision, f.full_path())
 
-            f.add_churn(code_churn)
+                f.add_churn(code_churn)
+            except Exception, e:
+                self.connector.unlock()
+
+                raise AnalyzeError(e, revision, f)
 
         self.connector.unlock()
 
@@ -94,9 +120,9 @@ class Analyzer(object):
 
 class BaseAnalyzer(object):
 
-    def __init__(self):
+    def __init__(self, checker):
         self.files = []
-        self.results = {}
+        self.checker = checker
 
     def __str__(self):
         return self.__unicode__()
@@ -124,21 +150,17 @@ class BaseAnalyzer(object):
 
     def clear(self):
         self.files = []
-        self.results = {}
 
     def measure(self, revision, connector):
         config_path, result_path = self.setup_paths(connector)
 
-        for cls in self.checkers:
-            checker = cls(config_path, result_path)
-            checker.configure(self.files, revision, connector)
+        checker = self.checker(config_path, result_path)
+        checker.configure(self.files, revision, connector)
 
-            if checker.run():
-                results = checker.parse(connector)
+        results = None
 
-                self.store_results(results)
-
-        results = self.results
+        if checker.run():
+            results = checker.parse(connector)
 
         self.cleanup(config_path, result_path)
 
@@ -147,46 +169,7 @@ class BaseAnalyzer(object):
     def empty(self):
         return len(self.files) == 0
 
-    def store_results(self, results):
-        for filename, measures in results.iteritems():
-            if not filename in self.results:
-                self.results[filename] = []
 
-            self.results[filename] += measures
-
-
-class Java(BaseAnalyzer):
-
-    def __init__(self):
-        self.checkers = [JHawk]
-
-        super(Java, self).__init__()
-
-    def __unicode__(self):
-        return "Java analyzer using: %d" % self.checkers
-
-
-Analyzer.register("x-java-source", Java)
-Analyzer.register("x-java", Java)
-
-
-class JavaScript(BaseAnalyzer):
-    def __init__(self):
-        self.checkers = [ComplexityReport]
-
-        super(JavaScript, self).__init__()
-
-    def __unicode__(self):
-        return "JavaScript analyzer using: %s" % self.checkers
-
-
-Analyzer.register("javascript", JavaScript)
-
-
-class C(BaseAnalyzer):
-    pass
-
-    def __unicode__(self):
-        return "C analyzer"
-
-Analyzer.register("x-c", C)
+Analyzer.register("x-java-source", JHawk)
+Analyzer.register("x-java", JHawk)
+Analyzer.register("javascript", ComplexityReport)

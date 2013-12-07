@@ -99,7 +99,7 @@ ns("plugins");
             }
 
             return this.wrap($(
-                "<a href='" + repo.href + "'>" + repo.rep.name + "</a>"
+                "<a href='" + repo.view + "'>" + repo.rep.name + "</a>"
             ));
         },
 
@@ -341,7 +341,7 @@ ns("plugins");
             var that = this;
 
             var updateProgress = function() {
-                $.ajax(branch.href + "/info", {
+                $.ajax(branch.href, {
                     success: function(branch) {
                         if(typeof branch.rep.activity.progress === "undefined") {
                             container.fadeOut(function() {
