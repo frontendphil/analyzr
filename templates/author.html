@@ -28,16 +28,16 @@
 
     <div
         class='stats'
-        data-author="{{ author.href }}"
-        data-branch="{{ branch.href }}"></div>
+        data-author="{{ author|href }}"
+        data-branch="{{ branch|href }}"></div>
 
     <hr />
 
     {% if branch.measured %}
         <div
             class='metrics centered'
-            data-author="{{ author.href }}"
-            data-branch="{{ branch.href }}">
+            data-author="{{ author|href }}"
+            data-branch="{{ branch|href }}">
 
             <h3>Complexity Metrics</h3>
         </div>
@@ -46,8 +46,8 @@
 
         <div
             class='churn centered'
-            data-author="{{ author.href }}"
-            data-branch="{{ branch.href }}">
+            data-author="{{ author|href }}"
+            data-branch="{{ branch|href }}">
 
             <h3>Code Churn</h3>
         </div>
@@ -57,8 +57,8 @@
 
     <div
         class='punchcard'
-        data-author="{{ author.href }}"
-        data-branch="{{ branch.href }}"></div>
+        data-author="{{ author|href }}"
+        data-branch="{{ branch|href }}"></div>
 
 {% endblock %}
 

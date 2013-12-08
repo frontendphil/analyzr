@@ -30,6 +30,11 @@ def is_checkbox(value):
 	return value.field.__class__.__name__ == "BooleanField"
 
 
+@register.filter
+def href(value):
+    return value.href(value.id)
+
+
 @register.tag
 def gravatar(parser, token):
     try:

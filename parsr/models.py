@@ -25,6 +25,10 @@ from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE
 
 class Repo(models.Model):
 
+    @classmethod
+    def href(cls, repo_id):
+        return reverse("parsr.views.repo.info", kwargs={ "repo_id": repo_id })
+
     TYPES = (
         ("svn", "Subversion"),
         ("git", "Git"),
@@ -44,9 +48,6 @@ class Repo(models.Model):
 
     def __unicode__(self):
         return "%s (%s)" % (self.url, self.kind)
-
-    def href(self):
-        return reverse("parsr.views.repo.info", kwargs={"repo_id": self.id})
 
     def view(self):
         return reverse("parsr.views.repo.view", kwargs={"repo_id": self.id})
@@ -124,7 +125,7 @@ class Repo(models.Model):
 
     def json(self):
         return {
-            "href": self.href(),
+            "href": Repo.href(self.id),
             "view": self.view(),
             "rel": "repo",
             "rep": {
@@ -199,6 +200,10 @@ def remove_repo(sender, instance, **kwargs):
 
 class Branch(models.Model):
 
+    @classmethod
+    def href(cls, branch_id):
+        return reverse("parsr.views.branch.info", kwargs={ "branch_id": branch_id })
+
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
 
@@ -232,14 +237,14 @@ class Branch(models.Model):
             info["count"] = self.revision_set.all().count()
 
         return {
-            "href": self.href(),
+            "href": Branch.href(self.id),
             "view": self.view(),
             "rel": "branch",
             "rep": {
                 "id": self.id,
                 "name": self.name,
                 "path": self.path,
-                "repo": self.repo.href(),
+                "repo": Repo.href(self.repo_id),
                 "analyze": {
                     "running": self.analyzing,
                     "finished": self.analyzed,
@@ -263,9 +268,6 @@ class Branch(models.Model):
         measured = self.revision_set.filter(measured=True).count()
 
         return measured > 0 and not measured == self.revision_set.all().count()
-
-    def href(self):
-        return reverse("parsr.views.branch.info", kwargs={"branch_id": self.id})
 
     def view(self):
         return reverse("parsr.views.branch.view", kwargs={"branch_id": self.id})
@@ -726,7 +728,7 @@ class Revision(models.Model):
             "rel": "revision",
             "rep": {
                 "identifier": self.identifier,
-                "branch": self.branch.href(),
+                "branch": Branch.href(self.branch_id),
                 "author": Author.href(self.author_id),
                 "next": Revision.href(self.next_id) if self.next else None,
                 "measured": self.measured,
