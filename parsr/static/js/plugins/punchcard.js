@@ -59,6 +59,22 @@ ns("plugins");
                 return container;
             }
 
+            container.qtip({
+                content: {
+                    text: $("<div><b>" + value + "</b> contributions</div>")
+                },
+                position: {
+                    my: "bottom center",
+                    at: "top center",
+                    adjust: {
+                        y: -10
+                    }
+                },
+                style: {
+                    classes: "qtip-dark qtip-tipsy qtip-shadow"
+                }
+            });
+
             var start = {
                 h: 50,
                 s: 45,
@@ -70,6 +86,16 @@ ns("plugins");
             value = value / max;
 
             var color = start.h + ((end-start.h) * value);
+
+            container.on("mouseenter", function() {
+                $(this).css({
+                    border: "1px solid hsl(" + color + "," + start.s + "%," + (start.l - 10) + "%)"
+                });
+            }).on("mouseleave", function() {
+                $(this).css({
+                    border: "none"
+                });
+            });
 
             return container.css({
                 width: 20 * value,
