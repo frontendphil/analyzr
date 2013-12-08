@@ -58,7 +58,7 @@ ns("plugins.graph");
                 .map(function(file) {
                     var deleted = false;
 
-                    var metrics = d3.keys(data[file][0][kind])
+                    var metrics = d3.keys(data[file][0].rep[kind])
                         .sort()
                         .filter(function(key) {
                             return key !== "date" && key !== "deleted";
@@ -68,12 +68,13 @@ ns("plugins.graph");
                                 type: type,
                                 id: type.replace(" ", "_").toLowerCase(),
                                 values: data[file].map(function(d) {
-                                    deleted = deleted || d.deleted;
+                                    deleted = deleted || d.rep.deleted;
 
                                     return {
                                         id: type.replace(" ", "_").toLowerCase(),
-                                        date: new Date(d.date),
-                                        value: d[kind][type]
+                                        date: new Date(d.rep.date),
+                                        revision: d.rep.revision,
+                                        value: d.rep[kind][type]
                                     };
                                 })
                             };
@@ -210,8 +211,6 @@ ns("plugins.graph");
                     });
             });
 
-            // that.updateScale(that.svg, data, info);
-
             // remove old background
             this.svg.select(".background").remove();
 
@@ -296,6 +295,47 @@ ns("plugins.graph");
             return result;
         },
 
+        getXY: function(metric, date) {
+            var value = this.nearestValue($.map(metric.values, function(value) {
+                return value.date;
+            }), date);
+
+            var x = value;
+            var y;
+            var revision;
+
+            $.each(metric.values, function() {
+                if(this.date.toISOString() !== value.toISOString()) {
+                    return;
+                }
+
+                y = this.value;
+                revision = this.revision;
+            });
+
+            return {
+                x: x,
+                y: y,
+                revision: revision
+            };
+        },
+
+        handleClick: function(args, file) {
+            var mouse = d3.mouse(args);
+
+            var x = mouse[0];
+            var y = mouse[1];
+
+            var domain = this.scale.x.domain();
+
+            var date = this.scale.x.invert(x);
+            date = this.constrain(date, domain[0], domain[1]);
+
+            var nearest = this.getXY(file.metrics[0], date);
+
+            alert(nearest.revision);
+        },
+
         handleMouseMove: function(args, metrics) {
             var mouse = d3.mouse(args);
 
@@ -307,32 +347,10 @@ ns("plugins.graph");
 
             var that = this;
 
-            var getXY = function(metric) {
-                var value = that.nearestValue($.map(metric.values, function(value) {
-                    return value.date;
-                }), date);
-
-                var x = value;
-                var y;
-
-                $.each(metric.values, function() {
-                    if(this.date.toISOString() !== value.toISOString()) {
-                        return;
-                    }
-
-                    y = this.value;
-                });
-
-                return {
-                    x: x,
-                    y: y
-                };
-            };
-
             var moveCircles = function(metric, scale, isLine) {
                 return function(selection) {
                     return selection.attr("transform", function() {
-                        var coord = getXY(metric, scale);
+                        var coord = that.getXY(metric, date);
 
                         var x = that.scale.x(coord.x);
                         var y = isLine ? 0 : scale(coord.y);
@@ -345,7 +363,7 @@ ns("plugins.graph");
             var updateValue = function(metric, scale) {
                 return function(selection) {
                     return selection.text(function() {
-                        var coord = getXY(metric, scale);
+                        var coord = that.getXY(metric, scale);
 
                         return coord.y;
                     });
@@ -369,12 +387,16 @@ ns("plugins.graph");
             });
         },
 
-        createDataPreview: function(metrics) {
+        createDataPreview: function(file) {
             var that = this;
 
-            this.svg.select(".background").on("mousemove", function() {
-                that.handleMouseMove(this, metrics);
-            });
+            this.svg.select(".background")
+                .on("mousemove", function() {
+                    that.handleMouseMove(this, file.metrics);
+                })
+                .on("click", function() {
+                    that.handleClick(this, file);
+                });
         },
 
         getFile: function(name) {
@@ -399,7 +421,7 @@ ns("plugins.graph");
             var file = this.getFile(value);
 
             this.updateScale(this.svg, file.metrics);
-            this.createDataPreview(file.metrics);
+            this.createDataPreview(file);
 
             this.raise("file.changed", file);
         },
@@ -418,8 +440,6 @@ ns("plugins.graph");
 
         handleData: function(svg, response) {
             var that = this;
-
-            // this.updateXScale(this.svg, response.info);
 
             this.files = this.parse(response.data, "complexity");
 

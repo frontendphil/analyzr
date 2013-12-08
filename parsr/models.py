@@ -617,24 +617,9 @@ class Branch(models.Model):
             if not path in result["data"]:
                 result["data"][path] = []
 
-            result["data"][path].append({
-                "date": date,
-                "deleted": f.change_type == Action.DELETE,
-                "complexity": {
-                    "Cyclomatic Complexity": float(f.cyclomatic_complexity),
-                    "Halstead Volume": float(f.halstead_volume),
-                    "Halstead Difficulty": float(f.halstead_difficulty),
-                    "Halstead Effort": float(f.halstead_effort)
-                },
-                "structure": {
-                    "Fan In": float(f.fan_in),
-                    "Fan Out": float(f.fan_out),
-                    "SLOC": f.sloc,
-                    "Information Flow": float(f.hk)
-                }
-            })
+            result["data"][path].append(f.stats())
 
-        files = files.values("date").annotate(
+        files = files.values("date", "revision").annotate(
             cyclomatic_complexity=Avg("cyclomatic_complexity"),
             halstead_volume=Avg("halstead_volume"),
             halstead_difficulty=Avg("halstead_difficulty"),
@@ -645,12 +630,17 @@ class Branch(models.Model):
 
         for rev in files:
             result["data"]["all"].append({
-                "date": rev["date"].isoformat(),
-                "complexity": {
-                    "Cyclomatic Complexity": rev["cyclomatic_complexity"],
-                    "Halstead Volume": rev["halstead_volume"],
-                    "Halstead Difficulty": rev["halstead_difficulty"],
-                    "Halstead Effort": rev["halstead_effort"]
+                "href": "/file/all",
+                "rel": "stats",
+                "rep": {
+                    "date": rev["date"].isoformat(),
+                    "revision": Revision.href(rev["revision"]),
+                    "complexity": {
+                        "Cyclomatic Complexity": rev["cyclomatic_complexity"],
+                        "Halstead Volume": rev["halstead_volume"],
+                        "Halstead Difficulty": rev["halstead_difficulty"],
+                        "Halstead Effort": rev["halstead_effort"]
+                    }
                 }
             })
 
@@ -695,6 +685,10 @@ class Branch(models.Model):
 
 class Revision(models.Model):
 
+    @classmethod
+    def href(cls, rev_id):
+        return reverse("parsr.views.revision.info", kwargs={ "rev_id": rev_id })
+
     identifier = models.CharField(max_length=255)
 
     branch = models.ForeignKey("Branch", null=True)
@@ -722,22 +716,19 @@ class Revision(models.Model):
             self.branch.repo
         )
 
-    def href(self):
-        return reverse("parsr.views.revision.info", kwargs={ "identifier": self.identifier })
-
     def view(self):
-        return reverse("parsr.views.revision.view", kwargs={ "identifier": self.identifier })
+        return reverse("parsr.views.revision.view", kwargs={ "rev_id": self.id })
 
     def json(self):
         return {
-            "href": self.href(),
+            "href": Revision.href(self.id),
             "view": self.view(),
             "rel": "revision",
             "rep": {
                 "identifier": self.identifier,
                 "branch": self.branch.href(),
-                "author": self.author.href(),
-                "next": self.next.href() if self.next else None,
+                "author": Author.href(self.author_id),
+                "next": Revision.href(self.next_id) if self.next else None,
                 "measured": self.measured,
                 "date": self.date,
                 "complexDate": {
@@ -856,6 +847,10 @@ class File(models.Model):
 
         return parts
 
+    @classmethod
+    def href(cls, file_id):
+        return reverse("parsr.views.file.info", kwargs={ "file_id": file_id })
+
     CHANGE_TYPES = (
         (Action.ADD, "Added"),
         (Action.MODIFY, "Modified"),
@@ -913,6 +908,75 @@ class File(models.Model):
             self.mimetype,
             self.change_type
         )
+
+    def view(self):
+        return reverse("parsr.views.file.view", kwargs={ "file_id": self.id })
+
+    def json(self):
+        return {
+            "href": File.href(self.id),
+            "view": self.view(),
+            "rel": "file",
+            "rep": {
+                "revision": Revision.href(self.revision_id),
+                "author": Author.href(self.author_id),
+                "date": self.date.isoformat(),
+                "name": self.name,
+                "package": self.package,
+                "mimetype": self.mimetype,
+                "changeType": self.change_type,
+                "copyOf": File.href(self.copy_of_id) if self.copy_of else None,
+                "complexity": {
+                    "cyclomaticComplexity": float(self.cyclomatic_complexity),
+                    "cyclomaticComplexityDelta": float(self.cyclomatic_complexity_delta),
+                    "halsteadVolume": float(self.halstead_volume),
+                    "halsteadVolumeDelta": float(self.halstead_volume_delta),
+                    "halsteadDifficulty": float(self.halstead_difficulty),
+                    "halsteadDifficultyDelta": float(self.halstead_difficulty_delta),
+                    "halsteadEffort": float(self.halstead_effort),
+                    "halsteadEffortDelta": float(self.halstead_effort_delta)
+                },
+                "structure": {
+                    "fanIn": float(self.fan_in),
+                    "fanInDelta": float(self.fan_in_delta),
+                    "fanOut": float(self.fan_out),
+                    "fanOutDelta": float(self.fan_out_delta),
+                    "hk": float(self.hk),
+                    "hkDelta": float(self.hk_delta),
+                    "sloc": float(self.sloc),
+                    "slocDelta": float(self.sloc_delta)
+                },
+                "churn": {
+                    "added": self.lines_added,
+                    "removed": self.lines_removed
+                }
+
+            }
+        }
+
+    def stats(self):
+        return {
+            "href": "%s/stats" % File.href(self.id),
+            "rel": "stats",
+            "rep": {
+                "date": self.date.isoformat(),
+                "deleted": self.change_type == Action.DELETE,
+                "revision": Revision.href(self.revision_id),
+                "author": Author.href(self.author_id),
+                "complexity": {
+                    "Cyclomatic Complexity": float(self.cyclomatic_complexity),
+                    "Halstead Volume": float(self.halstead_volume),
+                    "Halstead Difficulty": float(self.halstead_difficulty),
+                    "Halstead Effort": float(self.halstead_effort)
+                },
+                "structure": {
+                    "Fan In": float(self.fan_in),
+                    "Fan Out": float(self.fan_out),
+                    "SLOC": self.sloc,
+                    "Information Flow": float(self.hk)
+                }
+            }
+        }
 
     def get_previous(self):
         if self.change_type == Action.ADD:
@@ -1006,6 +1070,10 @@ class File(models.Model):
 
 class Author(models.Model):
 
+    @classmethod
+    def href(cls, author_id):
+        return reverse("parsr.views.author.info", kwargs={"author_id": author_id})
+
     name = models.CharField(max_length=255)
     email = models.EmailField(null=True)
 
@@ -1014,9 +1082,6 @@ class Author(models.Model):
             return "%s (%s)" % (self.name, self.email)
 
         return self.name
-
-    def href(self):
-        return reverse("parsr.views.author.info", kwargs={"author_id": self.id})
 
     def view(self):
         return reverse("parsr.views.author.view", kwargs={"author_id": self.id})
@@ -1085,7 +1150,7 @@ class Author(models.Model):
 
     def json(self, branch):
         return {
-            "href": self.href(),
+            "href": Author.href(self.id),
             "view": self.view(),
             "rel": "author",
             "rep": {
