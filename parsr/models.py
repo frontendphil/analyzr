@@ -125,7 +125,7 @@ class Repo(models.Model):
 
     def json(self):
         return {
-            "href": self.href(),
+            "href": Repo.href(self.id),
             "view": self.view(),
             "rel": "repo",
             "rep": {
@@ -237,14 +237,14 @@ class Branch(models.Model):
             info["count"] = self.revision_set.all().count()
 
         return {
-            "href": self.href(),
+            "href": Branch.href(self.id),
             "view": self.view(),
             "rel": "branch",
             "rep": {
                 "id": self.id,
                 "name": self.name,
                 "path": self.path,
-                "repo": self.repo.href(),
+                "repo": Repo.href(self.repo_id),
                 "analyze": {
                     "running": self.analyzing,
                     "finished": self.analyzed,
@@ -732,7 +732,8 @@ class Revision(models.Model):
                 "author": Author.href(self.author_id),
                 "next": Revision.href(self.next_id) if self.next else None,
                 "measured": self.measured,
-                "date": self.date,
+                "date": self.date.isoformat(),
+                "files": [f.json() for f in self.file_set.all()],
                 "complexDate": {
                     "year": self.year,
                     "month": self.month,

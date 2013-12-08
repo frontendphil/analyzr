@@ -333,7 +333,8 @@ ns("plugins.graph");
 
             var nearest = this.getXY(file.metrics[0], date);
 
-            alert(nearest.revision);
+            var info = new analyzr.plugins.RevisionInfo(nearest.revision);
+            info.show();
         },
 
         handleMouseMove: function(args, metrics) {
@@ -363,9 +364,9 @@ ns("plugins.graph");
             var updateValue = function(metric, scale) {
                 return function(selection) {
                     return selection.text(function() {
-                        var coord = that.getXY(metric, scale);
+                        var coord = that.getXY(metric, date);
 
-                        return coord.y;
+                        return Math.round(coord.y, 2);
                     });
                 };
             };

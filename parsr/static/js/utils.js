@@ -34,6 +34,15 @@
 
     ns("utils");
 
+    var _round = Math.round;
+
+    Math.round = function(number, precision) {
+        precision = Math.abs(parseInt(precision, 10)) || 0;
+        var coefficient = Math.pow(10, precision);
+
+        return _round(number * coefficient) / coefficient;
+    };
+
     analyzr.utils.svgToPNG = function(target) {
         var canvas = $("<canvas />");
 

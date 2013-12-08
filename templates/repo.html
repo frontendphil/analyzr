@@ -76,7 +76,7 @@
                 var branch = $(this).find("option:selected").attr("value");
                 var repo = $(this).data("repo");
 
-                window.location.href = "/repo/" + repo + "/branch/" + branch;
+                window.location|href = "/repo/" + repo + "/branch/" + branch;
             });
 
             var contributors = new analyzr.plugins.Contributors(".contributors");
