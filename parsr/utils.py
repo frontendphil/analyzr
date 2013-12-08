@@ -34,3 +34,22 @@ def send_mail(traceback):
         connection.login(EMAIL["account"], EMAIL["password"])
         connection.sendmail(EMAIL["account"], email, message.as_string())
         connection.quit()
+
+
+def previous(cls, instance, filters={}):
+    filters["date__lt"] = instance.date
+
+    try:
+        return cls.objects.filter(**filters).order_by("-date")[0]
+    except:
+        filters.pop("date__lt")
+        filters["date__lte"] = instance.date
+
+        objects = cls.objects.filter(**filters).order_by("-date")
+
+        if objects.count() > 1:
+            # multiple edits in one minute. we pick something.
+            # hopefully does not happen too often
+            return objects[1]
+
+        return None

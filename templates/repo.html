@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load filters %}
+
 {% block branch %}
     <i class='icon-code-fork'></i>
     <select data-repo="{{ repo.id }}" class='branch' value="{{ branch.id }}">
@@ -49,22 +51,22 @@
 
     <div
         class='stats'
-        data-repo="{{ repo.href }}"
-        data-branch="{{ branch.href }}"></div>
+        data-repo="{{ repo|href }}"
+        data-branch="{{ branch|href }}"></div>
 
     <hr />
 
     <div
         class='contributors'
-        data-repo='{{ repo.href }}'
-        data-branch="{{ branch.href }}"></div>
+        data-repo='{{ repo|href }}'
+        data-branch="{{ branch|href }}"></div>
 
     <hr />
 
     <div
         class='punchcard'
-        data-repo='{{ repo.href }}'
-        data-branch="{{ branch.href }}"></div>
+        data-repo='{{ repo|href }}'
+        data-branch="{{ branch|href }}"></div>
 {% endblock %}
 
 {% block specific %}

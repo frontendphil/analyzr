@@ -18,12 +18,16 @@ from mimetypes import guess_type
 
 from parsr.connectors import Connector, Action
 from parsr.analyzers import Analyzer
-from parsr import sql
+from parsr import sql, utils
 
 from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE
 
 
 class Repo(models.Model):
+
+    @classmethod
+    def href(cls, repo_id):
+        return reverse("parsr.views.repo.info", kwargs={ "repo_id": repo_id })
 
     TYPES = (
         ("svn", "Subversion"),
@@ -44,9 +48,6 @@ class Repo(models.Model):
 
     def __unicode__(self):
         return "%s (%s)" % (self.url, self.kind)
-
-    def href(self):
-        return reverse("parsr.views.repo.info", kwargs={"repo_id": self.id})
 
     def view(self):
         return reverse("parsr.views.repo.view", kwargs={"repo_id": self.id})
@@ -199,6 +200,10 @@ def remove_repo(sender, instance, **kwargs):
 
 class Branch(models.Model):
 
+    @classmethod
+    def href(cls, branch_id):
+        return reverse("parsr.views.branch.info", kwargs={ "branch_id": branch_id })
+
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
 
@@ -263,9 +268,6 @@ class Branch(models.Model):
         measured = self.revision_set.filter(measured=True).count()
 
         return measured > 0 and not measured == self.revision_set.all().count()
-
-    def href(self):
-        return reverse("parsr.views.branch.info", kwargs={"branch_id": self.id})
 
     def view(self):
         return reverse("parsr.views.branch.view", kwargs={"branch_id": self.id})
@@ -726,7 +728,7 @@ class Revision(models.Model):
             "rel": "revision",
             "rep": {
                 "identifier": self.identifier,
-                "branch": self.branch.href(),
+                "branch": Branch.href(self.branch_id),
                 "author": Author.href(self.author_id),
                 "next": Revision.href(self.next_id) if self.next else None,
                 "measured": self.measured,
@@ -836,6 +838,68 @@ class Revision(models.Model):
             raise Exception(message)
 
 
+class Package(models.Model):
+
+    name = models.CharField(max_length=255)
+
+    branch = models.ForeignKey("Branch", null=True)
+    parent = models.ForeignKey("Package", null=True, related_name="children")
+
+    left = models.IntegerField(default=0)
+    right = models.IntegerField(default=0)
+
+    def add_package(self, package):
+        package.parent = self
+
+        package.save()
+
+    def update(self, position=0):
+        self.left = position
+
+        for child in self.children.all():
+            position = child.update(position + 1)
+
+        self.right = position + 1
+
+        self.save()
+
+        return self.right
+
+
+class PackageMetric(models.Model):
+
+    package = models.ForeignKey("Package")
+    revision = models.ForeignKey("Revision")
+    author = models.ForeignKey("Author")
+    date = models.DateTimeField()
+
+    cyclomatic_complexity = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    cyclomatic_complexity_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    halstead_volume = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_volume_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_difficulty = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_difficulty_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_effort = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    halstead_effort_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    fan_in = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    fan_in_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    fan_out = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    fan_out_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    sloc = models.IntegerField(default=0)
+    sloc_delta = models.IntegerField(default=0)
+
+    hk = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    hk_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    def previous(self):
+        return utils.previous(PackageMetric, self, {
+            "package": self.package
+        })
+
+
 class File(models.Model):
 
     @classmethod
@@ -870,7 +934,8 @@ class File(models.Model):
     date = models.DateTimeField(null=True)
 
     name = models.CharField(max_length=255)
-    package = models.CharField(max_length=255)
+    package = models.CharField(max_length=255, null=True)
+    pkg = models.ForeignKey("Package", related_name="files", null=True)
 
     mimetype = models.CharField(max_length=255, null=True)
 
@@ -982,19 +1047,10 @@ class File(models.Model):
         if self.change_type == Action.ADD:
             return None
 
-        try:
-            return File.objects.filter(name=self.name, date__lt=self.revision.date)\
-                               .order_by("-date")[0]
-        except:
-            files = File.objects.filter(name=self.name, date__lte=self.revision.date)\
-                                .order_by("-date")
-
-            if files.count() > 1:
-                # multiple edits in one minute. we pick something.
-                # hopefully does not happen too often
-                return files[1]
-
-            return None
+        return utils.previous(File, self, {
+            "name": self.name,
+            "pkg": self.pkg
+        })
 
     def add_measures(self, measures):
         previous = self.get_previous()
