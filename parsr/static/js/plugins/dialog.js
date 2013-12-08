@@ -5,6 +5,8 @@ ns("plugins");
 	analyzr.plugins.Dialog = analyzr.core.Mask.extend({
 
 		init: function(attrs) {
+			attrs = attrs || {};
+
 			this.attrs = attrs;
 
 			this._super("body", attrs.text);
@@ -17,7 +19,7 @@ ns("plugins");
 				return;
 			}
 
-			this.dom.find(".info").width(width);
+			this.dom.find(".body").width(width);
 		},
 
 		standardButton: function() {
@@ -37,7 +39,7 @@ ns("plugins");
 
 			this.dom.addClass("dialog");
 
-			var dialog = this.dom.find(".info");
+			var dialog = this.dom.find(".body");
 
 			if(!this.attrs.waiting) {
 				this.dom.find(".icon-spinner").hide();

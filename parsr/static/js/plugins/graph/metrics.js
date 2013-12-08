@@ -333,7 +333,8 @@ ns("plugins.graph");
 
             var nearest = this.getXY(file.metrics[0], date);
 
-            alert(nearest.revision);
+            var info = new analyzr.plugins.RevisionInfo(nearest.revision);
+            info.show();
         },
 
         handleMouseMove: function(args, metrics) {

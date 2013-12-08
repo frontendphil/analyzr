@@ -732,7 +732,8 @@ class Revision(models.Model):
                 "author": Author.href(self.author_id),
                 "next": Revision.href(self.next_id) if self.next else None,
                 "measured": self.measured,
-                "date": self.date,
+                "date": self.date.isoformat(),
+                "files": [f.json() for f in self.file_set.all()],
                 "complexDate": {
                     "year": self.year,
                     "month": self.month,

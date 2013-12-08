@@ -2,9 +2,11 @@ ns("core");
 
 (function() {
 
-	analyzr.core.Mask = analyzr.core.Class.extend({
+	analyzr.core.Mask = analyzr.core.Observeable.extend({
 
 		init: function(target, text) {
+			this._super();
+
 			this.container = $(target);
 			this.text = text;
 
@@ -33,9 +35,16 @@ ns("core");
 
 		render: function() {
 			var mask = $("<div class='mask' />");
-			var info = $("<div class='info'><i class='icon-spinner icon-spin'></i> " + this.text + "</div>");
+			var body = $(
+				"<div class='body'>" +
+					"<div class='content'>" +
+						"<i class='icon-spinner icon-spin'></i> " +
+						"<span class='text'>" + this.text + "</span>" +
+					"</div>" +
+				"</div>"
+			);
 
-			mask.append(info);
+			mask.append(body);
 			this.container.append(mask);
 
 			this.container.css({
@@ -51,12 +60,14 @@ ns("core");
 		},
 
 		layout: function() {
-			var cHeight = this.container.height();
-			var mHeight = this.dom.find(".info").height();
+			var cHeight = Math.min(this.container.height(), window.innerHeight);
+			var mHeight = this.dom.find(".body").height();
 
-			this.dom.find(".info").css({
+			this.dom.find(".body").css({
 				marginTop: (cHeight / 2) - (mHeight / 2)
 			});
+
+			this.raise("layout");
 		},
 
 		remove: function() {
@@ -75,7 +86,11 @@ ns("core");
 				this.render();
 			}
 
-			this.dom.fadeIn();
+			var that = this;
+
+			this.dom.fadeIn(function() {
+				that.raise("show");
+			});
 		}
 
 	});
