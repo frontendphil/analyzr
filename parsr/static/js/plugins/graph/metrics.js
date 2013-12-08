@@ -363,9 +363,9 @@ ns("plugins.graph");
             var updateValue = function(metric, scale) {
                 return function(selection) {
                     return selection.text(function() {
-                        var coord = that.getXY(metric, scale);
+                        var coord = that.getXY(metric, date);
 
-                        return coord.y;
+                        return Math.round(coord.y, 2);
                     });
                 };
             };
