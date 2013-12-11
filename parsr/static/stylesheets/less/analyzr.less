@@ -167,12 +167,24 @@
             .delta {
                 width: 100px;
 
+                &:before {
+                    margin-right: 5px;
+                }
+
                 &.positive {
                     color: #e04c4c;
+
+                    &:before {
+                        content: "\2197";
+                    }
                 }
 
                 &.negative {
                     color: #5fbd4f;
+
+                    &:before {
+                        content: "\2198";
+                    }
                 }
             }
         }

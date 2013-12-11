@@ -43,6 +43,21 @@
         return _round(number * coefficient) / coefficient;
     };
 
+    if(!String.prototype.endsWith) {
+        String.prototype.endsWith = function(needle) {
+            if(!needle && needle !== "") {
+                return false;
+            }
+
+            var length = needle.length;
+            var index = this.lastIndexOf(needle);
+
+            var offset = this.length - length;
+
+            return offset >= 0 && index >= 0 && offset === index;
+        };
+    }
+
     analyzr.utils.svgToPNG = function(target) {
         var canvas = $("<canvas />");
 

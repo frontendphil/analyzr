@@ -53,7 +53,7 @@ class Checker(object):
 
     def execute(self, cmd):
         # close_fds must be true as python would otherwise reuse created
-        # files handles. this would cause a serious memeory leak.
+        # file handles. this would cause a serious memeory leak.
         # btw: the file handles are craeted because we pipe stdout and
         # stderr to them.
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
@@ -62,6 +62,23 @@ class Checker(object):
 
         if not proc.returncode == 0:
             raise CheckerException(self, cmd, stdout=stdout, stderr=stderr)
+
+    def stub(self):
+        return {
+            "cyclomatic_complexity": 0,
+            "halstead_effort": 0,
+            "halstead_volume": 0,
+            "halstead_difficulty": 0,
+            "fan_in": 0,
+            "fan_out": 0,
+            "sloc": 0
+        }
+
+    def set(self, filename, key, value):
+        if not filename in self.measures:
+            self.measures[filename] = self.stub()
+
+        self.measures[filename][key] = self.get_decimal(value)
 
     def configure(self, files, revision, connector):
         pass
@@ -165,18 +182,13 @@ class JHawk(Checker):
         return self.get_node_value(parent, "Name")
 
     def add_halstead_metrics(self, filename, metrics):
-        volume = self.get_decimal(self.get_node_value(metrics, "halsteadCumulativeVolume"))
-        effort = self.get_decimal(self.get_node_value(metrics, "halsteadEffort"))
+        volume = self.get_node_value(metrics, "halsteadCumulativeVolume")
+        effort = self.get_node_value(metrics, "halsteadEffort")
         difficulty = effort / volume
 
-        self.measures[filename].append({
-            "kind": "Halstead",
-            "value": {
-                "volume": volume,
-                "difficulty": difficulty,
-                "effort": effort
-            }
-        })
+        self.set(filename, "halstead_difficulty", difficulty)
+        self.set(filename, "halstead_effort", effort)
+        self.set(filename, "halstead_volume", volume)
 
     def includes(self, filename):
         for f in self.files:
@@ -212,30 +224,12 @@ class JHawk(Checker):
                         # filter files, which are not present in the current revision
                         continue
 
-                    if not filename in self.measures:
-                        self.measures[filename] = []
-
                     self.add_halstead_metrics(filename, class_metrics)
 
-                    self.measures[filename].append({
-                        "kind": "CyclomaticComplexity",
-                        "value": self.get_decimal(self.get_node_value(class_metrics, "avcc"))
-                    })
-
-                    self.measures[filename].append({
-                        "kind": "FanIn",
-                        "value": self.get_decimal(self.get_node_value(class_metrics, "fanIn"))
-                    })
-
-                    self.measures[filename].append({
-                        "kind": "FanOut",
-                        "value": self.get_decimal(self.get_node_value(class_metrics, "fanOut"))
-                    })
-
-                    self.measures[filename].append({
-                        "kind": "SLOC",
-                        "value": self.get_decimal(self.get_node_value(class_metrics, "loc"))
-                    })
+                    self.set(filename, "cyclomatic_complexity", self.get_node_value(class_metrics, "avcc"))
+                    self.set(filename, "fan_in", self.get_node_value(class_metrics, "fanIn"))
+                    self.set(filename, "fan_out", self.get_node_value(class_metrics, "fanOut"))
+                    self.set(filename, "sloc", self.get_node_value(class_metrics, "loc"))
 
         return self.measures
 
@@ -290,8 +284,6 @@ class ComplexityReport(Checker):
         return sum([function["halstead"][value] for function in functions]) / len(functions)
 
     def parse(self, connector):
-        results = {}
-
         for f in self.files:
             path = "%s_%s.json" % (self.result, f.get_identifier())
 
@@ -306,23 +298,12 @@ class ComplexityReport(Checker):
                 if len(data["functions"]) == 0:
                     continue
 
-                results[f.full_path()] = [
-                    {
-                        "kind": "CyclomaticComplexity",
-                        "value": self.get_decimal(self.average(data["functions"]))
-                    },
-                    {
-                        "kind": "SLOC",
-                        "value": self.get_decimal(data["aggregate"]["sloc"]["logical"])
-                    },
-                    {
-                        "kind": "Halstead",
-                        "value": {
-                            "volume": self.get_decimal(self.get_halstead_value(data["functions"], "volume")),
-                            "difficulty": self.get_decimal(self.get_halstead_value(data["functions"], "difficulty")),
-                            "effort": self.get_decimal(self.get_halstead_value(data["functions"], "effort"))
-                        }
-                    }
-                ]
+                filename = f.full_path()
 
-        return results
+                self.set(filename, "cyclomatic_complexity", self.average(data["functions"]))
+                self.set(filename, "halstead_volume", self.get_halstead_value(data["functions"], "volume"))
+                self.set(filename, "halstead_effort", self.get_halstead_value(data["functions"], "effort"))
+                self.set(filename, "halstead_difficulty", self.get_halstead_value(data["functions"], "difficulty"))
+                self.set(filename, "sloc", data["aggregate"]["sloc"]["logical"])
+
+        return self.measures

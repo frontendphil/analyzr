@@ -25,10 +25,6 @@ from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE
 
 class Repo(models.Model):
 
-    @classmethod
-    def href(cls, repo_id):
-        return reverse("parsr.views.repo.info", kwargs={ "repo_id": repo_id })
-
     TYPES = (
         ("svn", "Subversion"),
         ("git", "Git"),
@@ -125,7 +121,7 @@ class Repo(models.Model):
 
     def json(self):
         return {
-            "href": Repo.href(self.id),
+            "href": utils.href(Repo, self.id),
             "view": self.view(),
             "rel": "repo",
             "rep": {
@@ -200,10 +196,6 @@ def remove_repo(sender, instance, **kwargs):
 
 class Branch(models.Model):
 
-    @classmethod
-    def href(cls, branch_id):
-        return reverse("parsr.views.branch.info", kwargs={ "branch_id": branch_id })
-
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
 
@@ -237,14 +229,14 @@ class Branch(models.Model):
             info["count"] = self.revision_set.all().count()
 
         return {
-            "href": Branch.href(self.id),
+            "href": utils.href(Branch, self.id),
             "view": self.view(),
             "rel": "branch",
             "rep": {
                 "id": self.id,
                 "name": self.name,
                 "path": self.path,
-                "repo": Repo.href(self.repo_id),
+                "repo": utils.href(Repo, self.repo_id),
                 "analyze": {
                     "running": self.analyzing,
                     "finished": self.analyzed,
@@ -274,6 +266,8 @@ class Branch(models.Model):
 
     def cleanup(self):
         self.remove_all(File, File.objects.filter(revision__branch=self))
+        self.remove_all(Package, Package.objects.filter(branch=self))
+        self.remove_all(PackageMetric, PackageMetric.objects.filter(revision__branch=self))
         self.remove_all(Revision, Revision.objects.filter(branch=self))
         self.remove_all(Author, Author.objects.filter(revision__branch=self))
 
@@ -303,6 +297,8 @@ class Branch(models.Model):
         connector = Connector.get(self.repo)
         connector.analyze(self, revision)
 
+        self.init_packages()
+
         self.analyzing = False
         self.analyzed = True
         self.analyzed_date = datetime.now(self.repo.timezone)
@@ -315,6 +311,10 @@ class Branch(models.Model):
         self.last_analyze_error = error
 
         self.save()
+
+    def init_packages(self):
+        for package in Package.objects.filter(parent=None, branch=self):
+            package.update()
 
     def last_analyzed_revision(self):
         return self.revision_set.get(previous=None)
@@ -336,6 +336,8 @@ class Branch(models.Model):
 
         if not resume:
             sql.reset(self)
+
+            self.remove_all(PackageMetric, PackageMetric.objects.filter(revision__branch=self))
 
         revision = None
 
@@ -619,13 +621,17 @@ class Branch(models.Model):
             if not path in result["data"]:
                 result["data"][path] = []
 
-            result["data"][path].append(f.stats())
+            result["data"][path].append(f.json())
 
         files = files.values("date", "revision").annotate(
             cyclomatic_complexity=Avg("cyclomatic_complexity"),
+            cyclomatic_complexity_delta=Avg("cyclomatic_complexity_delta"),
             halstead_volume=Avg("halstead_volume"),
+            halstead_volume_delta=Avg("halstead_volume_delta"),
             halstead_difficulty=Avg("halstead_difficulty"),
-            halstead_effort=Avg("halstead_effort")
+            halstead_difficulty_delta=Avg("halstead_difficulty_delta"),
+            halstead_effort=Avg("halstead_effort"),
+            halstead_effort_delta=Avg("halstead_effort_delta")
         )
 
         result["data"]["all"] = []
@@ -633,15 +639,19 @@ class Branch(models.Model):
         for rev in files:
             result["data"]["all"].append({
                 "href": "/file/all",
-                "rel": "stats",
+                "rel": "file",
                 "rep": {
                     "date": rev["date"].isoformat(),
-                    "revision": Revision.href(rev["revision"]),
+                    "revision": utils.href(Revision, rev["revision"]),
                     "complexity": {
                         "Cyclomatic Complexity": rev["cyclomatic_complexity"],
+                        "Cyclomatic Complexity Delta": rev["cyclomatic_complexity_delta"],
                         "Halstead Volume": rev["halstead_volume"],
+                        "Halstead Volume Delta": rev["halstead_volume_delta"],
                         "Halstead Difficulty": rev["halstead_difficulty"],
-                        "Halstead Effort": rev["halstead_effort"]
+                        "Halstead Difficulty Delta": rev["halstead_difficulty_delta"],
+                        "Halstead Effort": rev["halstead_effort"],
+                        "Halstead Effort Delta": rev["halstead_effort_delta"]
                     }
                 }
             })
@@ -687,10 +697,6 @@ class Branch(models.Model):
 
 class Revision(models.Model):
 
-    @classmethod
-    def href(cls, rev_id):
-        return reverse("parsr.views.revision.info", kwargs={ "rev_id": rev_id })
-
     identifier = models.CharField(max_length=255)
 
     branch = models.ForeignKey("Branch", null=True)
@@ -719,18 +725,18 @@ class Revision(models.Model):
         )
 
     def view(self):
-        return reverse("parsr.views.revision.view", kwargs={ "rev_id": self.id })
+        return reverse("parsr.views.revision.view", kwargs={ "revision_id": self.id })
 
     def json(self):
         return {
-            "href": Revision.href(self.id),
+            "href": utils.href(Revision, self.id),
             "view": self.view(),
             "rel": "revision",
             "rep": {
                 "identifier": self.identifier,
-                "branch": Branch.href(self.branch_id),
-                "author": Author.href(self.author_id),
-                "next": Revision.href(self.next_id) if self.next else None,
+                "branch": utils.href(Branch, self.branch_id),
+                "author": utils.href(Author, self.author_id),
+                "next": utils.href(Revision, self.next_id) if self.next else None,
                 "measured": self.measured,
                 "date": self.date.isoformat(),
                 "files": [f.json() for f in self.file_set.all()],
@@ -769,6 +775,7 @@ class Revision(models.Model):
             date=self.date,
             name=filename,
             package=package,
+            pkg=Package.get(package, self.branch),
             mimetype=mimetype,
             change_type=action,
             copy_of=original[0] if original else None
@@ -841,6 +848,26 @@ class Revision(models.Model):
 
 class Package(models.Model):
 
+    @classmethod
+    def get(cls, name, branch):
+        packages = name.split("/")
+        parent = None
+        parent_name = ""
+
+        for pkg in packages:
+            pkg_name = "%s/%s" % (parent_name, pkg)
+
+            package, created = Package.objects.get_or_create(
+                name=pkg_name,
+                branch=branch,
+                parent=parent
+            )
+
+            parent = package
+            parent_name = pkg_name
+
+        return parent
+
     name = models.CharField(max_length=255)
 
     branch = models.ForeignKey("Branch", null=True)
@@ -866,8 +893,66 @@ class Package(models.Model):
 
         return self.right
 
+    def json(self):
+        return {
+            "href": utils.href(Package, self.id),
+            "rel": "package",
+            "rep": {
+                "name": self.name,
+                "branch": utils.href(Branch, self.branch_id),
+                "parent": utils.href(Package, self.parent_id) if self.parent_id else None
+            }
+        }
+
+    def update_measures(self, revision):
+        files = File.objects.raw(sql.newest_files(str(self.files.all())))
+        files = files.aggregate(
+            cyclomatic_complexity=Avg("cyclomatic_complexity"),
+            halstead_difficulty=Avg("halstead_difficulty"),
+            halstead_volume=Avg("halstead_volume"),
+            halstead_effort=Avg("halstead_effort"),
+            fan_in=Avg("fan_in"),
+            fan_out=Avg("fan_out"),
+            hk=Avg("hk"),
+            sloc=Sum("sloc")
+        )
+
+        PackageMetric.create(self, revision, files)
+
 
 class PackageMetric(models.Model):
+
+    @classmethod
+    def create(cls, package, revision, files):
+        metric, created = PackageMetric.objects.get_or_create(
+            package=package,
+            author=revision.author,
+            date=revision.date,
+            revision=revision
+        )
+
+        metric.cyclomatic_complexity = files["cyclomatic_complexity"]
+        metric.halstead_effort = files["halstead_effort"]
+        metric.halstead_difficulty = files["halstead_difficulty"]
+        metric.halstead_volume = files["halstead_volume"]
+        metric.fan_in = files["fan_in"]
+        metric.fan_out = files["fan_out"]
+        metric.hk = files["hk"]
+        metric.sloc = files["sloc"]
+
+        if not created:
+            previous = metric.previous()
+
+            metric.cyclomatic_complexity_delta = metric.cyclomatic_complexity - previous.cyclomatic_complexity
+            metric.halstead_difficulty_delta = metric.halstead_difficulty - previous.halstead_difficulty
+            metric.halstead_effort_delta = metric.halstead_effort - previous.halstead_effort
+            metric.halstead_volume_delta = metric.halstead_volume - previous.halstead_volume
+            metric.fan_in_delta = metric.fan_in - previous.fan_in
+            metric.fan_out_delta = metric.fan_out - previous.fan_out
+            metric.hk_delta = metric.hk - previous.hk
+            metric.sloc_delta = metric.sloc - previous.sloc
+
+        metric.save()
 
     package = models.ForeignKey("Package")
     revision = models.ForeignKey("Revision")
@@ -912,10 +997,6 @@ class File(models.Model):
 
         return parts
 
-    @classmethod
-    def href(cls, file_id):
-        return reverse("parsr.views.file.info", kwargs={ "file_id": file_id })
-
     CHANGE_TYPES = (
         (Action.ADD, "Added"),
         (Action.MODIFY, "Modified"),
@@ -935,7 +1016,7 @@ class File(models.Model):
     date = models.DateTimeField(null=True)
 
     name = models.CharField(max_length=255)
-    package = models.CharField(max_length=255, null=True)
+    package = models.CharField(max_length=255)
     pkg = models.ForeignKey("Package", related_name="files", null=True)
 
     mimetype = models.CharField(max_length=255, null=True)
@@ -980,67 +1061,43 @@ class File(models.Model):
 
     def json(self):
         return {
-            "href": File.href(self.id),
+            "href": utils.href(File, self.id),
             "view": self.view(),
             "rel": "file",
             "rep": {
-                "revision": Revision.href(self.revision_id),
-                "author": Author.href(self.author_id),
+                "revision": utils.href(Revision, self.revision_id),
+                "author": utils.href(Author, self.author_id),
                 "date": self.date.isoformat(),
                 "name": self.name,
                 "package": self.package,
                 "mimetype": self.mimetype,
                 "changeType": self.change_type,
-                "copyOf": File.href(self.copy_of_id) if self.copy_of else None,
+                "copyOf": utils.href(File, self.copy_of_id) if self.copy_of else None,
                 "complexity": {
-                    "cyclomaticComplexity": float(self.cyclomatic_complexity),
-                    "cyclomaticComplexityDelta": float(self.cyclomatic_complexity_delta),
-                    "halsteadVolume": float(self.halstead_volume),
-                    "halsteadVolumeDelta": float(self.halstead_volume_delta),
-                    "halsteadDifficulty": float(self.halstead_difficulty),
-                    "halsteadDifficultyDelta": float(self.halstead_difficulty_delta),
-                    "halsteadEffort": float(self.halstead_effort),
-                    "halsteadEffortDelta": float(self.halstead_effort_delta)
+                    "Cyclomatic Complexity": float(self.cyclomatic_complexity),
+                    "Cyclomatic Complexity Delta": float(self.cyclomatic_complexity_delta),
+                    "Halstead Volume": float(self.halstead_volume),
+                    "Halstead Volume Delta": float(self.halstead_volume_delta),
+                    "Halstead Difficulty": float(self.halstead_difficulty),
+                    "Halstead Difficulty Delta": float(self.halstead_difficulty_delta),
+                    "Halstead Effort": float(self.halstead_effort),
+                    "Halstead Effort Delta": float(self.halstead_effort_delta)
                 },
                 "structure": {
-                    "fanIn": float(self.fan_in),
-                    "fanInDelta": float(self.fan_in_delta),
-                    "fanOut": float(self.fan_out),
-                    "fanOutDelta": float(self.fan_out_delta),
-                    "hk": float(self.hk),
-                    "hkDelta": float(self.hk_delta),
-                    "sloc": float(self.sloc),
-                    "slocDelta": float(self.sloc_delta)
+                    "Fan In": float(self.fan_in),
+                    "Fan In Delta": float(self.fan_in_delta),
+                    "Fan Out": float(self.fan_out),
+                    "Fan Out Delta": float(self.fan_out_delta),
+                    "HK": float(self.hk),
+                    "HK Delta": float(self.hk_delta),
+                    "SLOC": float(self.sloc),
+                    "SLOC Delta": float(self.sloc_delta)
                 },
                 "churn": {
                     "added": self.lines_added,
                     "removed": self.lines_removed
                 }
 
-            }
-        }
-
-    def stats(self):
-        return {
-            "href": "%s/stats" % File.href(self.id),
-            "rel": "stats",
-            "rep": {
-                "date": self.date.isoformat(),
-                "deleted": self.change_type == Action.DELETE,
-                "revision": Revision.href(self.revision_id),
-                "author": Author.href(self.author_id),
-                "complexity": {
-                    "Cyclomatic Complexity": float(self.cyclomatic_complexity),
-                    "Halstead Volume": float(self.halstead_volume),
-                    "Halstead Difficulty": float(self.halstead_difficulty),
-                    "Halstead Effort": float(self.halstead_effort)
-                },
-                "structure": {
-                    "Fan In": float(self.fan_in),
-                    "Fan Out": float(self.fan_out),
-                    "SLOC": self.sloc,
-                    "Information Flow": float(self.hk)
-                }
             }
         }
 
@@ -1054,60 +1111,39 @@ class File(models.Model):
         })
 
     def add_measures(self, measures):
+        self.cyclomatic_complexity = measures["cyclomatic_complexity"]
+
+        self.halstead_volume = measures["halstead_volume"]
+        self.halstead_difficulty = measures["halstead_difficulty"]
+        self.halstead_effort = measures["halstead_effort"]
+
+        self.fan_in = measures["fan_in"]
+        self.fan_out = measures["fan_out"]
+        self.sloc = measures["sloc"]
+
+        self.hk = self.sloc * pow(self.fan_in * self.fan_out, 2)
+
+        self.lines_added = measures["churn"]["added"]
+        self.lines_removed = measures["churn"]["removed"]
+
         previous = self.get_previous()
 
-        for measure in measures:
-            kind = measure["kind"]
+        if previous:
+            self.cyclomatic_complexity_delta = self.cyclomatic_complexity - previous.cyclomatic_complexity
 
-            if kind == "CyclomaticComplexity":
-                self.cyclomatic_complexity = measure["value"]
+            self.halstead_volume_delta = self.halstead_volume - previous.halstead_volume
+            self.halstead_difficulty_delta = self.halstead_difficulty - previous.halstead_difficulty
+            self.halstead_effort_delta = self.halstead_effort - previous.halstead_effort
 
-                if previous:
-                    self.cyclomatic_complexity_delta = measure["value"] - previous.cyclomatic_complexity
+            self.fan_in_delta = self.fan_in - previous.fan_in
+            self.fan_out_delta = self.fan_out - previous.fan_out
+            self.sloc_delta = self.sloc - previous.sloc
 
-            if kind == "Halstead":
-                volume = measure["value"]["volume"]
-                difficulty = measure["value"]["difficulty"]
-                effort = measure["value"]["effort"]
-
-                self.halstead_volume = volume
-                self.halstead_difficulty = difficulty
-                self.halstead_effort = effort
-
-                if previous:
-                    self.halstead_volume_delta = volume - previous.halstead_volume
-                    self.halstead_difficulty_delta = difficulty - previous.halstead_difficulty
-                    self.halstead_effort_delta = effort - previous.halstead_effort
-
-            if kind == "churn":
-                self.lines_added = measure["value"]["added"]
-                self.lines_removed = measure["value"]["removed"]
-
-            if kind == "FanIn":
-                self.fan_in = measure["value"]
-
-                if previous:
-                    self.fan_in_delta = self.fan_in - previous.fan_in
-
-            if kind == "FanOut":
-                self.fan_out = measure["value"]
-
-                if previous:
-                    self.fan_out_delta = self.fan_out - previous.fan_out
-
-            if kind == "SLOC":
-                self.sloc = measure["value"]
-
-                if previous:
-                    self.sloc_delta = self.sloc - previous.sloc
-
-        if self.fan_in and self.fan_out and self.sloc:
-            self.hk = self.sloc * pow(self.fan_in * self.fan_out, 2)
-
-            if previous:
-                self.hk_delta = self.hk - previous.hk
+            self.hk_delta = self.hk - previous.hk
 
         self.save()
+
+        self.package.update_measures(self.revision)
 
     def add_churn(self, churn=None):
         if not churn:
@@ -1126,10 +1162,6 @@ class File(models.Model):
 
 
 class Author(models.Model):
-
-    @classmethod
-    def href(cls, author_id):
-        return reverse("parsr.views.author.info", kwargs={"author_id": author_id})
 
     name = models.CharField(max_length=255)
     email = models.EmailField(null=True)
@@ -1207,7 +1239,7 @@ class Author(models.Model):
 
     def json(self, branch):
         return {
-            "href": Author.href(self.id),
+            "href": utils.href(Author, self.id),
             "view": self.view(),
             "rel": "author",
             "rep": {

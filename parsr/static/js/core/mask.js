@@ -64,7 +64,7 @@ ns("core");
 			var mHeight = this.dom.find(".body").height();
 
 			this.dom.find(".body").css({
-				marginTop: (cHeight / 2) - (mHeight / 2)
+				marginTop: window.scrollY + (cHeight / 2) - (mHeight / 2)
 			});
 
 			this.raise("layout");

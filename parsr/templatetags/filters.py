@@ -3,6 +3,8 @@ from urllib import urlencode
 
 from django import template
 
+from parsr import utils
+
 register = template.Library()
 
 class GravatarUrlNode(template.Node):
@@ -32,7 +34,7 @@ def is_checkbox(value):
 
 @register.filter
 def href(value):
-    return value.href(value.id)
+    return utils.href(value.__class__, value.id)
 
 
 @register.tag

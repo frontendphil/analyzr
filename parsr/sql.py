@@ -11,20 +11,10 @@ def execute(query):
 def newest_files(query):
     sql = """
         SELECT
-            id,
-            name,
-            revision_id,
-            mimetype,
-            change_type,
-            copy_of_id
+            *
         FROM (
             SELECT
-                id,
-                name,
-                revision_id,
-                mimetype,
-                change_type,
-                copy_of_id,
+                *,
                 group_concat(change_type, '') AS change_history
             FROM
                 ( %s )
@@ -32,9 +22,32 @@ def newest_files(query):
                 change_type IS NOT NULL GROUP BY name
         ) WHERE
             change_history NOT LIKE 'D%%'
+        ORDER BY
+            date
     """ % query
 
     return sql.replace("%", "%%")
+
+def median(query, field):
+    return """
+        SELECT
+            AVG(%(field)s)
+        FROM (
+            SELECT
+                %(field)s
+            FROM
+                %(query)s
+            ORDER BY
+                %(field)s
+            LIMIT
+                2 - (SELECT COUNT(*) FROM ( %(query)s )) % 2    -- odd 1, even 2
+            OFFSET (
+                SELECT
+                    (COUNT(*) - 1) / 2
+                FROM %(query)s
+            )
+        )
+    """ % { "field": field, "query": query }
 
 def mimetype_count(files):
     return """

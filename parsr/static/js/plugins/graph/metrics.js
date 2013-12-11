@@ -61,7 +61,7 @@ ns("plugins.graph");
                     var metrics = d3.keys(data[file][0].rep[kind])
                         .sort()
                         .filter(function(key) {
-                            return key !== "date" && key !== "deleted";
+                            return key !== "date" && key !== "deleted" && !key.endsWith("Delta");
                         })
                         .map(function(type) {
                             return {

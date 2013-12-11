@@ -7,6 +7,8 @@ from pygments.formatters import HtmlFormatter, NullFormatter
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from django.core.urlresolvers import reverse
+
 from analyzr.settings import ADMINS, EMAIL
 
 
@@ -53,3 +55,11 @@ def previous(cls, instance, filters={}):
             return objects[1]
 
         return None
+
+def href(cls, instance_id):
+    name = cls.__name__.lower()
+
+    kwargs = {}
+    kwargs["%s_id" % name] = instance_id
+
+    return reverse("parsr.views.%s.info" % name, kwargs=kwargs)

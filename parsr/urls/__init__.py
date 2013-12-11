@@ -20,6 +20,6 @@ urlpatterns = patterns('',
 
     url(r"^branch/(?P<branch_id>\d+)", include("parsr.urls.branch")),
     url(r"^author/(?P<author_id>\d+)", include("parsr.urls.author")),
-    url(r"^revision/(?P<rev_id>\d+)", include("parsr.urls.revision")),
+    url(r"^revision/(?P<revision_id>\d+)", include("parsr.urls.revision")),
     url(r"^file/(?P<file_id>\d+)", include("parsr.urls.file")),
 )

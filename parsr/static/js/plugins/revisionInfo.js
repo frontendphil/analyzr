@@ -39,10 +39,22 @@ ns("plugins");
                             "<th>Package</th>" +
                             "<th>Name</th>" +
                             "<th>Change</th>" +
-                            "<th><i class='icon-exchange'></i> CC</th>" +
-                            "<th><i class='icon-exchange'></i> HSV</th>" +
-                            "<th><i class='icon-exchange'></i> HSD</th>" +
-                            "<th><i class='icon-exchange'></i> HSE</th>" +
+                            "<th>" +
+                                "<i class='icon-exchange'></i> " +
+                                "<abbr title='Cyclomatic Complexity Delta'>CC</abbr>" +
+                            "</th>" +
+                            "<th>" +
+                                "<i class='icon-exchange'></i> " +
+                                "<abbr title='Halstead Volume Delta'>HSV</abbr>" +
+                            "</th>" +
+                            "<th>" +
+                                "<i class='icon-exchange'></i> " +
+                                "<abbr title='Halstead Difficulty Delta'>HSD</abbt>" +
+                            "</th>" +
+                            "<th>" +
+                                "<i class='icon-exchange'></i> " +
+                                "<abbr title='Halstead Effort Delta'>HSE</abbr>" +
+                            "</th>" +
                         "</tr>" +
                     "</thead>" +
                     "<tbody></tbody>" +
@@ -54,8 +66,10 @@ ns("plugins");
 
             var createTD = function(metrics, metric) {
                 return "" +
-                    "<td class='delta " + metrics[metric].cls + "'>" +
-                        metrics[metric].value +
+                    "<td class='delta " + metrics[metric + " Delta"].cls + "'>" +
+                        "<abbr title='" + metrics[metric].value + "'>" +
+                            metrics[metric + " Delta"].value +
+                        "</abbr>" +
                     "</td>";
             };
 
@@ -67,10 +81,10 @@ ns("plugins");
                         "<td>" + this.rep["package"] + "</td>" +
                         "<td>" + this.rep.name + "</td>" +
                         "<td class='delta'>" + this.rep.changeType + "</td>" +
-                        createTD(metrics, "cyclomaticComplexityDelta") +
-                        createTD(metrics, "halsteadVolumeDelta") +
-                        createTD(metrics, "halsteadDifficultyDelta") +
-                        createTD(metrics, "halsteadEffortDelta") +
+                        createTD(metrics, "Cyclomatic Complexity") +
+                        createTD(metrics, "Halstead Volume") +
+                        createTD(metrics, "Halstead Difficulty") +
+                        createTD(metrics, "Halstead Effort") +
                     "</tr>"
                 ));
             });
@@ -87,8 +101,6 @@ ns("plugins");
             head.find("th").each(function(index) {
                 var th = $(this);
                 var ref = $(probe.get(index));
-
-                var padding = parseInt(ref.css("padding"), 10);
 
                 th.width(ref.width());
             });
@@ -112,7 +124,13 @@ ns("plugins");
                     content.html("");
 
                     content.append("<h3>" + revision.rep.identifier + "</h3>");
-                    content.append("<h5>" + revision.rep.date + "</h3>");
+                    content.append(
+                        "<h5>" +
+                            "<time datetime='" + revision.rep.date + "'>" +
+                                revision.rep.date +
+                            "</time>" +
+                        "</h5>"
+                    );
 
                     var fileChanges = that.createFileChanges(revision.rep.files);
                     content.append(fileChanges);
