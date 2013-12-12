@@ -38,7 +38,7 @@ def newest_files(query, date=None):
                 *,
                 group_concat(change_type, '') AS change_history
             FROM
-                ( %(query)s %(filter)s ORDER BY date ASC )
+                ( %(query)s %(filter)s ORDER BY "parsr_file"."date" ASC )
             WHERE
                 change_type IS NOT NULL GROUP BY name
         ) WHERE

@@ -102,7 +102,7 @@ ns("plugins");
                 var th = $(this);
                 var ref = $(probe.get(index));
 
-                th.width(ref.width());
+                th.width(Math.max(ref.width(), th.width()));
             });
         },
 

@@ -191,12 +191,7 @@ def clean_ignores(sender, instance, **kwargs):
 
 @receiver(pre_delete, sender=Repo)
 def remove_repo(sender, instance, **kwargs):
-    connector = Connector.get(instance)
-
-    path = connector.get_repo_path()
-
-    if os.path.exists(path):
-        rmtree(path)
+    instance.purge()
 
 
 class Branch(models.Model):
@@ -682,23 +677,23 @@ class Branch(models.Model):
         max_added = 0
         max_removed = 0
 
-        revisions = self.revisions(author, language=language, start=start, end=end)
-        revisions = revisions.annotate(added=Sum("file__lines_added"), removed=Sum("file__lines_removed"))
+        files = self.files(author, language=language, start=start, end=end)
+        revisions = files.values("date").annotate(added=Sum("lines_added"), removed=Sum("lines_removed"))
 
         for revision in revisions:
-            response["info"]["dates"].append(revision.date.isoformat())
+            response["info"]["dates"].append(revision["date"].isoformat())
 
-            max_added = max(max_added, revision.added)
-            max_removed = max(max_removed, revision.removed)
+            max_added = max(max_added, revision["added"])
+            max_removed = max(max_removed, revision["removed"])
 
-            response["data"][revision.date.isoformat()] = {
-                "added": revision.added,
-                "removed": revision.removed
+            response["data"][revision["date"].isoformat()] = {
+                "added": revision["added"],
+                "removed": revision["removed"]
             }
 
         self.set_options(response, {
-            "startDate": revisions[0].date.isoformat(),
-            "endDate": revisions[len(revisions) - 1].date.isoformat(),
+            "startDate": revisions[0]["date"].isoformat(),
+            "endDate": revisions[len(revisions) - 1]["date"].isoformat(),
             "upperBound": max_added,
             "lowerBound": -1 * max_removed
         })

@@ -158,6 +158,9 @@ class Git(Connector):
 
         stats = self.commit.stats.files
 
+        if filename.startswith("/"):
+            filename = filename.replace("/", "", 1)
+
         if not filename in stats:
             return
 
