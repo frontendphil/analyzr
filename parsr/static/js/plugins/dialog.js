@@ -22,6 +22,10 @@ ns("plugins");
 			this.dom.find(".body").width(width);
 		},
 
+		close: function() {
+			this.dom.remove();
+		},
+
 		standardButton: function() {
 			var dismiss = $("<button class='btn btn-default'>Dismiss</button>");
 
@@ -77,5 +81,28 @@ ns("plugins");
 		}
 
 	});
+
+	analyzr.plugins.Dialog.confirm = function(text, clb) {
+		var dialog = new analyzr.plugins.Dialog({
+			text: text,
+			actions: [
+				{
+					text: "Cancel",
+					handler: function(dialog) {
+						dialog.close();
+					}
+				},
+				{
+					text: "Ok",
+					cls: "btn btn-primary",
+					handler: function(dialog) {
+						clb();
+						dialog.close();
+					}
+				}
+			]
+		});
+		dialog.show();
+	}
 
 }());

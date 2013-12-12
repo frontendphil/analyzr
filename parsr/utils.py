@@ -9,10 +9,13 @@ from email.mime.text import MIMEText
 
 from django.core.urlresolvers import reverse
 
-from analyzr.settings import ADMINS, EMAIL
+from analyzr.settings import ADMINS, EMAIL, SEND_EMAILS
 
 
 def send_mail(traceback):
+    if not SEND_EMAILS:
+        return
+
     for name, email in ADMINS:
         message = MIMEMultipart("alternative")
         message["From"] = EMAIL["account"]

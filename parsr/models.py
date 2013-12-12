@@ -4,6 +4,7 @@ from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
 from shutil import rmtree
+from decimal import Decimal
 
 from django.core.urlresolvers import reverse
 from django.db import models
@@ -44,6 +45,10 @@ class Repo(models.Model):
 
     def __unicode__(self):
         return "%s (%s)" % (self.url, self.kind)
+
+    def purge(self):
+        connector = Connector.get(self)
+        connector.clear()
 
     def view(self):
         return reverse("parsr.views.repo.view", kwargs={"repo_id": self.id})
@@ -179,7 +184,7 @@ def clean_ignores(sender, instance, **kwargs):
             if not foldername.endswith("/"):
                 foldername = "%s/" % foldername
 
-            foldernames.append(foldername)
+            foldernames.append(foldername.strip())
 
     instance.ignored_folders = ",".join(foldernames)
 
@@ -291,6 +296,8 @@ class Branch(models.Model):
 
         revision = None
 
+        self.create_root_package()
+
         if resume:
             revision = self.last_analyzed_revision()
 
@@ -312,9 +319,12 @@ class Branch(models.Model):
 
         self.save()
 
+    def create_root_package(self):
+        Package.objects.get_or_create(parent=None, branch=self, name="/")
+
     def init_packages(self):
-        for package in Package.objects.filter(parent=None, branch=self):
-            package.update()
+        root = Package.root(self)
+        root.update()
 
     def last_analyzed_revision(self):
         return self.revision_set.get(previous=None)
@@ -769,13 +779,15 @@ class Revision(models.Model):
                            .filter(name=filename, package=package, revision__branch=self.branch)\
                            .order_by("-date")[0:1]
 
+        pkg = Package.get(package, self.branch)
+
         File.objects.create(
             revision=self,
             author=self.author,
             date=self.date,
             name=filename,
-            package=package,
-            pkg=Package.get(package, self.branch),
+            package=pkg.name,
+            pkg=pkg,
             mimetype=mimetype,
             change_type=action,
             copy_of=original[0] if original else None
@@ -837,10 +849,9 @@ class Revision(models.Model):
                                      package__endswith=package,
                                      change_type__in=Action.readable())
         except File.DoesNotExist:
-            message = "Could not find file using package: %s and filename: %s.\nRevision: %s" % (
+            message = "Could not find file using package: %s and filename: %s." % (
                 package,
-                filename,
-                self
+                filename
             )
 
             raise Exception(message)
@@ -849,9 +860,13 @@ class Revision(models.Model):
 class Package(models.Model):
 
     @classmethod
+    def root(cls, branch):
+        return Package.objects.get(parent=None, branch=branch)
+
+    @classmethod
     def get(cls, name, branch):
         packages = name.split("/")
-        parent = None
+        parent = Package.root(branch)
         parent_name = ""
 
         for pkg in packages:
@@ -904,20 +919,25 @@ class Package(models.Model):
             }
         }
 
-    def update_measures(self, revision):
-        files = File.objects.raw(sql.newest_files(str(self.files.all())))
-        files = files.aggregate(
-            cyclomatic_complexity=Avg("cyclomatic_complexity"),
-            halstead_difficulty=Avg("halstead_difficulty"),
-            halstead_volume=Avg("halstead_volume"),
-            halstead_effort=Avg("halstead_effort"),
-            fan_in=Avg("fan_in"),
-            fan_out=Avg("fan_out"),
-            hk=Avg("hk"),
-            sloc=Sum("sloc")
-        )
+    def parse_result(self, cursor):
+        cols = [info[0] for info in cursor.description]
 
-        PackageMetric.create(self, revision, files)
+        result = {}
+        values = cursor.fetchone()
+
+        for index, col in enumerate(cols):
+            result[col] = values[index]
+
+        return result
+
+    def update_measures(self, revision):
+        query = str(self.files.all().query)
+        query = sql.newest_files(query, revision.date)
+        query = sql.aggregate_metrics(query)
+
+        cursor = sql.execute(query)
+
+        PackageMetric.create(self, revision, self.parse_result(cursor))
 
 
 class PackageMetric(models.Model):
@@ -931,18 +951,18 @@ class PackageMetric(models.Model):
             revision=revision
         )
 
-        metric.cyclomatic_complexity = files["cyclomatic_complexity"]
-        metric.halstead_effort = files["halstead_effort"]
-        metric.halstead_difficulty = files["halstead_difficulty"]
-        metric.halstead_volume = files["halstead_volume"]
-        metric.fan_in = files["fan_in"]
-        metric.fan_out = files["fan_out"]
-        metric.hk = files["hk"]
-        metric.sloc = files["sloc"]
+        metric.cyclomatic_complexity = Decimal(files["cyclomatic_complexity"])
+        metric.halstead_effort = Decimal(files["halstead_effort"])
+        metric.halstead_difficulty = Decimal(files["halstead_difficulty"])
+        metric.halstead_volume = Decimal(files["halstead_volume"])
+        metric.fan_in = Decimal(files["fan_in"])
+        metric.fan_out = Decimal(files["fan_out"])
+        metric.hk = Decimal(files["hk"])
+        metric.sloc = Decimal(files["sloc"])
 
-        if not created:
-            previous = metric.previous()
+        previous = metric.previous()
 
+        if previous:
             metric.cyclomatic_complexity_delta = metric.cyclomatic_complexity - previous.cyclomatic_complexity
             metric.halstead_difficulty_delta = metric.halstead_difficulty - previous.halstead_difficulty
             metric.halstead_effort_delta = metric.halstead_effort - previous.halstead_effort
@@ -1123,9 +1143,6 @@ class File(models.Model):
 
         self.hk = self.sloc * pow(self.fan_in * self.fan_out, 2)
 
-        self.lines_added = measures["churn"]["added"]
-        self.lines_removed = measures["churn"]["removed"]
-
         previous = self.get_previous()
 
         if previous:
@@ -1142,8 +1159,6 @@ class File(models.Model):
             self.hk_delta = self.hk - previous.hk
 
         self.save()
-
-        self.package.update_measures(self.revision)
 
     def add_churn(self, churn=None):
         if not churn:

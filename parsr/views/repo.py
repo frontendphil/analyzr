@@ -34,6 +34,14 @@ def list(request):
     return [repo.json() for repo in repos]
 
 
+@require_POST
+def purge(request, repo_id):
+    repo = get_object_or_404(Repo, pk=repo_id)
+    repo.purge()
+
+    return HttpResponse(status=200)
+
+
 @render_to("create.html")
 def create(request):
     form = RepoForm()

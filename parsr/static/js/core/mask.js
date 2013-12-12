@@ -88,6 +88,9 @@ ns("core");
 
 			var that = this;
 
+			// focus this element
+			that.dom.click();
+
 			this.dom.fadeIn(function() {
 				that.raise("show");
 			});

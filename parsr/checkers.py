@@ -1,6 +1,7 @@
 import subprocess
 import json
 import math
+import re
 
 from jinja2 import Environment, FileSystemLoader
 from xml.dom import minidom
@@ -45,8 +46,17 @@ class Checker(object):
         self.config_path = config_path
         self.result_path = result_path
 
+        self.files = []
+
     def __str__(self):
         return self.__unicode__()
+
+    def includes(self, filename):
+        for f in self.files:
+            if f.endswith(filename):
+                return True
+
+        return False
 
     def get_decimal(self, value):
         return Decimal("%d" % round(float(value), 2))
@@ -62,6 +72,8 @@ class Checker(object):
 
         if not proc.returncode == 0:
             raise CheckerException(self, cmd, stdout=stdout, stderr=stderr)
+
+        return stdout
 
     def stub(self):
         return {
@@ -81,7 +93,8 @@ class Checker(object):
         self.measures[filename][key] = self.get_decimal(value)
 
     def configure(self, files, revision, connector):
-        pass
+        for f in files:
+            self.files.append(f.full_path())
 
     def run(self):
         pass
@@ -113,6 +126,8 @@ class JHawk(Checker):
         return "%s/%s_%d" % (self.result_path, revision.identifier, part)
 
     def configure(self, files, revision, connector):
+        super(JHawk, self).configure(files, revision, connector)
+
         self.measures = {}
         self.configurations = []
         self.results = []
@@ -150,9 +165,6 @@ class JHawk(Checker):
 
         self.revision = revision
 
-        for f in files:
-            self.files.append(f.full_path())
-
     def run(self):
         for configuration in self.configurations:
             cmd = [
@@ -189,13 +201,6 @@ class JHawk(Checker):
         self.set(filename, "halstead_difficulty", difficulty)
         self.set(filename, "halstead_effort", effort)
         self.set(filename, "halstead_volume", volume)
-
-    def includes(self, filename):
-        for f in self.files:
-            if f.endswith(filename):
-                return True
-
-        return False
 
     def parse(self, connector):
         for result in self.results:
@@ -305,5 +310,87 @@ class ComplexityReport(Checker):
                 self.set(filename, "halstead_effort", self.get_halstead_value(data["functions"], "effort"))
                 self.set(filename, "halstead_difficulty", self.get_halstead_value(data["functions"], "difficulty"))
                 self.set(filename, "sloc", data["aggregate"]["sloc"]["logical"])
+
+        return self.measures
+
+class CMetrics(Checker):
+
+    def __init__(self, config_path, result_path):
+        self.packages = []
+        self.results = {}
+
+        self.re = re.compile("\s{2,}")
+
+        super(CMetrics, self).__init__(config_path, result_path)
+
+    def configure(self, files, revision, connector):
+        super(CMetrics, self).configure(files, revision, connector)
+
+        self.repo_path = connector.get_repo_path()
+
+        packages = []
+
+        for f in files:
+            if not f.pkg in self.packages:
+                packages.append(f.pkg)
+
+        packages = sorted(packages, key=lambda pkg: pkg.left)
+        pivot = packages[0]
+
+        self.packages.append(pivot)
+
+        # reduce packages to most common parents
+        # this will reduce not needed parses
+        for pkg in packages:
+            if pkg.left > pivot.left and pkg.left < pivot.right:
+                continue
+
+            self.packages.append(pkg)
+            pivot = pkg
+
+    def run(self):
+        for pkg in self.packages:
+            cmd = ["cmetrics", "%s/%s" % (self.repo_path, pkg.name)]
+
+            self.results[pkg.name] = self.execute(cmd)
+
+        return True
+
+    def parse_result(self, data):
+        result = {}
+
+        lines = data.split("\n")
+        keys = self.re.split(lines.pop(0))
+
+        line = lines.pop(0)
+
+        while line:
+            values = self.re.split(line)
+            entry = {}
+
+            f = values.pop(0)
+
+            for index, value in enumerate(values):
+                entry[keys[index + 1]] = self.get_decimal(value)
+
+            result[f] = entry
+
+            line = lines.pop(0)
+
+        return result
+
+    def parse(self, connector):
+        for pkg, data in self.results.iteritems():
+            results = self.parse_result(data)
+
+            for f, result in results.iteritems():
+                filename = "%s/%s" % (pkg, f)
+
+                if not self.includes(filename):
+                    continue
+
+                self.set(filename, "cyclomatic_complexity", result["AVGCY"])
+                self.set(filename, "halstead_volume", result["H VOL"])
+                self.set(filename, "sloc", result["SLOC"])
 
         return self.measures

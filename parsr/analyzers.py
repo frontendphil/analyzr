@@ -4,7 +4,7 @@ import shutil
 import pysvn
 
 from parsr.connectors import Connector
-from parsr.checkers import JHawk, ComplexityReport
+from parsr.checkers import JHawk, ComplexityReport, CMetrics
 
 from analyzr.settings import RESULT_PATH
 
@@ -19,7 +19,7 @@ class AnalyzeError(Exception):
         super(AnalyzeError, self).__init__()
 
     def __str__(self):
-        return "%s\n\caused by revision\n\n%s\n\nprocessing file\n\n%s" % (
+        return "%s\n\ncaused by revision\n\n%s\n\nprocessing file\n\n%s" % (
             self.error,
             self.revision,
             self.f
@@ -82,19 +82,27 @@ class Analyzer(object):
 
     def store_results(self, revision, results):
         self.connector.lock(revision)
+        packages = []
+        f = None
 
-        for filename, measures in results.iteritems():
-            try:
+        try:
+            for filename, measures in results.iteritems():
                 f = revision.get_file(filename)
                 f.add_measures(measures)
 
                 code_churn = self.connector.get_churn(revision, f.full_path())
 
                 f.add_churn(code_churn)
-            except Exception, e:
-                self.connector.unlock()
 
-                raise AnalyzeError(e, revision, f)
+                if not f.pkg in packages:
+                    packages.append(f.pkg)
+
+            for pkg in packages:
+                pkg.update_measures(revision)
+        except Exception, e:
+            self.connector.unlock()
+
+            raise AnalyzeError(e, revision, f)
 
         self.connector.unlock()
 
@@ -173,3 +181,4 @@ class BaseAnalyzer(object):
 Analyzer.register("x-java-source", JHawk)
 Analyzer.register("x-java", JHawk)
 Analyzer.register("javascript", ComplexityReport)
+Analyzer.register("x-c", CMetrics)

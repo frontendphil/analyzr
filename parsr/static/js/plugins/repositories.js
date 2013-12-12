@@ -23,14 +23,11 @@ ns("plugins");
                             "<th class='status'>" +
                                 "<abbr title='At least one branch measured'>M</abbr>" +
                             "</th>" +
-                            "<th>Location</th>" +
                             "<th class='status'>" +
                                 "<abbr title='Anonymous repo access'>S</abbr>" +
                             "</th>" +
                             "<th>Type</th>" +
-                            "<th># Branches</th>" +
-                            "<th># Authors</th>" +
-                            "<th></th>" +
+                            "<th>Location</th>" +
                             "<th></th>" +
                             "<th></th>" +
                         "</tr>" +
@@ -212,12 +209,20 @@ ns("plugins");
             link.click(function() {
                 var url = $(this).data("rel");
 
-                if(clb && !clb($(this), branch)) {
-                    return false;
-                }
+                var performAction = function() {
+                    if(clb && !clb(link, branch)) {
+                        return false;
+                    }
 
-                that.request(url);
-                that.reload();
+                    that.request(url);
+                    that.reload();
+                };
+
+                if(branch.rep[action].finished) {
+                    analyzr.plugins.Dialog.confirm("This action has already finished on the selected branch. Do you want to restart it?", performAction);
+                } else {
+                    performAction();
+                }
 
                 return false;
             });
@@ -283,36 +288,45 @@ ns("plugins");
 
             repo.append(this.getAnalyzingState(rep));
             repo.append(this.getMeasuringState(rep));
-            repo.append(this.getRepoLink(info));
             repo.append(this.wrap(this.getRepoStatus(rep), {
                 "class": "status"
             }));
-
             repo.append(this.wrap(rep.kind));
-            repo.append(this.wrap(rep.branchCount));
-            repo.append(this.wrap(rep.authorCount));
+            repo.append(this.getRepoLink(info));
 
             repo.append(this.createActions(rep));
 
-            var edit = "", remove = "";
+            var edit = "", remove = "", purge = "";
 
             if(!rep.busy) {
-                edit = $("<a href='" + info.href + "/edit' />");
+                edit = $("<a href='" + info.href + "/edit' class='btn btn-default' />");
                 edit.append(this.icon("icon-edit"));
 
-                remove = $("<a href='#' data-action='" + info.href + "/remove' />");
+                remove = $("<a href='#' title='Remove this repository' data-action='" + info.href + "/remove' class='btn btn-danger'/>");
                 remove.append(this.icon("icon-remove"));
 
                 remove.click(function() {
-                    var result = confirm("Do you really want to delete the repo?");
+                    analyzr.plugins.Dialog.confirm("Do you really want to delete the repo?", function() {
+                        that.request(remove.data("action"), function() {
+                            $("tr[data-href='" + info.href + "']").fadeOut(function() {
+                                $(this).remove();
+                            });
+                        });
+                    });
 
-                    if(!result) {
-                        return false;
-                    }
+                    return false;
+                });
 
-                    that.request($(this).data("action"), function() {
-                        $("tr[data-href='" + info.href + "']").fadeOut(function() {
-                            $(this).remove();
+                purge = $("<a href='#' title='Clear data of this repository' data-action='" + info.href + "/purge' class='btn btn-warning' />");
+                purge.append(this.icon("icon-folder-close-alt"));
+
+                purge.click(function() {
+                    analyzr.plugins.Dialog.confirm("Do you really want to delete all files belonging to this repository?", function() {
+                        var mask = new analyzr.core.Mask(that.dom, "Removing files...");
+                        mask.show();
+
+                        that.request(purge.data("action"), function() {
+                            mask.remove();
                         });
                     });
 
@@ -320,7 +334,7 @@ ns("plugins");
                 });
             }
 
-            repo.append(this.wrap(edit), this.wrap(remove));
+            repo.append(this.wrap([edit, purge, remove], { "class": "actions" }));
 
             return repo;
         },

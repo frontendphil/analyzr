@@ -7,8 +7,29 @@ def execute(query):
     cursor.execute(query)
     transaction.commit_unless_managed()
 
+    return cursor
 
-def newest_files(query):
+
+def aggregate_metrics(query):
+    return """
+        SELECT
+            AVG(cyclomatic_complexity) AS cyclomatic_complexity,
+            AVG(halstead_volume) AS halstead_volume,
+            AVG(halstead_effort) AS halstead_effort,
+            AVG(halstead_difficulty) AS halstead_difficulty,
+            AVG(fan_in) AS fan_in,
+            AVG(fan_out) AS fan_out,
+            AVG(hk) AS hk,
+            SUM(sloc) AS sloc
+        FROM ( %s )
+    """ % query
+
+def newest_files(query, date=None):
+    date_filter = ""
+
+    if date:
+        date_filter = "AND date <= '%s'" % date.isoformat()
+
     sql = """
         SELECT
             *
@@ -17,14 +38,14 @@ def newest_files(query):
                 *,
                 group_concat(change_type, '') AS change_history
             FROM
-                ( %s )
+                ( %(query)s %(filter)s ORDER BY date ASC )
             WHERE
                 change_type IS NOT NULL GROUP BY name
         ) WHERE
-            change_history NOT LIKE 'D%%'
+            change_history NOT LIKE '%%D'
         ORDER BY
             date
-    """ % query
+    """ % { "query": query, "filter": date_filter }
 
     return sql.replace("%", "%%")
 
