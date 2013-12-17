@@ -320,6 +320,11 @@ ns("plugins");
                 purge = $("<a href='#' title='Clear data of this repository' data-action='" + info.href + "/purge' class='btn btn-warning' />");
                 purge.append(this.icon("icon-folder-close-alt"));
 
+                if(!rep.checkedOut) {
+                    purge.prop("readonly", true);
+                    purge.addClass("disabled");
+                }
+
                 purge.click(function() {
                     analyzr.plugins.Dialog.confirm("Do you really want to delete all files belonging to this repository?", function() {
                         var mask = new analyzr.core.Mask(that.dom, "Removing files...");

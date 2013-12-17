@@ -102,6 +102,9 @@ class Connector(object):
     def parse_date(self, timestamp):
         return datetime.fromtimestamp(int(timestamp))
 
+    def is_checked_out(self):
+        return os.path.exists(self.get_repo_path())
+
     def clear(self):
         path = self.get_repo_path()
 

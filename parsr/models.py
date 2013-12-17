@@ -1,9 +1,6 @@
-import os
-
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
-from shutil import rmtree
 from decimal import Decimal
 
 from django.core.urlresolvers import reverse
@@ -124,6 +121,11 @@ class Repo(models.Model):
 
         return False
 
+    def is_checked_out(self):
+        connector = Connector.get(self)
+
+        return connector.is_checked_out()
+
     def json(self):
         return {
             "href": utils.href(Repo, self.id),
@@ -134,6 +136,7 @@ class Repo(models.Model):
                 "name": self.url,
                 "kind": self.kind,
                 "busy": self.busy(),
+                "checkedOut": self.is_checked_out(),
                 "status": self.get_status(),
                 "anonymous": self.anonymous,
                 "analyzed": self.analyzed(),
