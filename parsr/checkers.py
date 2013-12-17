@@ -389,7 +389,7 @@ class CMetrics(Checker):
                 if not self.includes(filename):
                     continue
 
-                self.set(filename, "cyclomatic_complexity", result["AVGCY"])
+                self.set(filename, "cyclomatic_complexity", result["MEDCY"])
                 self.set(filename, "halstead_volume", result["H VOL"])
                 self.set(filename, "sloc", result["SLOC"])
 

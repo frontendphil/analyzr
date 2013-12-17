@@ -377,6 +377,9 @@ class Branch(models.Model):
         for key, value in options.iteritems():
             response["info"]["options"][key] = value
 
+    def packages(self, parent=None, packages=[]):
+        return []
+
     def contributors(self, page=None):
         response = self.response_stub()
 
@@ -933,6 +936,12 @@ class Package(models.Model):
         cursor = sql.execute(query)
 
         PackageMetric.create(self, revision, self.parse_result(cursor))
+
+    def all_children(self):
+        return Package.objects.filter(left__gt=self.left, right__lt=self.right)
+
+    def is_leaf(self):
+        return self.right == self.left + 1
 
 
 class PackageMetric(models.Model):

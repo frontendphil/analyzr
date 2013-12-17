@@ -179,3 +179,9 @@ def contributors(request, branch_id):
     page = request.GET.get("page")
 
     return branch.contributors(page=page)
+
+@ajax_request
+def packages(request, branch_id):
+    branch = get_object_or_404(Branch, pk=branch_id)
+
+    return branch.packages()

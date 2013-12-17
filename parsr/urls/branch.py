@@ -26,4 +26,6 @@ urlpatterns = patterns('parsr.views.branch',
     url(r"^/measure$", "measure"),
     url(r"^/measure/resume$", "resume_measure"),
 
+    url(r"^/packages$", "packages"),
+
 )
