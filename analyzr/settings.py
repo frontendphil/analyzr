@@ -82,6 +82,10 @@ STATIC_ROOT = "%s/static" % PROJECT_PATH
 # Example: "http://example.com/static/", "http://static.example.com/"
 STATIC_URL = '/static/'
 
+COMPRESS_OFFLINE_CONTEXT = {
+    "STATIC_URL": STATIC_URL
+}
+
 # Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
