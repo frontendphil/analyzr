@@ -380,8 +380,33 @@ class Branch(models.Model):
         for key, value in options.iteritems():
             response["info"]["options"][key] = value
 
-    def packages(self, parent=None, packages=[]):
-        return []
+    def packages(self, packages=None, right=None):
+        if packages is None:
+            packages = list(Package.objects.filter(branch=self).order_by("-left"))
+            root = packages.pop()
+
+            result = root.json()
+            result["rep"]["children"] = self.packages(packages, root.right)
+
+            return result
+
+        children = []
+
+        while packages:
+            package = packages[-1]
+
+            if package.left > right:
+                return children
+
+            packages.pop()
+
+            node = package.json()
+            node["rep"]["children"] = self.packages(packages, package.right)
+
+            children.append(node)
+
+        return children
+
 
     def contributors(self, page=None):
         response = self.response_stub()
@@ -558,7 +583,7 @@ class Branch(models.Model):
 
         return Revision.objects.filter(**filters).order_by("date")
 
-    def files(self, author=None, language=None, start=None, end=None):
+    def files(self, author=None, language=None, package=None, start=None, end=None):
         filters = {
             "revision__branch": self,
             "change_type__in": Action.readable()
@@ -575,6 +600,10 @@ class Branch(models.Model):
 
         if end:
             filters["date__lte"] = end
+
+        if package:
+            filters["pkg__left__gte"] = package.left
+            filters["pkg__right__lte"] = package.right
 
         return File.objects.filter(**filters).order_by("date")
 
@@ -597,13 +626,14 @@ class Branch(models.Model):
     def get_latest_revision(self):
         return self.revision_set.order_by("-date")[0:1][0]
 
-    def response_stub(self, language=None, start=None, end=None):
+    def response_stub(self, language=None, package=None, start=None, end=None):
         return {
             "info": {
                 "dates": [],
                 "languages": self.get_languages(),
                 "options": {
                     "language": language,
+                    "package": utils.href(Package, package.id) if package else None,
                     "startDate": start.isoformat() if start else None,
                     "endDate": end.isoformat() if end else None,
                     "minDate": self.get_earliest_revision().date.isoformat(),
@@ -613,13 +643,13 @@ class Branch(models.Model):
             "data": {}
         }
 
-    def metrics(self, author, language=None, start=None, end=None):
-        result = self.response_stub(language=language, start=start, end=end)
+    def metrics(self, author, language=None, package=None, start=None, end=None):
+        result = self.response_stub(language=language, package=package, start=start, end=end)
 
         if not language:
             return result
 
-        files = self.files(author, language=language, start=start, end=end)
+        files = self.files(author, language=language, package=package, start=start, end=end)
 
         for f in files:
             date = f.date.isoformat()
@@ -891,6 +921,9 @@ class Package(models.Model):
 
     left = models.IntegerField(default=0)
     right = models.IntegerField(default=0)
+
+    def __unicode__(self):
+        return self.name
 
     def add_package(self, package):
         package.parent = self

@@ -22,4 +22,5 @@ urlpatterns = patterns('',
     url(r"^author/(?P<author_id>\d+)", include("parsr.urls.author")),
     url(r"^revision/(?P<revision_id>\d+)", include("parsr.urls.revision")),
     url(r"^file/(?P<file_id>\d+)", include("parsr.urls.file")),
+    url(r"^package/(?P<package_id>\d+)", include("parsr.urls.package")),
 )

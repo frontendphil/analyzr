@@ -16,7 +16,7 @@ from django.core.urlresolvers import reverse
 from annoying.decorators import render_to, ajax_request
 from annoying.functions import get_object_or_None
 
-from parsr.models import Branch, Author
+from parsr.models import Branch, Author, Package
 from parsr.utils import send_mail
 
 
@@ -60,10 +60,11 @@ def get_tzinfo(timezone):
 
 def parse_filters(request, branch):
     language = request.GET.get("language")
+    package = get_object_or_None(Package, pk=request.GET.get("package"))
 
     start, end = parse_date_range(request, branch)
 
-    return language, start, end
+    return language, package, start, end
 
 
 def parse_date_range(request, branch):
@@ -158,16 +159,16 @@ def commits(request, branch_id, author_id=None):
 def metrics(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
-    language, start, end = parse_filters(request, branch)
+    language, package, start, end = parse_filters(request, branch)
 
-    return branch.metrics(author, language=language, start=start, end=end)
+    return branch.metrics(author, language=language, package=package, start=start, end=end)
 
 
 @ajax_request
 def churn(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
-    language, start, end = parse_filters(request, branch)
+    language, package, start, end = parse_filters(request, branch)
 
     return branch.churn(author, language=language, start=start, end=end)
 
@@ -183,5 +184,7 @@ def contributors(request, branch_id):
 @ajax_request
 def packages(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
+
+    # import pdb; pdb.set_trace()
 
     return branch.packages()

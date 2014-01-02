@@ -51,9 +51,10 @@ ns("plugins");
 
             this.createDatePicker(container);
             var language = this.createLanguageSelector();
+            var packages = this.createPackageSelector();
             var files = this.createFileSelector();
 
-            container.append(language, files);
+            container.append(language, packages, files);
 
             return container;
         },
@@ -237,6 +238,57 @@ ns("plugins");
 
             select.change(function() {
                 that.raise("file.selected", this.value);
+            });
+
+            return select;
+        },
+
+        createPackageSelector: function() {
+            var parse = function(parent, result, level) {
+                level = level || 1;
+
+                if(!result) {
+                    result = [{
+                        pkg: parent,
+                        indent: ""
+                    }];
+                }
+
+                $.each(parent.rep.children, function() {
+                    result.push({
+                        pkg: this,
+                        indent: "&nbsp;&nbsp;".repeat(level)
+                    });
+
+                    parse(this, result, level + 1);
+                });
+
+                return result;
+            };
+
+            var that = this;
+
+            $.ajax(this.dom.data("branch") + "/packages", {
+                success: function(root) {
+                    var children = parse(root);
+
+                    that.createSelect("package", children, function(child) {
+                        return {
+                            value: child.pkg.href,
+                            text: child.indent + child.pkg.rep.name
+                        };
+                    });
+                }
+            });
+
+            var select = this.createSelect("package");
+
+            select.change(function() {
+                if(!this.value) {
+                    return;
+                }
+
+                that.changeParam("package", this.value.replace("/package/", ""));
             });
 
             return select;
