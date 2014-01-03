@@ -7,6 +7,9 @@ ns("plugins.graph.metrics");
         init: function(target, attrs) {
             this.scales = {};
 
+            this.brushHeight = attrs.brushHeight || 50;
+            this.brushMargin = attrs.brushMargin || 20;
+
             this._super("metrics", target, attrs);
 
             this.addStaticContent();
@@ -34,7 +37,7 @@ ns("plugins.graph.metrics");
             });
 
             $.each(metrics, function(index) {
-                var y = that.setScale(this, d3.scale.linear().range([that.height, 0]));
+                var y = that.setScale(this, d3.scale.linear().range([that.getInnerHeight(), 0]));
 
                 var axis = d3.svg.axis()
                     .scale(y)
@@ -51,7 +54,83 @@ ns("plugins.graph.metrics");
             });
         },
 
+        getBrush: function(clb) {
+            var that = this;
+
+            this.brush = d3.svg.brush()
+                .x(this.scale.x2)
+                .on("brush", function() {
+                    that.handleBrush(clb);
+                });
+
+            return this.brush;
+        },
+
+        handleBrush: function(clb) {
+            clb = clb || function() {};
+
+            var domain = this.brush.empty() ? this.scale.x2.domain() : this.brush.extent();
+
+            this.updateXAxis(domain[0], domain[1]);
+
+            this.scale.x.domain(domain);
+
+            clb();
+        },
+
+        prepareScale: function() {
+            var scale = this._super();
+
+            this.scale.x2 = d3.time.scale().range([0, this.getInnerWidth()]);
+
+            return scale;
+        },
+
+        prepareAxis: function(x, y) {
+            this._super(x, y);
+
+            this.axis.x2 = d3.svg.axis().scale(this.scale.x2).orient("bottom").tickSize(-1 * this.getInnerHeight());
+        },
+
+        prepareSVG: function() {
+            var svg = this._super();
+
+            var y = this.getInnerHeight() + this.margins.top + this.brushMargin;
+
+            var el = d3.select(this.dom.get(0)).select("svg");
+
+            el.append("clipPath")
+                .attr("id", "clip")
+                .append("rect")
+                    .attr("height", this.getInnerHeight())
+                    .attr("width", this.getInnerWidth());
+
+            var context = el.append("g")
+                .attr("class", "filter")
+                .attr("transform", "translate(" + this.margins.left + "," + y + ")");
+
+            context.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + this.brushHeight + ")")
+                .call(this.axis.x2);
+
+            context.append("g")
+                .attr("class", "x brush")
+                .call(this.getBrush())
+                .selectAll("rect")
+                    .attr("y", -6)
+                    .attr("height", this.brushHeight + 7);
+
+            this.context = context;
+
+            return svg;
+        },
+
         addYAxis: function() {},
+
+        getDiagramHeight: function() {
+            return this._super() + this.brushHeight + this.brushMargin;
+        },
 
         parse: function(data, kind) {
             return d3.keys(data)
@@ -94,6 +173,7 @@ ns("plugins.graph.metrics");
 
         setScale: function(metric, scale) {
             this.scales[metric.id] = scale;
+            this.scales[metric.id + "-brush"] = d3.scale.linear().range([this.brushHeight, 0]);
 
             scale.domain([
                 0,
@@ -105,11 +185,17 @@ ns("plugins.graph.metrics");
             //     return d.value;
             // }));
 
+            this.scales[metric.id + "-brush"].domain(scale.domain());
+
             return scale;
         },
 
         getScale: function(metric) {
             return this.scales[metric.id];
+        },
+
+        getBrushScale: function(metric) {
+            return this.scales[metric.id + "-brush"];
         },
 
         createComplexCircle: function(parent, color) {
@@ -151,6 +237,84 @@ ns("plugins.graph.metrics");
                 });
         },
 
+        updateXScale: function(svg, info) {
+            this._super(svg, info);
+
+            var domain = this.scale.x.domain();
+
+            var x2 = d3.time.scale().range([0, this.getInnerWidth()]);
+            x2.domain(domain);
+
+            this.scale.x2 = x2;
+
+            var axis = d3.svg.axis()
+                .scale(x2)
+                .orient("bottom")
+                .tickSize(-1 * this.brushHeight);
+
+            this.context.select(".x.axis")
+                .call(axis);
+        },
+
+        createBrush: function(data, info, color) {
+            var metric = this.context.selectAll(".metric")
+                .data(data)
+                .enter().append("g")
+                .attr("class", "metric");
+
+            var that = this;
+
+            var line = d3.svg.line()
+                .x(function(d) {
+                    return that.scale.x2(d.date);
+                })
+                .y(function(d) {
+                    return that.getBrushScale(d)(d.value);
+                });
+
+            metric.append("path")
+                .attr("class", "line")
+                .attr("d", function(d) {
+                    return line(d.values);
+                })
+                .style("stroke", function(d) {
+                    return color(d.id);
+                });
+
+            this.on("file.changed", function(file) {
+                updateBrush(file.metrics);
+
+                that.context.selectAll(".line")
+                    .data(file.metrics)
+                    .transition()
+                    .attr("d", function(d) {
+                        return line(d.values);
+                    });
+            });
+
+            var updateBrush = function(data) {
+                var brush = that.getBrush(function() {
+                    var line = d3.svg.line()
+                        .x(function(d) {
+                            return that.scale.x(d.date);
+                        })
+                        .y(function(d) {
+                            return that.getScale(d)(d.value);
+                        });
+
+                    that.svg.selectAll(".line")
+                        .data(data)
+                        .attr("d", function(d) {
+                            return line(d.values);
+                        });
+                });
+
+                that.context.select(".brush").call(brush);
+            };
+
+            updateBrush(data);
+        },
+
         prepareDiagram: function(data, info) {
             var that = this;
 
@@ -160,6 +324,7 @@ ns("plugins.graph.metrics");
             }));
 
             this.createAxis(data, info, color);
+            this.createBrush(data, info, color);
 
             var metric = that.svg.selectAll(".metric")
                 .data(data)
@@ -180,7 +345,7 @@ ns("plugins.graph.metrics");
                     return "optional value value-" + d.id;
                 })
                 .attr("transform", function(d, index) {
-                    var stepSize = that.width / data.length;
+                    var stepSize = that.getInnerWidth() / data.length;
                     var offset = stepSize / 2;
 
                     return "translate(" + ((index * stepSize) + offset) + ",-" + (that.margins.top / 2) + ")";
@@ -198,6 +363,7 @@ ns("plugins.graph.metrics");
 
             metric.append("path")
                 .attr("class", "line")
+                .attr("clip-path", "url(#clip)")
                 .attr("d", function(d) {
                     return line(d.values);
                 })
@@ -219,19 +385,19 @@ ns("plugins.graph.metrics");
 
             this.svg.append("rect")
                 .attr("class", "background")
-                .attr("width", this.width)
-                .attr("height", this.height);
+                .attr("width", this.getInnerWidth())
+                .attr("height", this.getInnerHeight());
         },
 
         createAxis: function(data, info, color) {
             var that = this;
 
             $.each(data, function(index) {
-                that.setScale(this, d3.scale.linear().range([that.height, 0]));
+                that.setScale(this, d3.scale.linear().range([that.getInnerHeight(), 0]));
 
                 var metric = this;
 
-                var xOffset = index % 2 === 0 ? 0 : (that.width - 5);
+                var xOffset = index % 2 === 0 ? 0 : (that.getInnerWidth() - 5);
                 xOffset = xOffset + (index % 2 === 0 ? -1 : 1) * index * 25;
 
                 // remove old axis
@@ -438,7 +604,7 @@ ns("plugins.graph.metrics");
                 .attr("x0", 0)
                 .attr("x1", 0)
                 .attr("y0", 0)
-                .attr("y1", this.height)
+                .attr("y1", this.getInnerHeight())
                 .style("stroke", "#000");
         },
 
@@ -469,6 +635,8 @@ ns("plugins.graph.metrics");
 
             this.handleMouseLeave();
             this.updateFilters(response.info, this.files);
+
+
         }
     });
 }());

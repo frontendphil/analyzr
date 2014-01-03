@@ -33,59 +33,32 @@ ns("plugins.graph");
 
         handleFileSelect: function() {},
 
-        getTickValues: function(start, end) {
-            var span = start.to(end);
+        updateXAxis: function(start, end) {
+            var axis = d3.svg.axis()
+                .scale(this.scale.x)
+                .orient("bottom")
+                .tickSize(-this.getInnerHeight());
 
-            if(span.years > 0) {
-                return d3.time.months(start, end, span.years * 2);
-            }
+            this.axis.x = axis;
 
-            if(span.months > 0) {
-                return d3.time.months(start, end, 1);
-            }
-
-            if(span.weeks) {
-                return d3.time.weeks(start, end, span.weeks);
-            }
-
-            if(span.weeks > 0) {
-                return d3.time.days(start, end, span.weeks);
-            }
-
-            if(span.days > 0) {
-                return d3.time.hours(start, end, Math.floor(span.hours / 2));
-            }
-
-            if(span.hours > 0) {
-                return d3.time.minutes(start, end, span.hours);
-            }
-
-            return d3.time.minutes(start, end, 1);
+            this.svg.select(".x.axis")
+                .call(axis);
         },
 
         updateXScale: function(svg, info) {
             var start = info.options.startDate || info.options.minDate;
             var end = info.options.endDate || info.options.maxDate;
 
-            var x = d3.time.scale().range([0, this.width]);
+            var x = d3.time.scale().range([0, this.getInnerWidth()]);
             x.domain([start, end]);
 
             this.scale.x = x;
 
-            var axis = d3.svg.axis()
-                .scale(x)
-                .orient("bottom")
-                .tickValues(this.getTickValues(start, end))
-                .tickSize(-this.getInnerHeight());
-
-            this.axis.x = axis;
-
-            svg.select(".x.axis")
-                .call(axis);
+            this.updateXAxis(start, end);
         },
 
         updateYScale: function(svg, info) {
-            var y = d3.scale.linear().range([this.height, 0]);
+            var y = d3.scale.linear().range([this.getInnerHeight(), 0]);
             y.domain([info.options.lowerBound, info.options.upperBound]);
 
             this.scale.y = y;
@@ -135,8 +108,8 @@ ns("plugins.graph");
 
         prepareScale: function() {
             this.scale = {
-                x: d3.time.scale().range([0, this.width]),
-                y: d3.scale.linear().range([this.height, 0])
+                x: d3.time.scale().range([0, this.getInnerWidth()]),
+                y: d3.scale.linear().range([this.getInnerHeight(), 0])
             };
 
             return this.scale;
@@ -154,11 +127,20 @@ ns("plugins.graph");
             this.prepareAxis(scale.x, scale.y);
 
             return d3.select(this.dom.get(0)).append("svg")
-                .attr("class", "chart chart-" + this.baseName)
-                .attr("width", this.width + this.margins.left + this.margins.right)
-                .attr("height", this.height + this.margins.top + this.margins.bottom)
+                .attr("class", "canvas")
+                .attr("width", this.getDiagramWidth())
+                .attr("height", this.getDiagramHeight())
                 .append("g")
+                .attr("class", "chart chart-" + this.baseName)
                 .attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
+        },
+
+        getDiagramHeight: function() {
+            return this.height + this.margins.top + this.margins.bottom
+        },
+
+        getDiagramWidth: function() {
+            return this.width + this.margins.left + this.margins.right;
         },
 
         createDomain: function(svg, data, info) {
@@ -178,7 +160,7 @@ ns("plugins.graph");
         addXAxis: function(svg) {
             svg.append("g")
                 .attr("class", "x axis")
-                .attr("transform", "translate(0," + this.height + ")")
+                .attr("transform", "translate(0," + this.getInnerHeight() + ")")
                 .call(this.axis.x)
                 .selectAll("text")
                     .style("text-anchor", "end")

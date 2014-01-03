@@ -630,6 +630,11 @@ class Branch(models.Model):
             "info": {
                 "dates": [],
                 "languages": self.get_languages(),
+                "ranges": {
+                    "Cyclomatic Complexity": [0, 5, 11],
+                    "Halstead Volume": [0, 200, 1000],
+                    "Halstead Difficulty": [0, 5, 15]
+                },
                 "options": {
                     "language": language,
                     "package": utils.href(Package, package.id) if package else None,

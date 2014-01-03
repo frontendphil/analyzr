@@ -310,7 +310,13 @@
     }
 }
 
-.chart {
+.canvas {
+    .brush {
+        stroke: #fff;
+        fill-opacity: .125;
+        shape-rendering: crispEdges;
+    }
+
     .header {
         font-size: 12px;
     }
@@ -342,8 +348,6 @@
 
         &.y {
             .domain {
-                display: none;
-
                 .chart-metrics& {
                     display: initial;
                 }
@@ -452,7 +456,7 @@ table {
         stroke-width: 2px;
     }
 
-    .chart {
+    .canvas {
         .background {
             fill: none;
             pointer-events: all;
