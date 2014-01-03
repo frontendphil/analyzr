@@ -1008,14 +1008,14 @@ class PackageMetric(models.Model):
             revision=revision
         )
 
-        metric.cyclomatic_complexity = Decimal(files["cyclomatic_complexity"])
-        metric.halstead_effort = Decimal(files["halstead_effort"])
-        metric.halstead_difficulty = Decimal(files["halstead_difficulty"])
-        metric.halstead_volume = Decimal(files["halstead_volume"])
-        metric.fan_in = Decimal(files["fan_in"])
-        metric.fan_out = Decimal(files["fan_out"])
-        metric.hk = Decimal(files["hk"])
-        metric.sloc = Decimal(files["sloc"])
+        metric.cyclomatic_complexity = cls.to_decimal(files["cyclomatic_complexity"])
+        metric.halstead_effort = cls.to_decimal(files["halstead_effort"])
+        metric.halstead_difficulty = cls.to_decimal(files["halstead_difficulty"])
+        metric.halstead_volume = cls.to_decimal(files["halstead_volume"])
+        metric.fan_in = cls.to_decimal(files["fan_in"])
+        metric.fan_out = cls.to_decimal(files["fan_out"])
+        metric.hk = cls.to_decimal(files["hk"])
+        metric.sloc = cls.to_decimal(files["sloc"])
 
         previous = metric.previous()
 
@@ -1030,6 +1030,10 @@ class PackageMetric(models.Model):
             metric.sloc_delta = metric.sloc - previous.sloc
 
         metric.save()
+
+    @classmethod
+    def to_decimal(cls, value):
+        return Decimal("%s" % round(float(value or 0), 2))
 
     package = models.ForeignKey("Package")
     revision = models.ForeignKey("Revision")

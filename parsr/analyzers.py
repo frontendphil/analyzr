@@ -97,11 +97,14 @@ class Analyzer(object):
 
                 f.add_churn(code_churn)
 
-                if not f.pkg in packages:
-                    packages.append(f.pkg)
+                # currently skipping package metrics as they can
+                # be computed using only the files
 
-            for pkg in packages:
-                pkg.update_measures(revision)
+                # if not f.pkg in packages:
+                #     packages.append(f.pkg)
+
+            # for pkg in packages:
+            #     pkg.update_measures(revision)
         except Exception, e:
             self.connector.unlock()
 
