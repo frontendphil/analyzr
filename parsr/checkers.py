@@ -198,7 +198,7 @@ class JHawk(Checker):
     def add_halstead_metrics(self, filename, metrics):
         volume = self.get_node_value(metrics, "halsteadCumulativeVolume")
         effort = self.get_node_value(metrics, "halsteadEffort")
-        difficulty = effort / volume
+        difficulty = self.get_decimal(effort) / self.get_decimal(volume)
 
         self.set(filename, "halstead_difficulty", difficulty)
         self.set(filename, "halstead_effort", effort)
