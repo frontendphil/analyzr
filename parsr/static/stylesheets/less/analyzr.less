@@ -1,10 +1,6 @@
 .repos {
     .btn-group {
         margin-right: 5px;
-
-        i {
-            margin-left: 5px;
-        }
     }
 
     table {
@@ -379,6 +375,39 @@ table {
     }
 }
 
+.icons-ul {
+    padding-left: 2.142857142857143em;
+    margin-left: 0;
+}
+
+.dropdown-menu.icons-ul {
+    & > li {
+        & > a {
+            padding: 3px 20px 3px 0;
+
+            &:hover {
+                & > i {
+                    top: 0;
+
+                    padding: 3px 0 3px 5px;
+
+                    background-color: #428bca;
+
+                    &.icon-blank {
+                        color: #428bca;
+                    }
+                }
+            }
+
+            & > i {
+                &.icon-blank {
+                    color: #fff;
+                }
+            }
+        }
+    }
+}
+
 .contributors {
     text-align: center;
 
@@ -407,6 +436,12 @@ table {
             text-align: center;
             text-transform: uppercase;
         }
+    }
+}
+
+.filters {
+    .row {
+        margin-bottom: 10px;
     }
 }
 

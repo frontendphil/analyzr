@@ -1,8 +1,8 @@
-ns("plugins.graph");
+ns("plugins.graph.metrics");
 
 (function() {
 
-    analyzr.plugins.graph.Metrics = analyzr.plugins.graph.Graph.extend({
+    analyzr.plugins.graph.metrics.MetricsBase = analyzr.plugins.graph.Graph.extend({
 
         init: function(target, attrs) {
             this.scales = {};
@@ -101,6 +101,9 @@ ns("plugins.graph");
                     return d.value;
                 })
             ]);
+            // scale.domain(d3.extent(metric.values, function(d) {
+            //     return d.value;
+            // }));
 
             return scale;
         },
@@ -233,13 +236,14 @@ ns("plugins.graph");
 
                 // remove old axis
                 that.svg.selectAll(".axis-" + this.id).remove();
+                that.svg.selectAll(".header-" + this.id).remove();
 
                 that.svg.append("g")
                     .attr("class", "y axis axis-" + this.id)
                     .attr("transform", "translate(" + xOffset + ", 0)");
 
                 that.svg.append("text")
-                    .attr("class", "header")
+                    .attr("class", "header header-" + this.id)
                     .attr("dx", 0)
                     .attr("dy", index % 2 === 0 ? xOffset + 15 : xOffset - 5)
                     .attr("transform", "rotate(-90)")
@@ -324,7 +328,6 @@ ns("plugins.graph");
             var mouse = d3.mouse(args);
 
             var x = mouse[0];
-            var y = mouse[1];
 
             var domain = this.scale.x.domain();
 
@@ -361,7 +364,7 @@ ns("plugins.graph");
                 };
             };
 
-            var updateValue = function(metric, scale) {
+            var updateValue = function(metric) {
                 return function(selection) {
                     return selection.text(function() {
                         var coord = that.getXY(metric, date);
@@ -439,10 +442,12 @@ ns("plugins.graph");
                 .style("stroke", "#000");
         },
 
+        getKind: function() {},
+
         handleData: function(svg, response) {
             var that = this;
 
-            this.files = this.parse(response.data, "complexity");
+            this.files = this.parse(response.data, this.getKind());
 
             if(this.files.length === 0) {
                 this.updateFilters(response.info, this.files);

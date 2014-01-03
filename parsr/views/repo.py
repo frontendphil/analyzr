@@ -34,6 +34,13 @@ def list(request):
     return [repo.json() for repo in repos]
 
 
+@ajax_request
+def branches(request, repo_id):
+    repo = get_object_or_404(Repo, pk=repo_id)
+
+    return [branch.json() for branch in repo.branches.all()]
+
+
 @require_POST
 def purge(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)

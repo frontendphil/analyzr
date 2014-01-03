@@ -99,8 +99,8 @@ class Connector(object):
     def unlock(self):
         pass
 
-    def parse_date(self, timestamp):
-        return datetime.fromtimestamp(int(timestamp))
+    def parse_date(self, timestamp, timezone):
+        return datetime.fromtimestamp(int(timestamp), timezone)
 
     def is_checked_out(self):
         return os.path.exists(self.get_repo_path())
@@ -183,7 +183,7 @@ class Git(Connector):
 
         revision = branch.create_revision(commit.hexsha)
         revision.set_author(commit.author.name, commit.author.email)
-        revision.set_date(self.parse_date(commit.committed_date))
+        revision.set_date(self.parse_date(commit.committed_date, branch.repo.timezone))
 
         if not parent:
             for filename, info in stats.files.iteritems():
@@ -375,7 +375,7 @@ class SVN(Connector):
 
         revision = branch.create_revision(identifier)
         revision.set_author(log.author)
-        revision.set_date(self.parse_date(log.date))
+        revision.set_date(self.parse_date(log.date, branch.repo.timezone))
 
         for filename in log.changed_paths:
             original = None
@@ -510,7 +510,7 @@ class Mercurial(Connector):
 
         timestamp, foo = commit.date()
 
-        revision.set_date(self.parse_date(timestamp))
+        revision.set_date(self.parse_date(timestamp, branch.repo.timezone))
 
         for filename in commit.files():
             action = None

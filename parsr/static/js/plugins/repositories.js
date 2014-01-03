@@ -53,7 +53,9 @@ ns("plugins");
         },
 
         icon: function(cls) {
-            return $("<i class='" + cls + "'></i>");
+            cls = cls || "icon-code icon-blank";
+
+            return $("<i class='icon-li " + cls + "'></i>");
         },
 
         getAnalyzingState: function(repo) {
@@ -108,29 +110,40 @@ ns("plugins");
             return this.icon("icon-lock");
         },
 
-        createDropdown: function(name, items, clb) {
+        createDropdown: function(name, repo, clb) {
             var container = $(
                 "<div class='btn-group'>" +
                     "<button type='button' class='btn btn-default btn-sm dropdown-toggle' data-toggle='dropdown'>" +
                         name + " <span class='caret'></span>" +
                     "</button>" +
-                    "<ul class='dropdown-menu' role='menu'>" +
+                    "<ul class='dropdown-menu icons-ul' role='menu'>" +
+                        "<li class='loading'>" +
+                            "<i class='icon-li icon-spinner icon-spin'></i>Loading..." +
+                        "</li>" +
                     "</ul>" +
                 "</div>"
             );
 
             var dropdown = container.find("ul");
 
-            $.each(items, function() {
-                var item = $("<li />");
-                var content = clb(this);
+            container.one("click", function() {
+                $.ajax(repo.href + "/branches", {
+                    success: function(branches) {
+                        container.find(".loading").remove();
 
-                if(!content) {
-                    return;
-                }
+                        $.each(branches, function() {
+                            var item = $("<li />");
+                            var content = clb(this);
 
-                item.append(content);
-                dropdown.append(item);
+                            if(!content) {
+                                return;
+                            }
+
+                            item.append(content);
+                            dropdown.append(item);
+                        });
+                    }
+                });
             });
 
             return container;
@@ -230,10 +243,16 @@ ns("plugins");
             return link;
         },
 
-        createAction: function(title, action, branches) {
+        createAction: function(title, action, repo, filter) {
             var that = this;
 
-            return this.createDropdown(title, branches, function(branch) {
+            filter = filter || function() { return true; };
+
+            return this.createDropdown(title, repo, function(branch) {
+                if(!filter(branch)) {
+                    return false;
+                }
+
                 var link = that.createLink(branch, action, function(link, branch) {
                     if(!branch.rep[action].interrupted && !branch.rep[action].lastError) {
                         return true;
@@ -245,11 +264,15 @@ ns("plugins");
                 });
 
                 if(branch.rep[action].finished) {
-                    link.append(that.icon("icon-ok"));
+                    link.prepend(that.icon("icon-ok"));
                 }
 
                 if(branch.rep[action].interrupted || branch.rep[action].lastError) {
-                    link.append(that.icon("icon-warning-sign"));
+                    link.prepend(that.icon("icon-warning-sign"));
+                }
+
+                if(link.find(".icon-li").length === 0) {
+                    link.prepend(that.icon());
                 }
 
                 return link;
@@ -257,8 +280,10 @@ ns("plugins");
         },
 
         createActions: function(repo) {
-            if(repo.busy) {
-                var status = repo.status;
+            var rep = repo.rep;
+
+            if(rep.busy) {
+                var status = rep.status;
 
                 if(status.action === "analyzing") {
                     return this.wrap("Analyzing branch " + status.rep.rep.name + "...");
@@ -267,15 +292,15 @@ ns("plugins");
                 return this.wrap("Measuring branch " + status.rep.rep.name + "...");
             }
 
-            var wrap = this.wrap(this.createAction("Analyze", "analyze", repo.branches));
+            var wrap = this.wrap(this.createAction("Analyze", "analyze", repo));
 
-            if(!repo.measurable) {
+            if(!rep.measurable) {
                 return wrap;
             }
 
-            wrap.append(this.createAction("Measure", "measure", $.grep(repo.branches, function(branch) {
+            wrap.append(this.createAction("Measure", "measure", repo, function(branch) {
                 return branch.rep.analyze.finished;
-            })));
+            }));
 
             return wrap;
         },
@@ -294,7 +319,7 @@ ns("plugins");
             repo.append(this.wrap(rep.kind));
             repo.append(this.getRepoLink(info));
 
-            repo.append(this.createActions(rep));
+            repo.append(this.createActions(info));
 
             var edit = "", remove = "", purge = "";
 

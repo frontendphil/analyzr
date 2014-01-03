@@ -145,8 +145,7 @@ class Repo(models.Model):
                 "measured": self.measured(),
                 "measuring": self.measuring(),
                 "branchCount": self.branch_count(),
-                "authorCount": self.author_count(),
-                "branches": [branch.json() for branch in self.branch_set.all()]
+                "authorCount": self.author_count()
             }
         }
 
@@ -202,7 +201,7 @@ class Branch(models.Model):
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
 
-    repo = models.ForeignKey("Repo", null=True)
+    repo = models.ForeignKey("Repo", related_name="branches", null=True)
 
     analyzed = models.BooleanField(default=False)
     analyzing = models.BooleanField(default=False)
@@ -672,7 +671,15 @@ class Branch(models.Model):
             halstead_difficulty=Avg("halstead_difficulty"),
             halstead_difficulty_delta=Avg("halstead_difficulty_delta"),
             halstead_effort=Avg("halstead_effort"),
-            halstead_effort_delta=Avg("halstead_effort_delta")
+            halstead_effort_delta=Avg("halstead_effort_delta"),
+            fan_in=Avg("fan_in"),
+            fan_in_delta=Avg("fan_in_delta"),
+            fan_out=Avg("fan_out"),
+            fan_out_delta=Avg("fan_out_delta"),
+            sloc=Sum("sloc"),
+            sloc_delta=Sum("sloc_delta"),
+            hk=Avg("hk"),
+            hk_delta=Avg("hk_delta")
         )
 
         result["data"]["all"] = []
@@ -693,6 +700,16 @@ class Branch(models.Model):
                         "Halstead Difficulty Delta": rev["halstead_difficulty_delta"],
                         "Halstead Effort": rev["halstead_effort"],
                         "Halstead Effort Delta": rev["halstead_effort_delta"]
+                    },
+                    "structure": {
+                        "Fan In": rev["fan_in"],
+                        "Fan In Delta": rev["fan_in_delta"],
+                        "Fan Out": rev["fan_out"],
+                        "Fan Out Delta": rev["fan_out_delta"],
+                        "SLOC": rev["sloc"],
+                        "SLOC Delta": rev["sloc_delta"],
+                        "HK": rev["hk"],
+                        "HK Delta": rev["hk_delta"]
                     }
                 }
             })

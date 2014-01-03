@@ -49,12 +49,18 @@ ns("plugins");
         initFilters: function() {
             var container = $("<div class='filters col-sm-10 col-lg-10 col-md-10' />");
 
-            this.createDatePicker(container);
+            var mandatory = $("<div class='row' />");
+            var optional = $("<div class='row' />");
+
+            this.createDatePicker(mandatory);
             var language = this.createLanguageSelector();
             var packages = this.createPackageSelector();
             var files = this.createFileSelector();
 
-            container.append(language, packages, files);
+            mandatory.append(language);
+            optional.append(packages, files);
+
+            container.append(mandatory, optional);
 
             return container;
         },
@@ -77,7 +83,7 @@ ns("plugins");
         createUpdateButton: function(clb) {
             var button = $(
                 "<div class='col-sm-2 col-lg-2 col-md-2'>" +
-                    "<button class='btn btn-default update-filters'>Update</button>" +
+                    "<button class='btn btn-default update-filters'>Update filters</button>" +
                 "</div>"
             );
 
@@ -244,6 +250,10 @@ ns("plugins");
         },
 
         createPackageSelector: function() {
+            if(this.dom.length === 0) {
+                return;
+            }
+
             var parse = function(parent, result, level) {
                 level = level || 1;
 

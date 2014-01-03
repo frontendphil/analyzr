@@ -4,7 +4,7 @@ import shutil
 import pysvn
 
 from parsr.connectors import Connector
-from parsr.checkers import JHawk, ComplexityReport, CMetrics
+from parsr.checkers import JHawk, ComplexityReport, CMetrics, Lizard
 
 from analyzr.settings import RESULT_PATH
 
@@ -81,6 +81,9 @@ class Analyzer(object):
                     self.store_results(revision, results)
 
     def store_results(self, revision, results):
+        if not results:
+            return
+
         self.connector.lock(revision)
         packages = []
         f = None
@@ -181,4 +184,5 @@ class BaseAnalyzer(object):
 Analyzer.register("x-java-source", JHawk)
 Analyzer.register("x-java", JHawk)
 Analyzer.register("javascript", ComplexityReport)
-Analyzer.register("x-c", CMetrics)
+# Analyzer.register("x-c", CMetrics)
+Analyzer.register("x-c", Lizard)

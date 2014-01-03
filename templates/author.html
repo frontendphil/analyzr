@@ -35,11 +35,21 @@
 
     {% if branch.measured %}
         <div
-            class='metrics centered'
+            class='metrics complexity centered'
             data-author="{{ author|href }}"
             data-branch="{{ branch|href }}">
 
             <h3>Complexity Metrics</h3>
+        </div>
+
+        <hr />
+
+        <div
+            class='metrics structure centered'
+            data-author="{{ author|href }}"
+            data-branch="{{ branch|href }}">
+
+            <h3>Structural Metrics</h3>
         </div>
 
         <hr />
@@ -69,7 +79,7 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-            var metrics = new analyzr.plugins.graph.Metrics(".metrics", {
+            var complexity = new analyzr.plugins.graph.metrics.ComplexityMetrics(".metrics.complexity", {
                 height: 400,
                 margins: {
                     top: 40,
@@ -78,7 +88,18 @@
                     bottom: 40
                 }
             });
-            metrics.load();
+            complexity.load();
+
+            var structure = new analyzr.plugins.graph.metrics.StructuralMetrics(".metrics.structure", {
+                height: 400,
+                margins: {
+                    top: 40,
+                    left: 100,
+                    right: 100,
+                    bottom: 40
+                }
+            });
+            structure.load();
 
             var churn = new analyzr.plugins.graph.CodeChurn(".churn", {
                 height: 300,

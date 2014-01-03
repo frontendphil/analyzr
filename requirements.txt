@@ -11,6 +11,7 @@ django-appconf==0.6
 django-compressor==1.3
 django-timezone-field==1.0
 gitdb==0.5.4
+lizard==0.0.1
 mercurial==2.8
 pycparser==2.10
 python-dateutil==2.2

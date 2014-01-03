@@ -3,6 +3,8 @@ import json
 import math
 import re
 
+import lizard
+
 from jinja2 import Environment, FileSystemLoader
 from xml.dom import minidom
 from decimal import Decimal
@@ -63,7 +65,7 @@ class Checker(object):
 
     def execute(self, cmd):
         # close_fds must be true as python would otherwise reuse created
-        # file handles. this would cause a serious memeory leak.
+        # file handles. this would cause a serious memory leak.
         # btw: the file handles are craeted because we pipe stdout and
         # stderr to them.
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
@@ -393,4 +395,31 @@ class CMetrics(Checker):
                 self.set(filename, "halstead_volume", result["H VOL"])
                 self.set(filename, "sloc", result["SLOC"])
 
+        return self.measures
+
+class Lizard(Checker):
+
+    def __init__(self, config_path, result_path):
+        self.files = []
+
+        super(Lizard, self).__init__(config_path, result_path)
+
+    def configure(self, files, revision, connector):
+        self.files = files
+        self.path = connector.get_repo_path()
+
+    def run(self):
+        for f in self.files:
+            result = lizard.analyze_file("%s/%s" % (self.path, f.full_path()))
+
+            self.set(f.full_path(), "sloc", result.nloc)
+            self.set(f.full_path(), "cyclomatic_complexity", result.average_CCN)
+
+    def average(self, functions):
+        if len(functions) == 0:
+            return 0
+
+        return sum([function.cyclomatic_complexity for function in functions]) / len(functions)
+
+    def parse(self, connector):
         return self.measures
