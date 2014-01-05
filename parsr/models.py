@@ -379,16 +379,7 @@ class Branch(models.Model):
         for key, value in options.iteritems():
             response["info"]["options"][key] = value
 
-    def packages(self, packages=None, right=None):
-        if packages is None:
-            packages = list(Package.objects.filter(branch=self).order_by("-left"))
-            root = packages.pop()
-
-            result = root.json()
-            result["rep"]["children"] = self.packages(packages, root.right)
-
-            return result
-
+    def get_package_tree(self, packages, right):
         children = []
 
         while packages:
@@ -400,11 +391,20 @@ class Branch(models.Model):
             packages.pop()
 
             node = package.json()
-            node["rep"]["children"] = self.packages(packages, package.right)
+            node["rep"]["children"] = self.get_package_tree(packages, package.right)
 
             children.append(node)
 
         return children
+
+    def packages(self, author):
+        packages = list(Package.objects.filter(branch=self).distinct().order_by("-left"))
+        root = packages.pop()
+
+        result = root.json()
+        result["rep"]["children"] = self.get_package_tree(packages, root.right)
+
+        return result
 
 
     def contributors(self, page=None):

@@ -22,7 +22,7 @@ ns("plugins.graph.metrics");
             var extent;
 
             if(!info) {
-                extent = d3.extent(metrics[0].values, function(d) {
+                extent = d3.extent(metrics[0] ? metrics[0].values : [], function(d) {
                     return d.date;
                 });
             } else {
@@ -137,33 +137,37 @@ ns("plugins.graph.metrics");
                 .map(function(file) {
                     var deleted = false;
 
-                    var metrics = d3.keys(data[file][0].rep[kind])
-                        .sort()
-                        .filter(function(key) {
-                            return key !== "date" && key !== "deleted" && !key.endsWith("Delta");
-                        })
-                        .map(function(type) {
-                            return {
-                                type: type,
-                                id: type.replace(" ", "_").toLowerCase(),
-                                values: data[file].map(function(d) {
-                                    deleted = deleted || d.rep.deleted;
+                    var metrics = [];
 
-                                    return {
-                                        id: type.replace(" ", "_").toLowerCase(),
-                                        date: new Date(d.rep.date),
-                                        revision: d.rep.revision,
-                                        value: d.rep[kind][type]
-                                    };
-                                })
-                            };
-                        });
+                    if(data[file][0]) {
+                        metrics = d3.keys(data[file][0].rep[kind])
+                            .sort()
+                            .filter(function(key) {
+                                return key !== "date" && key !== "deleted" && !key.endsWith("Delta");
+                            })
+                            .map(function(type) {
+                                return {
+                                    type: type,
+                                    id: type.replace(" ", "_").toLowerCase(),
+                                    values: data[file].map(function(d) {
+                                        deleted = deleted || d.rep.deleted;
+
+                                        return {
+                                            id: type.replace(" ", "_").toLowerCase(),
+                                            date: new Date(d.rep.date),
+                                            revision: d.rep.revision,
+                                            value: d.rep[kind][type]
+                                        };
+                                    })
+                                };
+                            });
+                    }
 
                     return {
                         name: file,
                         deleted: deleted,
                         metrics: metrics,
-                        count: metrics[0].values.length
+                        count: metrics[0] ? metrics[0].values.length : 0
                     };
                 })
                 .sort(function(a, b) {
@@ -466,6 +470,10 @@ ns("plugins.graph.metrics");
         },
 
         getXY: function(metric, date) {
+            if(!metric) {
+                return;
+            }
+
             var value = this.nearestValue($.map(metric.values, function(value) {
                 return value.date;
             }), date);
@@ -501,6 +509,11 @@ ns("plugins.graph.metrics");
             date = this.constrain(date, domain[0], domain[1]);
 
             var nearest = this.getXY(file.metrics[0], date);
+
+            if(!nearest) {
+                // empty screen
+                return;
+            }
 
             var info = new analyzr.plugins.RevisionInfo(nearest.revision);
             info.show();

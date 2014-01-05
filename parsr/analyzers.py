@@ -93,7 +93,7 @@ class Analyzer(object):
                 f = revision.get_file(filename)
                 f.add_measures(measures)
 
-                code_churn = self.connector.get_churn(revision, f.full_path())
+                code_churn = self.connector.get_churn(revision, f)
 
                 f.add_churn(code_churn)
 

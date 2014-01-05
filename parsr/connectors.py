@@ -327,15 +327,15 @@ class SVN(Connector):
 
         return "%s%s/%s" % (repo.url, branch.path, filename)
 
-    def get_churn(self, revision, filename):
-        previous = revision.get_previous()
+    def get_churn(self, revision, f):
+        previous = f.get_previous()
 
         if not previous:
             return
 
         diff = self.repo.diff("/tmp",
-            self.full_path(previous, filename),
-            revision1=Revision(revision_kind.number, previous.identifier),
+            self.full_path(previous.revision, f.full_path()),
+            revision1=Revision(revision_kind.number, previous.revision.identifier),
             revision2=Revision(revision_kind.number, revision.identifier)
         )
 

@@ -278,7 +278,7 @@ ns("plugins");
 
             var that = this;
 
-            $.ajax(this.dom.data("branch") + "/packages", {
+            $.ajax(this.dom.data("branch") + this.dom.data("author") + "/packages", {
                 success: function(root) {
                     var children = parse(root);
 

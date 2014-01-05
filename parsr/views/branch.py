@@ -182,9 +182,7 @@ def contributors(request, branch_id):
     return branch.contributors(page=page)
 
 @ajax_request
-def packages(request, branch_id):
-    branch = get_object_or_404(Branch, pk=branch_id)
+def packages(request, branch_id, author_id):
+    branch, author = get_branch_and_author(branch_id, author_id)
 
-    # import pdb; pdb.set_trace()
-
-    return branch.packages()
+    return branch.packages(author)
