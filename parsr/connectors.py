@@ -2,6 +2,8 @@ from datetime import datetime
 from hashlib import md5
 from shutil import rmtree
 
+import urllib
+
 import os
 import git
 import locale
@@ -334,7 +336,7 @@ class SVN(Connector):
             return
 
         diff = self.repo.diff("/tmp",
-            self.full_path(previous.revision, f.full_path()),
+            urllib.quote(self.full_path(previous.revision, f.full_path())),
             revision1=Revision(revision_kind.number, previous.revision.identifier),
             revision2=Revision(revision_kind.number, revision.identifier)
         )
