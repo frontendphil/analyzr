@@ -157,11 +157,13 @@ class Git(Connector):
     def unlock(self):
         self.commit = None
 
-    def get_churn(self, revision, filename):
+    def get_churn(self, revision, f):
         if not self.commit:
             self.commit = self.repo.commit(revision.identifier)
 
         stats = self.commit.stats.files
+
+        filename = f.full_path()
 
         if filename.startswith("/"):
             filename = filename.replace("/", "", 1)
@@ -336,7 +338,7 @@ class SVN(Connector):
             return
 
         diff = self.repo.diff("/tmp",
-            urllib.quote(self.full_path(previous.revision, f.full_path())),
+            urllib.quote(self.full_path(previous.revision, f.full_path()), ":/"),
             revision1=Revision(revision_kind.number, previous.revision.identifier),
             revision2=Revision(revision_kind.number, revision.identifier)
         )
