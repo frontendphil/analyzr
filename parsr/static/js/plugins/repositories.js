@@ -430,6 +430,9 @@ ns("plugins");
 
             this.dom.html("");
 
+            var mask = new analyzr.core.Mask(this.dom, "Loading repositories...");
+            mask.show();
+
             var table = this.prepareTable();
 
             this.dom.append(table);
@@ -447,6 +450,8 @@ ns("plugins");
                             body.append(progess);
                         }
                     });
+
+                    mask.remove();
                 }
             });
         }
