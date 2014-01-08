@@ -269,6 +269,7 @@ ns("plugins");
 
                 if(!result) {
                     result = [{
+                        name: "/",
                         pkg: parent,
                         indent: ""
                     }];
@@ -276,6 +277,7 @@ ns("plugins");
 
                 $.each(parent.rep.children, function() {
                     result.push({
+                        name: this.rep.name.replace(parent.rep.name, ""),
                         pkg: this,
                         indent: "&nbsp;&nbsp;".repeat(level)
                     });
@@ -299,7 +301,7 @@ ns("plugins");
 
                         return {
                             value: child.pkg.href,
-                            text: child.indent + child.pkg.rep.name
+                            text: child.indent + child.name
                         };
                     });
                 }
