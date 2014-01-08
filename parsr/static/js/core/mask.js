@@ -78,6 +78,8 @@ ns("core");
 				that.container.css({
 					"minHeight": ""
 				});
+
+				delete that.dom;
 			});
 		},
 

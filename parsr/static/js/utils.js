@@ -64,6 +64,22 @@
         };
     }
 
+    if(!Array.prototype.compact) {
+        Array.prototype.compact = function() {
+            return $.grep(this, function(element) {
+                return element !== null && typeof element !== "undefined";
+            });
+        };
+    }
+
+    if(!Array.prototype.last) {
+        Array.prototype.last = function() {
+            var length = this.length;
+
+            return this[length - 1];
+        };
+    }
+
     analyzr.utils.svgToPNG = function(target) {
         var canvas = $("<canvas />");
 

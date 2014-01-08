@@ -237,16 +237,26 @@ ns("plugins");
             }
         },
 
+        getCurrentFile: function() {
+            return this.currentFile;
+        },
+
         createFileSelector: function() {
             var select = this.createSelect("file");
 
             var that = this;
 
             select.change(function() {
+                that.currentFile = that.files[this.value];
+
                 that.raise("file.selected", this.value);
             });
 
             return select;
+        },
+
+        getCurrentPackage: function() {
+            return this.currentPackage;
         },
 
         createPackageSelector: function() {
@@ -278,11 +288,15 @@ ns("plugins");
 
             var that = this;
 
+            this.packages = {};
+
             $.ajax(this.dom.data("branch") + this.dom.data("author") + "/packages", {
                 success: function(root) {
                     var children = parse(root);
 
                     that.createSelect("package", children, function(child) {
+                        that.packages[child.pkg.href] = child.pkg;
+
                         return {
                             value: child.pkg.href,
                             text: child.indent + child.pkg.rep.name
@@ -298,6 +312,8 @@ ns("plugins");
                     return;
                 }
 
+                that.currentPackage = that.packages[this.value];
+
                 that.changeParam("package", this.value.replace("/package/", ""));
             });
 
@@ -305,6 +321,14 @@ ns("plugins");
         },
 
         updateFileSelector: function(files) {
+            this.files = {};
+
+            var that = this;
+
+            $.each(files, function() {
+                that.files[this.name] = this;
+            });
+
             var select = this.createSelect("file", files, function(file) {
                 var deleted = "";
 

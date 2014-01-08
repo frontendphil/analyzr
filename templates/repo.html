@@ -4,13 +4,13 @@
 
 {% block branch %}
     <i class='icon-code-fork'></i>
-    <select data-repo="{{ repo.id }}" class='branch' value="{{ branch.id }}">
-        {% for b in repo.branch_set.all %}
+    <select data-repo="{{ repo|href }}" class='branch' value="{{ branch|href }}">
+        {% for b in repo.branches.all %}
             {% if b.analyzed %}
                 {% if b.id == branch.id %}
-                    <option value='{{ b.id }}' selected='selected'>{{ b.name }}</option>
+                    <option value='{{ b|href }}' selected='selected'>{{ b.name }}</option>
                 {% else %}
-                    <option value='{{ b.id }}'>{{ b.name }}</option>
+                    <option value='{{ b|href }}'>{{ b.name }}</option>
                 {% endif %}
             {% endif %}
         {% endfor %}
@@ -76,7 +76,7 @@
                 var branch = $(this).find("option:selected").attr("value");
                 var repo = $(this).data("repo");
 
-                window.location|href = "/repo/" + repo + "/branch/" + branch;
+                window.location.href = repo + branch;
             });
 
             var contributors = new analyzr.plugins.Contributors(".contributors");

@@ -74,11 +74,17 @@ ns("plugins");
             };
 
             $.each(files, function() {
+                if(that.file && that.file.name !== "all") {
+                    if(that.file.name !== this.rep["package"] + "/" + this.rep.name) {
+                        return;
+                    }
+                }
+
                 var metrics = that.parseMetrics(this.rep.complexity);
 
                 body.append($(
                     "<tr>" +
-                        "<td>" + this.rep["package"] + "</td>" +
+                        "<td>" + this.rep["package"].replace(that.pkg.rep.name, "...") + "</td>" +
                         "<td>" + this.rep.name + "</td>" +
                         "<td class='delta'>" + this.rep.changeType + "</td>" +
                         createTD(metrics, "Cyclomatic Complexity") +
@@ -104,6 +110,13 @@ ns("plugins");
 
                 th.width(Math.max(ref.width(), th.width()));
             });
+        },
+
+        show: function(pkg, file) {
+            this.pkg = pkg;
+            this.file = file;
+
+            this._super();
         },
 
         render: function() {

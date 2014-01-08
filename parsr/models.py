@@ -604,7 +604,7 @@ class Branch(models.Model):
             filters["pkg__left__gte"] = package.left
             filters["pkg__right__lte"] = package.right
 
-        return File.objects.filter(**filters).order_by("date")
+        return File.objects.filter(**filters).distinct().order_by("date")
 
     def create_revision(self, identifier):
         return Revision.objects.create(
@@ -647,26 +647,13 @@ class Branch(models.Model):
             "data": {}
         }
 
-    def metrics(self, author, language=None, package=None, start=None, end=None):
+    def aggregated_metrics(self, author, language=None, package=None, start=None, end=None):
         result = self.response_stub(language=language, package=package, start=start, end=end)
 
         if not language:
             return result
 
         files = self.files(author, language=language, package=package, start=start, end=end)
-
-        for f in files:
-            date = f.date.isoformat()
-
-            if not date in result["info"]["dates"]:
-                result["info"]["dates"].append(date)
-
-            path = f.full_path()
-
-            if not path in result["data"]:
-                result["data"][path] = []
-
-            result["data"][path].append(f.json())
 
         files = files.values("date", "revision").annotate(
             cyclomatic_complexity=Avg("cyclomatic_complexity"),
@@ -687,14 +674,19 @@ class Branch(models.Model):
             hk_delta=Avg("hk_delta")
         )
 
-        result["data"]["all"] = []
+        result["data"] = []
 
         for rev in files:
-            result["data"]["all"].append({
+            date = rev["date"].isoformat()
+
+            if not date in result["info"]["dates"]:
+                result["info"]["dates"].append(date)
+
+            result["data"].append({
                 "href": "/file/all",
                 "rel": "file",
                 "rep": {
-                    "date": rev["date"].isoformat(),
+                    "date": date,
                     "revision": utils.href(Revision, rev["revision"]),
                     "complexity": {
                         "Cyclomatic Complexity": rev["cyclomatic_complexity"],
@@ -718,6 +710,37 @@ class Branch(models.Model):
                     }
                 }
             })
+
+        return result
+
+    def metrics(self, author, language=None, package=None, start=None, end=None):
+        result = self.response_stub(language=language, package=package, start=start, end=end)
+
+        if not language:
+            return result
+
+        files = self.files(author, language=language, package=package, start=start, end=end)
+
+        for f in files:
+            date = f.date.isoformat()
+
+            if not date in result["info"]["dates"]:
+                result["info"]["dates"].append(date)
+
+            path = f.full_path()
+
+            if not path in result["data"]:
+                result["data"][path] = []
+
+            last = result["data"][path][-1] if len(result["data"][path]) > 0 else None
+
+            result["data"][path].append(f.json(last["rep"]["complexity"] if last else None))
+
+        result["data"]["all"] = self.aggregated_metrics(author,
+            language=language,
+            package=package,
+            start=start,
+            end=end)["data"]
 
         return result
 
@@ -1145,7 +1168,12 @@ class File(models.Model):
     def view(self):
         return reverse("parsr.views.file.view", kwargs={ "file_id": self.id })
 
-    def json(self):
+    def json(self, previous=None):
+        cyclomatic_complexity = previous["Cyclomatic Complexity"] + float(self.cyclomatic_complexity_delta) if previous else float(self.cyclomatic_complexity)
+        halstead_difficulty = previous["Halstead Difficulty"] + float(self.halstead_difficulty_delta) if previous else float(self.halstead_difficulty)
+        halstead_volume = previous["Halstead Volume"] + float(self.halstead_volume_delta) if previous else float(self.halstead_volume)
+        halstead_effort = previous["Halstead Effort"] + float(self.halstead_effort_delta) if previous else float(self.halstead_effort)
+
         return {
             "href": utils.href(File, self.id),
             "view": self.view(),
@@ -1160,13 +1188,13 @@ class File(models.Model):
                 "changeType": self.change_type,
                 "copyOf": utils.href(File, self.copy_of_id) if self.copy_of else None,
                 "complexity": {
-                    "Cyclomatic Complexity": float(self.cyclomatic_complexity),
+                    "Cyclomatic Complexity": cyclomatic_complexity,
                     "Cyclomatic Complexity Delta": float(self.cyclomatic_complexity_delta),
-                    "Halstead Volume": float(self.halstead_volume),
+                    "Halstead Volume": halstead_volume,
                     "Halstead Volume Delta": float(self.halstead_volume_delta),
-                    "Halstead Difficulty": float(self.halstead_difficulty),
+                    "Halstead Difficulty": halstead_difficulty,
                     "Halstead Difficulty Delta": float(self.halstead_difficulty_delta),
-                    "Halstead Effort": float(self.halstead_effort),
+                    "Halstead Effort": halstead_effort,
                     "Halstead Effort Delta": float(self.halstead_effort_delta)
                 },
                 "structure": {

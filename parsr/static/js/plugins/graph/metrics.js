@@ -179,15 +179,17 @@ ns("plugins.graph.metrics");
             this.scales[metric.id] = scale;
             this.scales[metric.id + "-brush"] = d3.scale.linear().range([this.brushHeight, 0]);
 
-            scale.domain([
-                0,
-                d3.max(metric.values, function(d) {
-                    return d.value;
-                })
-            ]);
-            // scale.domain(d3.extent(metric.values, function(d) {
-            //     return d.value;
-            // }));
+            var max = d3.max(metric.values, function(d) {
+                return d.value;
+            });
+
+            var range = this.ranges[metric.type];
+
+            if(range) {
+                max = Math.max(max, range.last());
+            }
+
+            scale.domain([0, max]);
 
             this.scales[metric.id + "-brush"].domain(scale.domain());
 
@@ -515,8 +517,11 @@ ns("plugins.graph.metrics");
                 return;
             }
 
+            var pkg = this.filter.getCurrentPackage();
+            var file = this.filter.getCurrentFile();
+
             var info = new analyzr.plugins.RevisionInfo(nearest.revision);
-            info.show();
+            info.show(pkg, file);
         },
 
         handleMouseMove: function(args, metrics) {
@@ -625,6 +630,8 @@ ns("plugins.graph.metrics");
 
         handleData: function(svg, response) {
             var that = this;
+
+            this.ranges = response.info.ranges;
 
             this.files = this.parse(response.data, this.getKind());
 
