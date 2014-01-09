@@ -1,9 +1,10 @@
+import re
+
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
 from decimal import Decimal
 
-from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Count, Sum, Avg, Min, Max
 from django.db.models.signals import post_save, pre_save, pre_delete
@@ -369,6 +370,62 @@ class Branch(models.Model):
 
         return end.date - start.date
 
+    def score(self, author):
+        result = self.response_stub()
+
+        files = self.files(author)
+
+        files = files.aggregate(
+            cyclomatic_complexity_sum=Sum("cyclomatic_complexity_delta"),
+            cyclomatic_complexity_min=Min("cyclomatic_complexity_delta"),
+            cyclomatic_complexity_max=Max("cyclomatic_complexity_delta"),
+            cyclomatic_complexity_avg=Avg("cyclomatic_complexity_delta"),
+            halstead_difficulty_sum=Sum("halstead_difficulty_delta"),
+            halstead_difficulty_min=Min("halstead_difficulty_delta"),
+            halstead_difficulty_max=Max("halstead_difficulty_delta"),
+            halstead_difficulty_avg=Avg("halstead_difficulty_delta"),
+            halstead_effort_sum=Sum("halstead_effort_delta"),
+            halstead_effort_min=Min("halstead_effort_delta"),
+            halstead_effort_max=Max("halstead_effort_delta"),
+            halstead_effort_avg=Avg("halstead_effort_delta"),
+            halstead_volume_sum=Sum("halstead_volume_delta"),
+            halstead_volume_min=Min("halstead_volume_delta"),
+            halstead_volume_max=Max("halstead_volume_delta"),
+            halstead_volume_avg=Avg("halstead_volume_delta"),
+            fan_in_sum=Sum("fan_in_delta"),
+            fan_in_min=Min("fan_in_delta"),
+            fan_in_max=Max("fan_in_delta"),
+            fan_in_avg=Avg("fan_in_delta"),
+            fan_out_sum=Sum("fan_out_delta"),
+            fan_out_min=Min("fan_out_delta"),
+            fan_out_max=Max("fan_out_delta"),
+            fan_out_avg=Avg("fan_out_delta"),
+            sloc_sum=Sum("sloc_delta"),
+            sloc_min=Min("sloc_delta"),
+            sloc_max=Max("sloc_delta"),
+            sloc_avg=Avg("sloc_delta"),
+            hk_sum=Sum("hk_delta"),
+            hk_min=Min("hk_delta"),
+            hk_max=Max("hk_delta"),
+            hk_avg=Avg("hk_delta")
+        )
+
+        result["info"]["keys"] = []
+
+        for key, value in files.iteritems():
+            v = float(value)
+            key, kind = key.rsplit("_", 1)
+
+            if not kind in result["info"]["keys"]:
+                result["info"]["keys"].append(kind)
+
+            if not key in result["data"]:
+                result["data"][key] = {}
+
+            result["data"][key][kind] = v
+
+        return result
+
     def set_options(self, response, options):
         for key, value in options.iteritems():
             response["info"]["options"][key] = value
@@ -404,7 +461,9 @@ class Branch(models.Model):
     def contributors(self, page=None):
         response = self.response_stub()
 
-        paginator = Paginator(self.authors(), CONTRIBUTORS_PER_PAGE)
+        authors = self.authors().annotate(rev_count=Count("revision")).order_by("-rev_count")
+
+        paginator = Paginator(authors, CONTRIBUTORS_PER_PAGE)
 
         try:
             authors = paginator.page(page)
@@ -537,9 +596,7 @@ class Branch(models.Model):
         return response
 
     def authors(self):
-        return Author.objects.filter(revision__branch=self)\
-                             .annotate(rev_count=Count("revision"))\
-                             .order_by("-rev_count")
+        return Author.objects.filter(revision__branch=self).distinct().order_by("name")
 
     def author_count(self):
         return Author.objects.filter(revision__branch=self).distinct().count()

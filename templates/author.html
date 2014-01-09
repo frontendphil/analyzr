@@ -24,6 +24,18 @@
         {% endif %}
     </h1>
 
+    <select>
+        <option>Compare To</option>
+
+        {% with author as current_author %}
+            {% for author in branch.authors %}
+                {% if not author == current_author %}
+                    <option value="{{ author|href }}">{{ author.name }}</option>
+                {% endif %}
+            {% endfor %}
+        {% endwith %}
+    </select>
+
     <hr />
 
     <div
@@ -31,9 +43,15 @@
         data-author="{{ author|href }}"
         data-branch="{{ branch|href }}"></div>
 
-    <hr />
-
     {% if branch.measured %}
+        <div
+            class="score"
+            data-author="{{ author|href }}"
+            data-branch="{{ branch|href }}">
+        </div>
+
+        <hr />
+
         <div
             class='metrics complexity centered'
             data-author="{{ author|href }}"
@@ -61,9 +79,9 @@
 
             <h3>Code Churn</h3>
         </div>
-
-        <hr />
     {% endif %}
+
+    <hr />
 
     <div
         class='punchcard'
@@ -79,6 +97,9 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
+            var score = new analyzr.plugins.Score(".score");
+            score.load();
+
             var complexity = new analyzr.plugins.graph.metrics.ComplexityMetrics(".metrics.complexity", {
                 height: 400,
                 margins: {

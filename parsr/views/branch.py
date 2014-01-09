@@ -1,9 +1,5 @@
 import traceback
 
-from dateutil import parser
-
-from datetime import datetime
-
 from pygments import highlight
 from pygments.lexers import PythonTracebackLexer
 from pygments.formatters import HtmlFormatter
@@ -13,10 +9,10 @@ from django.http import HttpResponseRedirect
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
 
-from annoying.decorators import render_to, ajax_request
+from annoying.decorators import ajax_request
 from annoying.functions import get_object_or_None
 
-from parsr.models import Branch, Author, Package
+from parsr.models import Branch, Author
 from parsr.utils import send_mail
 
 
@@ -46,37 +42,6 @@ def track_action(branch, action, abort):
 
 def get_branch(branch_id):
     return get_object_or_404(Branch, pk=branch_id)
-
-
-def get_tzinfo(timezone):
-    now = datetime.now()
-    tz_abbr = timezone.tzname(now)
-
-    tzinfo = {}
-    tzinfo[tz_abbr] = timezone.zone
-
-    return tzinfo
-
-
-def parse_filters(request, branch):
-    language = request.GET.get("language")
-    package = get_object_or_None(Package, pk=request.GET.get("package"))
-
-    start, end = parse_date_range(request, branch)
-
-    return language, package, start, end
-
-
-def parse_date_range(request, branch):
-    start = request.GET.get("from")
-    end = request.GET.get("to")
-
-    tzinfo = get_tzinfo(branch.repo.timezone)
-
-    start = parser.parse(start, tzinfos=tzinfo) if start else None
-    end = parser.parse(end, tzinfos=tzinfo) if end else None
-
-    return start, end
 
 
 def view(request, branch_id):
@@ -127,50 +92,25 @@ def info(request, branch_id):
     return branch.json()
 
 
-@render_to("author.html")
-def author(request, author_id, branch_id):
-    branch, author = get_branch_and_author(branch_id, author_id)
+@ajax_request
+def commits(request, branch_id):
+    branch = get_branch(branch_id)
 
-    return { "author": author, "branch": branch }
+    return branch.commit_history()
 
 
 @ajax_request
-def punchcard(request, branch_id, author_id=None):
-    branch, author = get_branch_and_author(branch_id, author_id)
+def punchcard(request, branch_id):
+    branch = get_branch(branch_id)
 
-    return branch.punchcard(author)
-
-
-@ajax_request
-def file_stats(request, branch_id, author_id=None):
-    branch, author = get_branch_and_author(branch_id, author_id)
-
-    return branch.file_statistics(author)
+    return branch.punchcard()
 
 
 @ajax_request
-def commits(request, branch_id, author_id=None):
-    branch, author = get_branch_and_author(branch_id, author_id)
+def file_stats(request, branch_id):
+    branch= get_branch(branch_id)
 
-    return branch.commit_history(author)
-
-
-@ajax_request
-def metrics(request, branch_id, author_id):
-    branch, author = get_branch_and_author(branch_id, author_id)
-
-    language, package, start, end = parse_filters(request, branch)
-
-    return branch.metrics(author, language=language, package=package, start=start, end=end)
-
-
-@ajax_request
-def churn(request, branch_id, author_id):
-    branch, author = get_branch_and_author(branch_id, author_id)
-
-    language, package, start, end = parse_filters(request, branch)
-
-    return branch.churn(author, language=language, package=package, start=start, end=end)
+    return branch.file_statistics()
 
 
 @ajax_request
@@ -181,8 +121,3 @@ def contributors(request, branch_id):
 
     return branch.contributors(page=page)
 
-@ajax_request
-def packages(request, branch_id, author_id):
-    branch, author = get_branch_and_author(branch_id, author_id)
-
-    return branch.packages(author)

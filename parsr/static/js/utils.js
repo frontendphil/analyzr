@@ -157,9 +157,11 @@
                 return "";
             }
 
-            var firstLetter = this.slice(0, 1);
+            return $.map(this.split("_"), function(part) {
+                var firstLetter = part.slice(0, 1);
 
-            return firstLetter.toUpperCase() + this.slice(1);
+                return firstLetter.toUpperCase() + part.slice(1);
+            }).join(" ");
         };
     }
 

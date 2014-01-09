@@ -18,7 +18,7 @@ ns("plugins.graph");
             this.svg = this.prepareSVG();
             this.addAxis(this.svg);
 
-            this._super(base, target);
+            this._super(base, target, attrs.params);
 
             var that = this;
 
