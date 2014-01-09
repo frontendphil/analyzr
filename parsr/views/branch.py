@@ -47,7 +47,7 @@ def get_branch(branch_id):
 def view(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
-    return HttpResponseRedirect(reverse("parsr.views.repo", kwargs={
+    return HttpResponseRedirect(reverse("parsr.views.repo.view", kwargs={
         "branch_id": branch.id,
         "repo_id": branch.repo.id
     }))

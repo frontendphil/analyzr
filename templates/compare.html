@@ -1,0 +1,50 @@
+{% extends "author.html" %}
+
+{% load filters %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+
+    <li>
+        <a href='{% url "parsr.views.author.view" branch_id=branch.id author_id=left.id %}'>{{ left.name }}</a>
+    </li>
+{% endblock %}
+
+{% block active %}
+    <li class='active'>Compared to {{ right.name }}</li>
+{% endblock %}
+
+{% block content %}
+    <div class='row'>
+        <div class='col-lg-6'>
+            {% with left as author %}
+                <h1>
+                    {% gravatar author.email %}
+                    {{ author.name }}
+
+                    {% if author.email %}
+                        <small>({{ author.email }})</small>
+                    {% endif %}
+                </h1>
+
+                {% include "includes/metrics.html" %}
+            {% endwith %}
+        </div>
+        <div class='col-lg-6'>
+            {% with right as author %}
+                <h1>
+                    {% gravatar author.email %}
+                    {{ author.name }}
+
+                    {% if author.email %}
+                        <small>({{ author.email }})</small>
+                    {% endif %}
+                </h1>
+
+                {% include "includes/metrics.html" %}
+            {% endwith %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block specific %}{% endblock %}

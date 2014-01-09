@@ -13,4 +13,6 @@ urlpatterns = patterns('parsr.views.author',
     url(r'^/stats$', "file_stats"),
     url(r'^/commits$', "commits"),
 
+    url(r'^/compare/author/(?P<compare_id>\d+)$', "compare"),
+
 )

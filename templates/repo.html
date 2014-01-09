@@ -2,6 +2,10 @@
 
 {% load filters %}
 
+{% block active %}
+    <li class='active'>{{ branch.repo.url }}</li>
+{% endblock %}
+
 {% block branch %}
     <i class='icon-code-fork'></i>
     <select data-repo="{{ repo|href }}" class='branch' value="{{ branch|href }}">
@@ -88,11 +92,15 @@
 {% block script %}
     <script type="text/javascript">
         $(document).ready(function() {
-            var punchcard = new analyzr.plugins.Punchcard(".punchcard");
-            punchcard.load();
+            $(".punchcard").each(function() {
+                var punchcard = new analyzr.plugins.Punchcard(this);
+                punchcard.load();
+            });
 
-            var stats = new analyzr.plugins.FileStatistics(".stats");
-            stats.load();
+            $(".stats").each(function() {
+                var stats = new analyzr.plugins.FileStatistics(this);
+                stats.load();
+            });
         });
     </script>
 {% endblock %}

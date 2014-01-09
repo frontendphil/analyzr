@@ -107,3 +107,11 @@ def score(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
     return branch.score(author)
+
+
+@render_to("compare.html")
+def compare(request, branch_id, author_id, compare_id):
+    branch, author = get_branch_and_author(branch_id, author_id)
+    compare_to = get_object_or_404(Author, pk=compare_id)
+
+    return { "branch": branch, "left": author, "right": compare_to }

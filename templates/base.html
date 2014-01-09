@@ -17,13 +17,20 @@
 <body>
     {% csrf_token %}
 
-    <div class="container content">
+    <div class="content">
         <ul class='nav nav-pills'>
             <li>
-                <a href='{% url "parsr.views.app.index" %}'>
-                    <i class='icon-code'></i>
-                    Analyzr
-                </a>
+                <ol class='breadcrumb'>
+                    {% block breadcrumb %}
+                        <li>
+                            <a href='{% url "parsr.views.app.index" %}'>
+                                <i class='icon-code'></i>
+                                Analyzr
+                            </a>
+                        </li>
+                    {% endblock %}
+                    {% block active %}{% endblock %}
+                </ol>
             </li>
             <li class='pull-right branch-info'>
                 {% block branch %}{% endblock %}
@@ -68,7 +75,8 @@
         <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/contributors.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/add.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/fileStatistics.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/revisionInfo.js"></script><script type="text/javascript" src="{{ STATIC_URL }}js/plugins/score.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/revisionInfo.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/score.js"></script>
 
         <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/graph.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/commits.js"></script>

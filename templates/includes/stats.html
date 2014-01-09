@@ -1,0 +1,14 @@
+{% load filters %}
+
+<div
+    class='stats'
+    data-author="{{ author|href }}"
+    data-branch="{{ branch|href }}"></div>
+
+{% if branch.measured %}
+    <div
+        class="score"
+        data-author="{{ author|href }}"
+        data-branch="{{ branch|href }}">
+    </div>
+{% endif %}

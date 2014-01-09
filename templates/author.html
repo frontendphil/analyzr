@@ -9,12 +9,19 @@
     </h5>
 {% endblock %}
 
+{% block breadcrumb %}
+    {{ block.super }}
+
+    <li>
+        <a href='{% url "parsr.views.branch.view" branch_id=branch.id %}'>{{ branch.repo.url }}</a>
+    </li>
+{% endblock %}
+
+{% block active%}
+    <li class='active'>{{ author.name }}</li>
+{% endblock %}
+
 {% block content %}
-
-    <a href='{% url "parsr.views.repo.view" repo_id=branch.repo.id branch_id=branch.id %}'>
-        <i class='icon-angle-left'></i> Back to repo
-    </a>
-
     <h1>
         {% gravatar author.email %}
         {{ author.name }}
@@ -24,7 +31,7 @@
         {% endif %}
     </h1>
 
-    <select>
+    <select class='compare'>
         <option>Compare To</option>
 
         {% with author as current_author %}
@@ -38,99 +45,69 @@
 
     <hr />
 
-    <div
-        class='stats'
-        data-author="{{ author|href }}"
-        data-branch="{{ branch|href }}"></div>
-
-    {% if branch.measured %}
-        <div
-            class="score"
-            data-author="{{ author|href }}"
-            data-branch="{{ branch|href }}">
-        </div>
-
-        <hr />
-
-        <div
-            class='metrics complexity centered'
-            data-author="{{ author|href }}"
-            data-branch="{{ branch|href }}">
-
-            <h3>Complexity Metrics</h3>
-        </div>
-
-        <hr />
-
-        <div
-            class='metrics structure centered'
-            data-author="{{ author|href }}"
-            data-branch="{{ branch|href }}">
-
-            <h3>Structural Metrics</h3>
-        </div>
-
-        <hr />
-
-        <div
-            class='churn centered'
-            data-author="{{ author|href }}"
-            data-branch="{{ branch|href }}">
-
-            <h3>Code Churn</h3>
-        </div>
-    {% endif %}
-
-    <hr />
-
-    <div
-        class='punchcard'
-        data-author="{{ author|href }}"
-        data-branch="{{ branch|href }}"></div>
+    {% include "includes/metrics.html" %}
 
 {% endblock %}
 
-{% block specific %}{% endblock %}
+{% block specific %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".compare").change(function() {
+                var author = $(this).val();
+
+                window.location.href = "{{ branch|href }}{{ author|href }}/compare" + author;
+            });
+        });
+    </script>
+{% endblock %}
 
 {% block script %}
     {{ block.super }}
 
     <script type="text/javascript">
         $(document).ready(function() {
-            var score = new analyzr.plugins.Score(".score");
-            score.load();
-
-            var complexity = new analyzr.plugins.graph.metrics.ComplexityMetrics(".metrics.complexity", {
-                height: 400,
-                margins: {
-                    top: 40,
-                    left: 100,
-                    right: 100,
-                    bottom: 40
-                }
+            $(".score").each(function() {
+                var score = new analyzr.plugins.Score(this);
+                score.load();
             });
-            complexity.load();
 
-            var structure = new analyzr.plugins.graph.metrics.StructuralMetrics(".metrics.structure", {
-                height: 400,
-                margins: {
-                    top: 40,
-                    left: 100,
-                    right: 100,
-                    bottom: 40
-                }
+            $(".metrics.complexity").each(function() {
+                var complexity = new analyzr.plugins.graph.metrics.ComplexityMetrics(this, {
+                    height: 400,
+                    margins: {
+                        top: 40,
+                        left: 100,
+                        right: 100,
+                        bottom: 40
+                    }
+                });
+                complexity.load();
             });
-            structure.load();
 
-            var churn = new analyzr.plugins.graph.CodeChurn(".churn", {
-                height: 300,
-                margins: {
-                    top: 20,
-                    left: 40,
-                    bottom: 40
-                }
+            $(".metrics.structure").each(function() {
+                var structure = new analyzr.plugins.graph.metrics.StructuralMetrics(this, {
+                    height: 400,
+                    margins: {
+                        top: 40,
+                        left: 100,
+                        right: 100,
+                        bottom: 40
+                    }
+                });
+                structure.load();
             });
-            churn.load();
+
+            $(".churn").each(function() {
+                var churn = new analyzr.plugins.graph.CodeChurn(this, {
+                    height: 300,
+                    margins: {
+                        top: 20,
+                        left: 40,
+                        bottom: 40
+                    }
+                });
+                churn.load();
+            });
         });
     </script>
 {% endblock %}

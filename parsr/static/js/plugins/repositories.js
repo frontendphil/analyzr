@@ -14,7 +14,7 @@ ns("plugins");
 
         prepareTable: function() {
             return $(
-                "<table class='table'>" +
+                "<table class='table table-hover'>" +
                     "<thead>" +
                         "<tr>" +
                             "<th class='status'>" +
