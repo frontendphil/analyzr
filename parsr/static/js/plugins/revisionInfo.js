@@ -81,10 +81,15 @@ ns("plugins");
                 }
 
                 var metrics = that.parseMetrics(this.rep.complexity);
+                var packageName = this.rep["package"];
+
+                if(that.pkg) {
+                    packageName = packageName.replace(that.pkg.rep.name, "...");
+                }
 
                 body.append($(
                     "<tr>" +
-                        "<td>" + this.rep["package"].replace(that.pkg.rep.name, "...") + "</td>" +
+                        "<td>" + packageName + "</td>" +
                         "<td>" + this.rep.name + "</td>" +
                         "<td class='delta'>" + this.rep.changeType + "</td>" +
                         createTD(metrics, "Cyclomatic Complexity") +

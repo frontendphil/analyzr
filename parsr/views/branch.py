@@ -170,7 +170,7 @@ def churn(request, branch_id, author_id):
 
     language, package, start, end = parse_filters(request, branch)
 
-    return branch.churn(author, language=language, start=start, end=end)
+    return branch.churn(author, language=language, package=package, start=start, end=end)
 
 
 @ajax_request

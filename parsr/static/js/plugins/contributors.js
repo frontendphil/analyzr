@@ -138,7 +138,11 @@ ns("plugins");
                             "<th></th>" +
                             "<th></th>" +
                             "<th>Name</th>" +
+                            "<th>First Action</th>" +
+                            "<th>Last Action</th>" +
+                            "<th>Age</th>" +
                             "<th class='revisions'>Revisions</th>" +
+                            "<th class='revisions'>Rev/Day</td>" +
                         "<tr>" +
                     "</thead>" +
                 "</table>"
@@ -154,6 +158,8 @@ ns("plugins");
                     language = LANGUAGE_MAPPINGS[this.rep.primeLanguage.mimetype];
                 }
 
+                var format = d3.time.format("%d/%m/%Y");
+
                 var entry = $(
                     "<tr>" +
                         "<td class='rank'>" + ((info.perPage * (info.page - 1)) + index + 1) + "</td>" +
@@ -161,10 +167,14 @@ ns("plugins");
                             (language || "") +
                         "</td>" +
                         "<td class='avatar' style='background-image:url(" + this.rep.icon + ")'></td>" +
-                        "<td>" +
+                        "<td class='author'>" +
                             "<a href='" + branch + this.view + "'>" + this.rep.name + "</a>" +
                         "</td>" +
-                        "<td>" + this.rep.count + "</td>" +
+                        "<td>" + format(new Date(this.rep.firstAction)) + "</td>" +
+                        "<td>" + format(new Date(this.rep.lastAction)) + "</td>" +
+                        "<td>" + this.rep.age + "</td>" +
+                        "<td>" + this.rep.revisions + "</td>" +
+                        "<td>" + this.rep.workIndex.toFixed(2) + "</td>" +
                     "</tr>"
                 );
 

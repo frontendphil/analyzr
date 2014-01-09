@@ -279,7 +279,7 @@ ns("plugins");
                     result.push({
                         name: this.rep.name.replace(parent.rep.name, ""),
                         pkg: this,
-                        indent: "&nbsp;&nbsp;".repeat(level)
+                        indent: "|&nbsp;&nbsp;".repeat(level)
                     });
 
                     parse(this, result, level + 1);

@@ -66,3 +66,11 @@ def href(cls, instance_id):
     kwargs["%s_id" % name] = instance_id
 
     return reverse("parsr.views.%s.info" % name, kwargs=kwargs)
+
+def view(cls, instance_id):
+    name = cls.__name__.lower()
+
+    kwargs = {}
+    kwargs["%s_id" % name] = instance_id
+
+    return reverse("parsr.views.%s.view" % name, kwargs=kwargs)
