@@ -35,9 +35,9 @@
         <option>Compare To</option>
 
         {% with author as current_author %}
-            {% for author in branch.authors %}
+            {% for author in branch.authors|ranked %}
                 {% if not author == current_author %}
-                    <option value="{{ author|href }}">{{ author.name }}</option>
+                    <option value="{{ author|href }}">{{ author.name }} ({{ author|rank:branch }})</option>
                 {% endif %}
             {% endfor %}
         {% endwith %}

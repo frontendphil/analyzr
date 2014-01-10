@@ -2,8 +2,10 @@ from hashlib import md5
 from urllib import urlencode
 
 from django import template
+from django.db.models import Count
 
 from parsr import utils
+from parsr.models import Revision
 
 register = template.Library()
 
@@ -46,3 +48,13 @@ def gravatar(parser, token):
         raise template.TemplateSyntaxError, "%r tag requires a single argument" % token.contents.split()[0]
 
     return GravatarUrlNode(email)
+
+
+@register.filter
+def ranked(authors):
+    return authors.annotate(revision_count=Count("revision")).order_by("-revision_count")
+
+
+@register.filter
+def rank(author, branch):
+    return Revision.objects.filter(author=author, branch=branch).count()
