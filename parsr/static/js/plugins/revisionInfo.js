@@ -32,6 +32,13 @@ ns("plugins");
         },
 
         createFileChanges: function(files) {
+            var createTH = function(abbr, description) {
+                return "<th>" +
+                    "<i class='icon-exchange'></i> " +
+                    "<abbr title='" + description + "'>" + abbr + "</abbr>" +
+                "</th>";
+            };
+
             var table = $(
                 "<table class='table'>" +
                     "<thead>" +
@@ -39,22 +46,14 @@ ns("plugins");
                             "<th>Package</th>" +
                             "<th>Name</th>" +
                             "<th>Change</th>" +
-                            "<th>" +
-                                "<i class='icon-exchange'></i> " +
-                                "<abbr title='Cyclomatic Complexity Delta'>CC</abbr>" +
-                            "</th>" +
-                            "<th>" +
-                                "<i class='icon-exchange'></i> " +
-                                "<abbr title='Halstead Volume Delta'>HSV</abbr>" +
-                            "</th>" +
-                            "<th>" +
-                                "<i class='icon-exchange'></i> " +
-                                "<abbr title='Halstead Difficulty Delta'>HSD</abbt>" +
-                            "</th>" +
-                            "<th>" +
-                                "<i class='icon-exchange'></i> " +
-                                "<abbr title='Halstead Effort Delta'>HSE</abbr>" +
-                            "</th>" +
+                            createTH("CC", "Cyclomatic Complexity Delta") +
+                            createTH("HSV", "Halstead Volume Delta") +
+                            createTH("HSD", "Halstead Difficulty Delta") +
+                            createTH("HSE", "Halstead Effort Delta") +
+                            createTH("FI", "Fan In Delta") +
+                            createTH("FO", "Fan Out Delta") +
+                            createTH("SLOC", "Source Lines of Code Delta") +
+                            createTH("HK", "Information Flow Delta") +
                         "</tr>" +
                     "</thead>" +
                     "<tbody></tbody>" +
@@ -80,7 +79,8 @@ ns("plugins");
                     }
                 }
 
-                var metrics = that.parseMetrics(this.rep.complexity);
+                var complexity = that.parseMetrics(this.rep.complexity);
+                var structure = that.parseMetrics(this.rep.structure);
                 var packageName = this.rep["package"];
 
                 if(that.pkg) {
@@ -92,10 +92,14 @@ ns("plugins");
                         "<td>" + packageName + "</td>" +
                         "<td>" + this.rep.name + "</td>" +
                         "<td class='delta'>" + this.rep.changeType + "</td>" +
-                        createTD(metrics, "Cyclomatic Complexity") +
-                        createTD(metrics, "Halstead Volume") +
-                        createTD(metrics, "Halstead Difficulty") +
-                        createTD(metrics, "Halstead Effort") +
+                        createTD(complexity, "Cyclomatic Complexity") +
+                        createTD(complexity, "Halstead Volume") +
+                        createTD(complexity, "Halstead Difficulty") +
+                        createTD(complexity, "Halstead Effort") +
+                        createTD(structure, "Fan In") +
+                        createTD(structure, "Fan Out") +
+                        createTD(structure, "SLOC") +
+                        createTD(structure, "HK") +
                     "</tr>"
                 ));
             });
@@ -121,7 +125,19 @@ ns("plugins");
             this.pkg = pkg;
             this.file = file;
 
+            this.clear();
+
             this._super();
+        },
+
+        clear: function() {
+            if(!this.dom) {
+                return;
+            }
+
+            this.dom.remove();
+
+            delete this.dom;
         },
 
         render: function() {

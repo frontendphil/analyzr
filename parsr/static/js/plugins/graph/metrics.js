@@ -183,13 +183,19 @@ ns("plugins.graph.metrics");
                 return d.value;
             });
 
+            var min = d3.min(metric.values, function(d) {
+                return d.value;
+            });
+
             var range = this.ranges[metric.type];
 
             if(range) {
                 max = Math.max(max, range.last());
             }
 
-            scale.domain([0, max]);
+            min = Math.min(0, min);
+
+            scale.domain([min, max]);
 
             this.scales[metric.id + "-brush"].domain(scale.domain());
 
@@ -404,7 +410,7 @@ ns("plugins.graph.metrics");
                 var metric = this;
 
                 var xOffset = index % 2 === 0 ? 0 : (that.getInnerWidth() - 5);
-                xOffset = xOffset + (index % 2 === 0 ? -1 : 1) * index * 25;
+                xOffset = xOffset + (index % 2 === 0 ? -1 : 1) * index * 20;
 
                 // remove old axis
                 that.svg.selectAll(".axis-" + this.id).remove();

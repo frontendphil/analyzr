@@ -43,6 +43,10 @@ class Action(object):
     def readable(cls):
         return [cls.ADD, cls.MODIFY]
 
+    @classmethod
+    def checkable(cls):
+        return [cls.MODIFY]
+
 
 class Connector(object):
 

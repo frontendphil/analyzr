@@ -1,5 +1,3 @@
-import re
-
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
@@ -633,10 +631,10 @@ class Branch(models.Model):
 
         return Revision.objects.filter(**filters).order_by("date")
 
-    def files(self, author=None, language=None, package=None, start=None, end=None):
+    def files(self, author=None, language=None, package=None, start=None, end=None, action=Action.checkable()):
         filters = {
             "revision__branch": self,
-            "change_type__in": Action.readable()
+            "change_type__in": action
         }
 
         if author:
@@ -832,7 +830,7 @@ class Branch(models.Model):
         max_added = 0
         max_removed = 0
 
-        files = self.files(author, language=language, package=package, start=start, end=end)
+        files = self.files(author, action=Action.readable(), language=language, package=package, start=start, end=end)
         revisions = files.values("date").annotate(added=Sum("lines_added"), removed=Sum("lines_removed"))
 
         for revision in revisions:
@@ -979,7 +977,10 @@ class Revision(models.Model):
         return self.identifier == identifier
 
     def modified_files(self):
-        return self.file_set.filter(change_type__in=Action.readable(), mimetype__in=Analyzer.parseable_types())
+        return self.file_set.filter(
+            change_type__in=Action.readable(),
+            mimetype__in=Analyzer.parseable_types()
+        )
 
     def includes(self, filename):
         package, filename = File.parse_name(filename)
