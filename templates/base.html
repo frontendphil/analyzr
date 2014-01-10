@@ -5,6 +5,8 @@
 <head>
     <title>Analyzr</title>
 
+    <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery-2.0.3.min.js"></script>
+
     {% compress css %}
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/bootstrap.min.css" charset="utf-8" />
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/font-awesome.min.css" charset="utf-8" />
@@ -51,7 +53,6 @@
     </div>
 
     {% compress js %}
-        <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery-2.0.3.min.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery.cookie.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/bootstrap.min.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/d3.v3.js"></script>

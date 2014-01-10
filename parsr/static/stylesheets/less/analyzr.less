@@ -41,6 +41,7 @@
 
 .breadcrumb {
     margin-bottom: 0;
+    background-color: #fff;
 }
 
 body > .content {
@@ -72,6 +73,37 @@ body > .content {
 
 .score {
     margin-top: 20px;
+
+    table {
+        font-size: 8pt;
+
+        th:first-child {
+            width: 150px;
+        }
+
+        .statistics {
+            padding: 0;
+
+            table {
+                margin-bottom: 0;
+
+                border-bottom: 1px solid #ddd;
+
+                td, th {
+                    text-align: center;
+                    border-right: 1px solid #ddd;
+
+                    &:last-child {
+                        border-right: 0;
+                    }
+                }
+
+                &:last-child {
+                    border-bottom: 0;
+                }
+            }
+        }
+    }
 }
 
 .centered {

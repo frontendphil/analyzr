@@ -368,59 +368,83 @@ class Branch(models.Model):
 
         return end.date - start.date
 
+    def compute_statistics(self, files, metric):
+        file_count = files.count() * 1.0
+
+        increase_filter = {}
+        increase_filter["%s_delta__gt" % metric] = 0
+
+        decrease_filter = {}
+        decrease_filter["%s_delta__lt" % metric] = 0
+
+        num_increase = files.filter(**increase_filter).count()
+        num_decreaes = files.filter(**decrease_filter).count()
+
+        percent_increase = num_increase / file_count
+        percent_decrease = num_decreaes / file_count
+        percent_unmodified = 1 - percent_increase - percent_decrease
+
+        return {
+            "increases": num_increase,
+            "decreases": num_decreaes,
+            "percent_increase": percent_increase,
+            "percent_decrease": percent_decrease,
+            "percent_unmodified": percent_unmodified,
+            "increse_to_decrease": percent_increase / percent_decrease if percent_decrease else 1,
+            "unmodified_to_increase": percent_unmodified / percent_increase if percent_increase else 1,
+            "unmodified_to_decrease": percent_unmodified / percent_decrease if percent_decrease else 1
+        }
+
+    def compute_scores(self, files, metrics):
+        kwargs = {}
+        aggregations = {
+            "sum": Sum,
+            "max": Max,
+            "min": Min,
+            "avg": Avg
+        }
+
+        result = {}
+
+        for metric in metrics:
+            if not metric in result:
+                result[metric] = {}
+
+            result[metric]["statistics"] = self.compute_statistics(files, metric)
+
+            for key, value in aggregations.iteritems():
+                kwargs["%s_%s" % (metric, key)] = value("%s_delta" % metric)
+
+        aggregate = files.aggregate(**kwargs)
+
+        for key, value in aggregate.iteritems():
+            v = float(value)
+            key, kind = key.rsplit("_", 1)
+
+            result[key][kind] = v
+
+        return result, aggregations
+
     def score(self, author):
         result = self.response_stub()
 
         files = self.files(author)
 
-        files = files.aggregate(
-            cyclomatic_complexity_sum=Sum("cyclomatic_complexity_delta"),
-            cyclomatic_complexity_min=Min("cyclomatic_complexity_delta"),
-            cyclomatic_complexity_max=Max("cyclomatic_complexity_delta"),
-            cyclomatic_complexity_avg=Avg("cyclomatic_complexity_delta"),
-            halstead_difficulty_sum=Sum("halstead_difficulty_delta"),
-            halstead_difficulty_min=Min("halstead_difficulty_delta"),
-            halstead_difficulty_max=Max("halstead_difficulty_delta"),
-            halstead_difficulty_avg=Avg("halstead_difficulty_delta"),
-            halstead_effort_sum=Sum("halstead_effort_delta"),
-            halstead_effort_min=Min("halstead_effort_delta"),
-            halstead_effort_max=Max("halstead_effort_delta"),
-            halstead_effort_avg=Avg("halstead_effort_delta"),
-            halstead_volume_sum=Sum("halstead_volume_delta"),
-            halstead_volume_min=Min("halstead_volume_delta"),
-            halstead_volume_max=Max("halstead_volume_delta"),
-            halstead_volume_avg=Avg("halstead_volume_delta"),
-            fan_in_sum=Sum("fan_in_delta"),
-            fan_in_min=Min("fan_in_delta"),
-            fan_in_max=Max("fan_in_delta"),
-            fan_in_avg=Avg("fan_in_delta"),
-            fan_out_sum=Sum("fan_out_delta"),
-            fan_out_min=Min("fan_out_delta"),
-            fan_out_max=Max("fan_out_delta"),
-            fan_out_avg=Avg("fan_out_delta"),
-            sloc_sum=Sum("sloc_delta"),
-            sloc_min=Min("sloc_delta"),
-            sloc_max=Max("sloc_delta"),
-            sloc_avg=Avg("sloc_delta"),
-            hk_sum=Sum("hk_delta"),
-            hk_min=Min("hk_delta"),
-            hk_max=Max("hk_delta"),
-            hk_avg=Avg("hk_delta")
-        )
+        metrics = [
+            "cyclomatic_complexity",
+            "halstead_difficulty",
+            "halstead_volume",
+            "halstead_effort",
+            "fan_in",
+            "fan_out",
+            "sloc",
+            "hk"
+        ]
 
-        result["info"]["keys"] = []
+        aggregate, aggregations = self.compute_scores(files, metrics)
 
-        for key, value in files.iteritems():
-            v = float(value)
-            key, kind = key.rsplit("_", 1)
-
-            if not kind in result["info"]["keys"]:
-                result["info"]["keys"].append(kind)
-
-            if not key in result["data"]:
-                result["data"][key] = {}
-
-            result["data"][key][kind] = v
+        result["info"]["keys"] = aggregations.keys()
+        result["data"] = aggregate
 
         return result
 

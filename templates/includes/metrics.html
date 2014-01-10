@@ -1,42 +1,69 @@
 {% load filters %}
 
-{% include "includes/stats.html" %}
+<div class='btn-group metric-toggle'>
+    <button type='button' class='btn btn-default btn-graphs'>Graphs</button>
+    <button type='button' class='btn btn-default btn-stats'>Statistics</button>
+</div>
 
-{% if branch.measured %}
-    <hr />
+<script type="text/javascript">
+    $(document).ready(function() {
+        $(".btn-stats").click(function() {
+            $(".graphs").hide();
+            $(".statistics").show();
 
+            return false;
+        });
+
+        $(".btn-graphs").click(function() {
+            $(".graphs").show();
+            $(".statistics").hide();
+
+            return false;
+        });
+
+        $(".statistics").hide();
+    });
+</script>
+
+<div class='statistics'>
+    {% include "includes/stats.html" %}
+</div>
+
+<div class='graphs'>
     <div
-        class='metrics complexity centered'
+        class='punchcard'
         data-author="{{ author|href }}"
-        data-branch="{{ branch|href }}">
+        data-branch="{{ branch|href }}"></div>
 
-        <h3>Complexity Metrics</h3>
-    </div>
+    {% if branch.measured %}
+        <hr />
 
-    <hr />
+        <div
+            class='metrics complexity centered'
+            data-author="{{ author|href }}"
+            data-branch="{{ branch|href }}">
 
-    <div
-        class='metrics structure centered'
-        data-author="{{ author|href }}"
-        data-branch="{{ branch|href }}">
+            <h3>Complexity Metrics</h3>
+        </div>
 
-        <h3>Structural Metrics</h3>
-    </div>
+        <hr />
 
-    <hr />
+        <div
+            class='metrics structure centered'
+            data-author="{{ author|href }}"
+            data-branch="{{ branch|href }}">
 
-    <div
-        class='churn centered'
-        data-author="{{ author|href }}"
-        data-branch="{{ branch|href }}">
+            <h3>Structural Metrics</h3>
+        </div>
 
-        <h3>Code Churn</h3>
-    </div>
-{% endif %}
+        <hr />
 
-<hr />
+        <div
+            class='churn centered'
+            data-author="{{ author|href }}"
+            data-branch="{{ branch|href }}">
 
-<div
-    class='punchcard'
-    data-author="{{ author|href }}"
-    data-branch="{{ branch|href }}"></div>
+            <h3>Code Churn</h3>
+        </div>
+    {% endif %}
+</div>

@@ -14,7 +14,7 @@ ns("plugins");
 
         createTable: function(columns) {
             var table = $(
-                "<table class='table table-bordered table-hover'>" +
+                "<table class='table table-bordered'>" +
                     "<thead>" +
                         "<tr></tr>" +
                     "</thead>" +
@@ -33,6 +33,63 @@ ns("plugins");
             return table;
         },
 
+        createStatistics: function(data, size) {
+            var entries = 3;
+            var rows = [];
+            var row;
+
+            $.each(d3.keys(data.statistics), function(index) {
+                if(row && index % entries === 0) {
+                    rows.push(row);
+                    row = null;
+                }
+
+                if(!row) {
+                    row = {
+                        headers: [],
+                        values: []
+                    };
+                }
+
+                var key = this.toString();
+                var value = data.statistics[key];
+
+                row.headers.push(key.capitalize());
+                row.values.push(value.toFixed(2));
+            });
+
+            var createTable = function(headers, values) {
+                return $(
+                    "<table class='table'>" +
+                        "<thead>" +
+                            $.map(headers, function(value) {
+                                return "<th>" + value + "</th>";
+                            }).join("") +
+                        "</thead>" +
+                        "<tbody>" +
+                            "<tr>" +
+                                $.map(values, function(value) {
+                                    return "<td>" + value + "</td>";
+                                }).join("") +
+                            "</tr>" +
+                        "</tbody>" +
+                    "</table>"
+                );
+            };
+
+            var container = $(
+                "<tr>" +
+                    "<td class='statistics' colspan='" + size + "'></td>" +
+                "</tr>"
+            );
+
+            $.each(rows, function() {
+                container.find("> td").append(createTable(this.headers, this.values));
+            });
+
+            return container;
+        },
+
         handleData: function(response) {
             this.clear();
 
@@ -43,15 +100,17 @@ ns("plugins");
                 metrics.push(key);
             });
 
-            var table = this.createTable(fields);
-            var body = table.find("tbody");
+            var that = this;
 
             $.each(metrics.sort(), function() {
+                var table = that.createTable(fields);
+                var body = table.find("tbody");
+
                 var key = this.toString();
                 var metric = response.data[key];
                 var row = $("<tr />");
 
-                row.append($("<td>" + key.capitalize() + "</td>"));
+                row.append($("<td rowspan='2'>" + key.capitalize() + "</td>"));
 
                 $.each(fields, function() {
                     var key = this.toString();
@@ -59,10 +118,12 @@ ns("plugins");
                     row.append($("<td>" + metric[key].toFixed(2) + "</td>"));
                 });
 
-                body.append(row);
-            });
+                var stats = that.createStatistics(response.data[key], fields.length);
 
-            this.dom.append(table);
+                body.append(row, stats);
+
+                that.dom.append(table);
+            });
         }
 
     });
