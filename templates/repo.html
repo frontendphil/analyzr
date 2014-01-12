@@ -3,7 +3,7 @@
 {% load filters %}
 
 {% block active %}
-    <li class='active'>{{ branch.repo.url }}</li>
+    <li class='active'>{{ branch.repo.url }} ({{ branch.name }})</li>
 {% endblock %}
 
 {% block branch %}

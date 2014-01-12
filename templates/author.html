@@ -13,7 +13,7 @@
     {{ block.super }}
 
     <li>
-        <a href='{% url "parsr.views.branch.view" branch_id=branch.id %}'>{{ branch.repo.url }}</a>
+        <a href='{% url "parsr.views.branch.view" branch_id=branch.id %}'>{{ branch.repo.url }} ({{ branch.name }})</a>
     </li>
 {% endblock %}
 
@@ -22,6 +22,7 @@
 {% endblock %}
 
 {% block content %}
+    <div class='container'>
     <h1>
         {% gravatar author.email %}
         {{ author.name }}
@@ -46,6 +47,7 @@
     <hr />
 
     {% include "includes/metrics.html" %}
+</div>
 
 {% endblock %}
 
