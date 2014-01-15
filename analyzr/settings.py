@@ -17,6 +17,10 @@ CONFIG_PATH = '%s/templates/config' % PROJECT_PATH
 
 CONTRIBUTORS_PER_PAGE = 10
 
+# defines hardness of the squale aggregation algorithm
+# LOW = 3, MEDIUM = 9, HARD = 30
+LAMBDA = 9
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.

@@ -262,7 +262,6 @@ class Branch(models.Model):
     def cleanup(self):
         self.remove_all(File, File.objects.filter(revision__branch=self))
         self.remove_all(Package, Package.objects.filter(branch=self))
-        self.remove_all(PackageMetric, PackageMetric.objects.filter(revision__branch=self))
         self.remove_all(Revision, Revision.objects.filter(branch=self))
         self.remove_all(Author, Author.objects.filter(revision__branch=self))
 
@@ -337,8 +336,6 @@ class Branch(models.Model):
         if not resume:
             sql.reset(self)
 
-            self.remove_all(PackageMetric, PackageMetric.objects.filter(revision__branch=self))
-
         revision = None
 
         if resume:
@@ -409,11 +406,13 @@ class Branch(models.Model):
         for metric in metrics:
             if not metric in result:
                 result[metric] = {}
+                result["%s_delta" % metric] = {}
 
             result[metric]["statistics"] = self.compute_statistics(files, metric)
 
             for key, value in aggregations.iteritems():
-                kwargs["%s_%s" % (metric, key)] = value("%s_delta" % metric)
+                kwargs["%s_delta_%s" % (metric, key)] = value("%s_delta" % metric)
+                kwargs["%s_%s" % (metric, key)] = value(metric)
 
         aggregate = files.aggregate(**kwargs)
 
@@ -434,7 +433,6 @@ class Branch(models.Model):
             "cyclomatic_complexity",
             "halstead_difficulty",
             "halstead_volume",
-            "halstead_effort",
             "fan_in",
             "fan_out",
             "sloc",
@@ -735,8 +733,6 @@ class Branch(models.Model):
             halstead_volume_delta=Avg("halstead_volume_delta"),
             halstead_difficulty=Avg("halstead_difficulty"),
             halstead_difficulty_delta=Avg("halstead_difficulty_delta"),
-            halstead_effort=Avg("halstead_effort"),
-            halstead_effort_delta=Avg("halstead_effort_delta"),
             fan_in=Avg("fan_in"),
             fan_in_delta=Avg("fan_in_delta"),
             fan_out=Avg("fan_out"),
@@ -762,7 +758,6 @@ class Branch(models.Model):
                     "cyclomatic_complexity": rev["cyclomatic_complexity"],
                     "halstead_difficulty": rev["halstead_difficulty"],
                     "halstead_volume": rev["halstead_volume"],
-                    "halstead_effort": rev["halstead_effort"],
                     "fan_in": rev["fan_in"],
                     "fan_out": rev["fan_out"],
                     "sloc": rev["sloc"],
@@ -771,7 +766,6 @@ class Branch(models.Model):
             else:
                 value["cyclomatic_complexity"] += rev["cyclomatic_complexity_delta"]
                 value["halstead_difficulty"] += rev["halstead_difficulty_delta"]
-                value["halstead_effort"] += rev["halstead_effort_delta"]
                 value["halstead_volume"] += rev["halstead_volume_delta"]
                 value["fan_in"] += rev["fan_in_delta"]
                 value["fan_out"] += rev["fan_out_delta"]
@@ -790,9 +784,7 @@ class Branch(models.Model):
                         "Halstead Volume": value["halstead_volume"],
                         "Halstead Volume Delta": rev["halstead_volume_delta"],
                         "Halstead Difficulty": value["halstead_difficulty"],
-                        "Halstead Difficulty Delta": rev["halstead_difficulty_delta"],
-                        "Halstead Effort": value["halstead_effort"],
-                        "Halstead Effort Delta": rev["halstead_effort_delta"]
+                        "Halstead Difficulty Delta": rev["halstead_difficulty_delta"]
                     },
                     "structure": {
                         "Fan In": value["fan_in"],
@@ -1105,90 +1097,11 @@ class Package(models.Model):
 
         return result
 
-    def update_measures(self, revision):
-        query = str(self.files.all().query)
-        query = sql.newest_files(query, revision.date)
-        query = sql.aggregate_metrics(query)
-
-        cursor = sql.execute(query)
-
-        PackageMetric.create(self, revision, self.parse_result(cursor))
-
     def all_children(self):
         return Package.objects.filter(left__gt=self.left, right__lt=self.right)
 
     def is_leaf(self):
         return self.right == self.left + 1
-
-
-class PackageMetric(models.Model):
-
-    @classmethod
-    def create(cls, package, revision, files):
-        metric, created = PackageMetric.objects.get_or_create(
-            package=package,
-            author=revision.author,
-            date=revision.date,
-            revision=revision
-        )
-
-        metric.cyclomatic_complexity = cls.to_decimal(files["cyclomatic_complexity"])
-        metric.halstead_effort = cls.to_decimal(files["halstead_effort"])
-        metric.halstead_difficulty = cls.to_decimal(files["halstead_difficulty"])
-        metric.halstead_volume = cls.to_decimal(files["halstead_volume"])
-        metric.fan_in = cls.to_decimal(files["fan_in"])
-        metric.fan_out = cls.to_decimal(files["fan_out"])
-        metric.hk = cls.to_decimal(files["hk"])
-        metric.sloc = cls.to_decimal(files["sloc"])
-
-        previous = metric.previous()
-
-        if previous:
-            metric.cyclomatic_complexity_delta = metric.cyclomatic_complexity - previous.cyclomatic_complexity
-            metric.halstead_difficulty_delta = metric.halstead_difficulty - previous.halstead_difficulty
-            metric.halstead_effort_delta = metric.halstead_effort - previous.halstead_effort
-            metric.halstead_volume_delta = metric.halstead_volume - previous.halstead_volume
-            metric.fan_in_delta = metric.fan_in - previous.fan_in
-            metric.fan_out_delta = metric.fan_out - previous.fan_out
-            metric.hk_delta = metric.hk - previous.hk
-            metric.sloc_delta = metric.sloc - previous.sloc
-
-        metric.save()
-
-    @classmethod
-    def to_decimal(cls, value):
-        return Decimal("%s" % round(float(value or 0), 2))
-
-    package = models.ForeignKey("Package")
-    revision = models.ForeignKey("Revision")
-    author = models.ForeignKey("Author")
-    date = models.DateTimeField()
-
-    cyclomatic_complexity = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    cyclomatic_complexity_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
-    halstead_volume = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    halstead_volume_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    halstead_difficulty = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    halstead_difficulty_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    halstead_effort = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    halstead_effort_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
-    fan_in = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    fan_in_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    fan_out = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    fan_out_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
-    sloc = models.IntegerField(default=0)
-    sloc_delta = models.IntegerField(default=0)
-
-    hk = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    hk_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
-    def previous(self):
-        return utils.previous(PackageMetric, self, {
-            "package": self.package
-        })
 
 
 class File(models.Model):
@@ -1236,8 +1149,6 @@ class File(models.Model):
     halstead_volume_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     halstead_difficulty = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     halstead_difficulty_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    halstead_effort = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    halstead_effort_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     fan_in = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     fan_in_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
@@ -1269,7 +1180,6 @@ class File(models.Model):
             cyclomatic_complexity = complexity["Cyclomatic Complexity"] + float(self.cyclomatic_complexity_delta)
             halstead_difficulty = complexity["Halstead Difficulty"] + float(self.halstead_difficulty_delta)
             halstead_volume = complexity["Halstead Volume"] + float(self.halstead_volume_delta)
-            halstead_effort = complexity["Halstead Effort"] + float(self.halstead_effort_delta)
 
             fan_in = structure["Fan In"] + float(self.fan_in_delta)
             fan_out = structure["Fan Out"] + float(self.fan_out_delta)
@@ -1279,7 +1189,6 @@ class File(models.Model):
             cyclomatic_complexity = float(self.cyclomatic_complexity)
             halstead_difficulty = float(self.halstead_difficulty)
             halstead_volume = float(self.halstead_volume)
-            halstead_effort = float(self.halstead_effort)
 
             fan_in = float(self.fan_in)
             fan_out = float(self.fan_out)
@@ -1305,9 +1214,7 @@ class File(models.Model):
                     "Halstead Volume": halstead_volume,
                     "Halstead Volume Delta": float(self.halstead_volume_delta),
                     "Halstead Difficulty": halstead_difficulty,
-                    "Halstead Difficulty Delta": float(self.halstead_difficulty_delta),
-                    "Halstead Effort": halstead_effort,
-                    "Halstead Effort Delta": float(self.halstead_effort_delta)
+                    "Halstead Difficulty Delta": float(self.halstead_difficulty_delta)
                 },
                 "structure": {
                     "Fan In": fan_in,
@@ -1341,7 +1248,6 @@ class File(models.Model):
 
         self.halstead_volume = measures["halstead_volume"]
         self.halstead_difficulty = measures["halstead_difficulty"]
-        self.halstead_effort = measures["halstead_effort"]
 
         self.fan_in = measures["fan_in"]
         self.fan_out = measures["fan_out"]
@@ -1356,7 +1262,6 @@ class File(models.Model):
 
             self.halstead_volume_delta = self.halstead_volume - previous.halstead_volume
             self.halstead_difficulty_delta = self.halstead_difficulty - previous.halstead_difficulty
-            self.halstead_effort_delta = self.halstead_effort - previous.halstead_effort
 
             self.fan_in_delta = self.fan_in - previous.fan_in
             self.fan_out_delta = self.fan_out - previous.fan_out
@@ -1431,25 +1336,21 @@ class Author(models.Model):
                             .aggregate(
                                 cyclomatic=Sum("cyclomatic_complexity_delta"),
                                 halstead_difficulty=Sum("halstead_difficulty_delta"),
-                                halstead_effort=Sum("halstead_effort_delta"),
                                 halstead_volume=Sum("halstead_volume_delta")
                             )
 
         cyclomatic = aggregate["cyclomatic"] or 0
-        halstead_effort = aggregate["halstead_effort"] or 0
         halstead_volume = aggregate["halstead_volume"] or 0
         halstead_difficulty = aggregate["halstead_difficulty"] or 0
 
         return {
             "cyclomatic": float(cyclomatic),
             "halstead": {
-                "effort": float(halstead_effort),
                 "volume": float(halstead_volume),
                 "difficulty": float(halstead_difficulty)
             },
             "combined": float(
                 cyclomatic +
-                halstead_effort +
                 halstead_volume +
                 halstead_difficulty
             )

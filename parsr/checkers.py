@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 from xml.dom import minidom
 from decimal import Decimal
 
-from analyzr.settings import CONFIG_PATH, PROJECT_PATH
+from analyzr.settings import CONFIG_PATH, PROJECT_PATH, LAMBDA
 
 
 class CheckerException(Exception):
@@ -93,6 +93,11 @@ class Checker(object):
             self.measures[filename] = self.stub()
 
         self.measures[filename][key] = self.get_decimal(value)
+
+    def squale(self, marks):
+        sum_marks = sum([pow(LAMBDA, -1 * mark) for mark in marks])
+
+        return -1 * math.log(sum_marks / len(marks), LAMBDA)
 
     def configure(self, files, revision, connector):
         for f in files:
@@ -283,12 +288,68 @@ class ComplexityReport(Checker):
 
         return True
 
-    def average(self, functions):
-        # maybe use median here instead
-        return sum([function["cyclomatic"] for function in functions]) / len(functions)
+    # Balmas F, Bellingard F, Denier S, Ducasse S, Franchet B, Laval J, Mordal-Manet K, Vaillergues P. The Squale quality
+    # model. Technical Report, INRIA, 2010.
+    def get_cc_mark(self, sloc, functions):
+        cc = sum([function["cyclomatic"] for function in functions])
+        nom = len(functions)
 
-    def get_halstead_value(self, functions, value):
-        return sum([function["halstead"][value] for function in functions]) / len(functions)
+        if cc >= 80:
+            exponent = (30.0 - nom) / 10.0
+
+            return pow(2, exponent)
+
+        if cc < 80 and cc >= 50 and nom >= 15:
+            return 2 + ((20 - nom) / 30)
+
+        if cc < 50 and cc >= 30 and nom >= 15:
+            return 3 + ((15 - nom) / 15)
+
+        return 3
+
+    def get_value_in_range(self, value, low, high):
+        if value <= low:
+            return 1
+
+        if value >= high:
+            return 3
+
+        return 1 + 2 * (value / high)
+
+    def get_hv_mark(self, function):
+        value = function["halstead"]["volume"]
+
+        return self.get_value_in_range(value, 20, 1000)
+
+    def get_hv_squale(self, functions):
+        marks = []
+
+        for function in functions:
+            marks.append(self.get_hv_mark(function))
+
+        return self.squale(marks)
+
+    def get_hd_mark(self, function):
+        value = function["halstead"]["difficulty"]
+
+        return self.get_value_in_range(value, 10, 50)
+
+    def get_hd_squale(self, functions):
+        marks = []
+
+        for function in functions:
+            marks.append(self.get_hd_mark(function))
+
+        return self.squale(marks)
+
+    def get_sloc_squale(self, functions):
+        marks = []
+
+        for function in functions:
+            # 30 is the threshold for good methods
+            marks.append(pow(2, (30 - function["sloc"]["logical"]) / 21))
+
+        return self.squale(marks)
 
     def parse(self, connector):
         for f in self.files:
@@ -307,11 +368,13 @@ class ComplexityReport(Checker):
 
                 filename = f.full_path()
 
-                self.set(filename, "cyclomatic_complexity", self.average(data["functions"]))
-                self.set(filename, "halstead_volume", self.get_halstead_value(data["functions"], "volume"))
-                self.set(filename, "halstead_effort", self.get_halstead_value(data["functions"], "effort"))
-                self.set(filename, "halstead_difficulty", self.get_halstead_value(data["functions"], "difficulty"))
-                self.set(filename, "sloc", data["aggregate"]["sloc"]["logical"])
+                sloc = data["aggregate"]["sloc"]["logical"]
+                functions = data["functions"]
+
+                self.set(filename, "cyclomatic_complexity", self.get_cc_mark(sloc, functions))
+                self.set(filename, "halstead_volume", self.get_hv_squale(functions))
+                self.set(filename, "halstead_difficulty", self.get_hd_squale(functions))
+                self.set(filename, "sloc", self.get_sloc_squale(functions))
 
         return self.measures
 
