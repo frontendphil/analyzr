@@ -85,7 +85,6 @@ class Analyzer(object):
             return
 
         self.connector.lock(revision)
-        packages = []
         f = None
 
         try:
@@ -96,15 +95,6 @@ class Analyzer(object):
                 code_churn = self.connector.get_churn(revision, f)
 
                 f.add_churn(code_churn)
-
-                # currently skipping package metrics as they can
-                # be computed using only the files
-
-                # if not f.pkg in packages:
-                #     packages.append(f.pkg)
-
-            # for pkg in packages:
-            #     pkg.update_measures(revision)
         except Exception, e:
             self.connector.unlock()
 

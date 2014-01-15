@@ -7,8 +7,14 @@ from django.shortcuts import get_object_or_404
 from annoying.decorators import ajax_request, render_to
 from annoying.functions import get_object_or_None
 
-from parsr.views.branch import get_branch_and_author
-from parsr.models import Author, Package
+from parsr.models import Author, Package, Branch
+
+
+def get_branch_and_author(branch_id, author_id):
+    branch = get_object_or_404(Branch, pk=branch_id)
+    author = get_object_or_None(Author, pk=author_id)
+
+    return branch, author
 
 
 def parse_filters(request, branch):
@@ -93,13 +99,6 @@ def churn(request, branch_id, author_id):
     language, package, start, end = parse_filters(request, branch)
 
     return branch.churn(author, language=language, package=package, start=start, end=end)
-
-
-@ajax_request
-def packages(request, branch_id, author_id):
-    branch, author = get_branch_and_author(branch_id, author_id)
-
-    return branch.packages(author)
 
 
 @ajax_request

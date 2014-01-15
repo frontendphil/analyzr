@@ -16,5 +16,8 @@ urlpatterns = patterns('parsr.views.branch',
     url(r"^/measure$", "measure"),
     url(r"^/measure/resume$", "resume_measure"),
 
+    url(r"^/packages$", "packages"),
+    url(r"^/metrics$", "metrics"),
+
     url(r"^/author/(?P<author_id>\d+)", include("parsr.urls.author")),
 )

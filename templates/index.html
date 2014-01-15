@@ -1,8 +1,16 @@
 {% extends "base.html" %}
 
+{% block actions %}
+    <hr />
+
+    <a href='{% url "parsr.views.repo.create" %}' class='btn btn-primary'>
+        <i class='icon-plus'></i>
+        Add Repository
+    </a>
+{% endblock %}
+
 {% block content %}
     <div class='repos'></div>
-    <a href='{% url "parsr.views.repo.create" %}'>Add Repository</a>
 {% endblock %}
 
 {% block script %}

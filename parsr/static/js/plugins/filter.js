@@ -292,7 +292,7 @@ ns("plugins");
 
             this.packages = {};
 
-            $.ajax(this.dom.data("branch") + this.dom.data("author") + "/packages", {
+            $.ajax(this.dom.data("branch") + "/packages", {
                 success: function(root) {
                     var children = parse(root);
 

@@ -49,7 +49,6 @@ ns("plugins");
                             createTH("CC", "Cyclomatic Complexity Delta") +
                             createTH("HSV", "Halstead Volume Delta") +
                             createTH("HSD", "Halstead Difficulty Delta") +
-                            createTH("HSE", "Halstead Effort Delta") +
                             createTH("FI", "Fan In Delta") +
                             createTH("FO", "Fan Out Delta") +
                             createTH("SLOC", "Source Lines of Code Delta") +
@@ -95,7 +94,6 @@ ns("plugins");
                         createTD(complexity, "Cyclomatic Complexity") +
                         createTD(complexity, "Halstead Volume") +
                         createTD(complexity, "Halstead Difficulty") +
-                        createTD(complexity, "Halstead Effort") +
                         createTD(structure, "Fan In") +
                         createTD(structure, "Fan Out") +
                         createTD(structure, "SLOC") +

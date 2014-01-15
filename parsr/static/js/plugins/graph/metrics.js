@@ -187,12 +187,6 @@ ns("plugins.graph.metrics");
                 return d.value;
             });
 
-            var range = this.ranges[metric.type];
-
-            if(range) {
-                max = Math.max(max, range.last());
-            }
-
             min = Math.min(0, min);
 
             scale.domain([min, max]);
@@ -636,8 +630,6 @@ ns("plugins.graph.metrics");
 
         handleData: function(svg, response) {
             var that = this;
-
-            this.ranges = response.info.ranges;
 
             this.files = this.parse(response.data, this.getKind());
 

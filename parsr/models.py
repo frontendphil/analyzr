@@ -468,7 +468,7 @@ class Branch(models.Model):
 
         return children
 
-    def packages(self, author):
+    def packages(self):
         packages = list(Package.objects.filter(branch=self).distinct().order_by("-left"))
         root = packages.pop()
 
@@ -701,11 +701,6 @@ class Branch(models.Model):
             "info": {
                 "dates": [],
                 "languages": self.get_languages(),
-                "ranges": {
-                    "Cyclomatic Complexity": [0, 5, 11],
-                    "Halstead Volume": [0, 200, 1000],
-                    "Halstead Difficulty": [0, 5, 15]
-                },
                 "options": {
                     "language": language,
                     "package": utils.href(Package, package.id) if package else None,
@@ -718,13 +713,13 @@ class Branch(models.Model):
             "data": {}
         }
 
-    def aggregated_metrics(self, author, language=None, package=None, start=None, end=None):
+    def aggregated_metrics(self, author=None, language=None, package=None, start=None, end=None):
         result = self.response_stub(language=language, package=package, start=start, end=end)
 
         if not language:
             return result
 
-        files = self.files(author, language=language, package=package, start=start, end=end)
+        files = self.files(author=author, language=language, package=package, start=start, end=end)
 
         files = files.values("date", "revision").annotate(
             cyclomatic_complexity=Avg("cyclomatic_complexity"),
@@ -801,13 +796,13 @@ class Branch(models.Model):
 
         return result
 
-    def metrics(self, author, language=None, package=None, start=None, end=None):
+    def metrics(self, author=None, language=None, package=None, start=None, end=None):
         result = self.response_stub(language=language, package=package, start=start, end=end)
 
         if not language:
             return result
 
-        files = self.files(author, language=language, package=package, start=start, end=end)
+        files = self.files(author=author, language=language, package=package, start=start, end=end)
 
         for f in files:
             date = f.date.isoformat()
@@ -824,7 +819,8 @@ class Branch(models.Model):
 
             result["data"][path].append(f.json(last["rep"] if last else None))
 
-        result["data"]["all"] = self.aggregated_metrics(author,
+        result["data"]["all"] = self.aggregated_metrics(
+            author=author,
             language=language,
             package=package,
             start=start,

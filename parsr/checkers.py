@@ -93,10 +93,41 @@ class Checker(object):
 
         self.measures[filename][key] = self.get_decimal(value)
 
+    def get_value_in_range(self, value, low, high):
+        high = high * 1.0
+        low = low * 1.0
+
+        if value <= low:
+            return 3
+
+        if value >= high:
+            return 1
+
+        return 3.0 - 2.0 * (value / high)
+
     def squale(self, marks):
-        sum_marks = sum([pow(LAMBDA, -1 * mark) for mark in marks])
+        sum_marks = math.fsum([math.pow(LAMBDA, -1 * mark) for mark in marks])
 
         return -1 * math.log(sum_marks / len(marks), LAMBDA)
+
+    def get_hv_mark(self, value):
+        return self.get_value_in_range(value, 20, 1000)
+
+    def get_hd_mark(self, value):
+        return self.get_value_in_range(value, 10, 50)
+
+    def get_cc_mark(self, value):
+        return self.get_value_in_range(value, 2, 11)
+
+    def get_sloc_mark(self, value):
+        # 30 is the threshold for good methods
+        return math.pow(2, (30 - value) / 21)
+
+    def get_fan_in_mark(self, value):
+        return math.pow(2, (30 - value) / 7)
+
+    def get_fan_out_mark(self, value):
+        return math.pow(2, (10 - value) / 2)
 
     def configure(self, files, revision, connector):
         for f in files:
@@ -196,16 +227,58 @@ class JHawk(Checker):
             if node.localName == node_name:
                 return node.firstChild.nodeValue
 
+    def get_number(self, parent, node_name):
+        return float(self.get_node_value(parent, node_name))
+
     def get_name(self, parent):
         return self.get_node_value(parent, "Name")
 
-    def add_halstead_metrics(self, filename, metrics):
-        volume = self.get_node_value(metrics, "halsteadCumulativeVolume")
-        effort = self.get_node_value(metrics, "halsteadEffort")
-        difficulty = self.get_decimal(effort) / self.get_decimal(volume)
+    def get_sloc_squale(self, methods):
+        marks = []
 
-        self.set(filename, "halstead_difficulty", difficulty)
-        self.set(filename, "halstead_volume", volume)
+        for method in methods:
+            metrics = self.get_metrics(method)
+
+            marks.append(self.get_sloc_mark(self.get_number(metrics, "loc")))
+
+        return self.squale(marks)
+
+    def get_hv_squale(self, methods):
+        marks = []
+
+        for method in methods:
+            metrics = self.get_metrics(method)
+
+            marks.append(self.get_hv_mark(self.get_number(metrics, "halsteadVolume")))
+
+        return self.squale(marks)
+
+    def add_halstead_metrics(self, filename, methods):
+        marks = []
+
+        for method in methods:
+            metrics = self.get_metrics(method)
+
+            volume = self.get_number(metrics, "halsteadVolume")
+            effort = self.get_number(metrics, "halsteadEffort")
+
+            difficulty = effort / volume
+
+            marks.append(self.get_hd_mark(difficulty))
+
+        self.set(filename, "halstead_difficulty", self.squale(marks))
+        self.set(filename, "halstead_volume", self.get_hv_squale(methods))
+
+    def get_cc_squale(self, methods):
+        marks = []
+
+        for method in methods:
+            metrics = self.get_metrics(method)
+
+            marks.append(self.get_cc_mark(self.get_number(metrics, "cyclomaticComplexity")))
+
+        return self.squale(marks)
+
 
     def parse(self, connector):
         for result in self.results:
@@ -230,16 +303,23 @@ class JHawk(Checker):
                     filename = "%s/%s.java" % (path, class_name)
 
                     if not self.includes(filename):
-                        # JHawk analyzes _everything_ therefore we must
-                        # filter files, which are not present in the current revision
                         continue
 
-                    self.add_halstead_metrics(filename, class_metrics)
+                    methods = cls.getElementsByTagName("Method")
 
-                    self.set(filename, "cyclomatic_complexity", self.get_node_value(class_metrics, "avcc"))
-                    self.set(filename, "fan_in", self.get_node_value(class_metrics, "fanIn"))
-                    self.set(filename, "fan_out", self.get_node_value(class_metrics, "fanOut"))
-                    self.set(filename, "sloc", self.get_node_value(class_metrics, "loc"))
+                    if len(methods) == 0:
+                        continue
+
+                    self.add_halstead_metrics(filename, methods)
+
+                    self.set(filename, "cyclomatic_complexity", self.get_cc_squale(methods))
+                    self.set(filename, "sloc", self.get_sloc_squale(methods))
+
+                    fan_in = self.get_number(class_metrics, "fanIn")
+                    fan_out = self.get_number(class_metrics, "fanOut")
+
+                    self.set(filename, "fan_in", self.get_fan_in_mark(fan_in))
+                    self.set(filename, "fan_out", self.get_fan_out_mark(fan_out))
 
         return self.measures
 
@@ -286,57 +366,42 @@ class ComplexityReport(Checker):
 
         return True
 
-    # Balmas F, Bellingard F, Denier S, Ducasse S, Franchet B, Laval J, Mordal-Manet K, Vaillergues P. The Squale quality
-    # model. Technical Report, INRIA, 2010.
-    def get_cc_mark(self, sloc, functions):
-        cc = sum([function["cyclomatic"] for function in functions])
-        nom = len(functions)
+    def get_cc_squale(self, sloc, functions):
+        # cc = sum([function["cyclomatic"] for function in functions])
+        # nom = len(functions)
 
-        if cc >= 80:
-            exponent = (30.0 - nom) / 10.0
+        # if cc >= 80:
+        #     exponent = (30.0 - nom) / 10.0
 
-            return pow(2, exponent)
+        #     return pow(2, exponent)
 
-        if cc < 80 and cc >= 50 and nom >= 15:
-            return 2 + ((20 - nom) / 30)
+        # if cc < 80 and cc >= 50 and nom >= 15:
+        #     return 2 + ((20 - nom) / 30)
 
-        if cc < 50 and cc >= 30 and nom >= 15:
-            return 3 + ((15 - nom) / 15)
+        # if cc < 50 and cc >= 30 and nom >= 15:
+        #     return 3 + ((15 - nom) / 15)
 
-        return 3
+        # return 3
+        marks = []
 
-    def get_value_in_range(self, value, low, high):
-        if value <= low:
-            return 1
+        for function in functions:
+            marks.append(self.get_cc_mark(function["cyclomatic"]))
 
-        if value >= high:
-            return 3
-
-        return 1 + 2 * (value / high)
-
-    def get_hv_mark(self, function):
-        value = function["halstead"]["volume"]
-
-        return self.get_value_in_range(value, 20, 1000)
+        return self.squale(marks)
 
     def get_hv_squale(self, functions):
         marks = []
 
         for function in functions:
-            marks.append(self.get_hv_mark(function))
+            marks.append(self.get_hv_mark(function["halstead"]["volume"]))
 
         return self.squale(marks)
-
-    def get_hd_mark(self, function):
-        value = function["halstead"]["difficulty"]
-
-        return self.get_value_in_range(value, 10, 50)
 
     def get_hd_squale(self, functions):
         marks = []
 
         for function in functions:
-            marks.append(self.get_hd_mark(function))
+            marks.append(self.get_hd_mark(function["halstead"]["difficulty"]))
 
         return self.squale(marks)
 
@@ -344,8 +409,7 @@ class ComplexityReport(Checker):
         marks = []
 
         for function in functions:
-            # 30 is the threshold for good methods
-            marks.append(pow(2, (30 - function["sloc"]["logical"]) / 21))
+            marks.append(self.get_sloc_mark(function["sloc"]["logical"]))
 
         return self.squale(marks)
 
@@ -366,10 +430,9 @@ class ComplexityReport(Checker):
 
                 filename = f.full_path()
 
-                sloc = data["aggregate"]["sloc"]["logical"]
                 functions = data["functions"]
 
-                self.set(filename, "cyclomatic_complexity", self.get_cc_mark(sloc, functions))
+                self.set(filename, "cyclomatic_complexity", self.get_cc_squale(functions))
                 self.set(filename, "halstead_volume", self.get_hv_squale(functions))
                 self.set(filename, "halstead_difficulty", self.get_hd_squale(functions))
                 self.set(filename, "sloc", self.get_sloc_squale(functions))

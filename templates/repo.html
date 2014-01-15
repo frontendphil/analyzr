@@ -68,6 +68,12 @@
     <hr />
 
     <div
+        class='metrics complexity centered'
+        data-branch='{{ branch|href }}'></div>
+
+    <hr />
+
+    <div
         class='punchcard'
         data-repo='{{ repo|href }}'
         data-branch="{{ branch|href }}"></div>
@@ -85,6 +91,17 @@
 
             var contributors = new analyzr.plugins.Contributors(".contributors");
             contributors.load();
+
+            var metrics = new analyzr.plugins.graph.metrics.ComplexityMetrics(".metrics", {
+                height: 400,
+                margins: {
+                    top: 40,
+                    left: 100,
+                    right: 100,
+                    bottom: 40
+                }
+            });
+            metrics.load();
         });
     </script>
 {% endblock %}

@@ -10,17 +10,10 @@ from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
 
 from annoying.decorators import ajax_request
-from annoying.functions import get_object_or_None
 
-from parsr.models import Branch, Author
+from parsr.models import Branch
 from parsr.utils import send_mail
-
-
-def get_branch_and_author(branch_id, author_id):
-    branch = get_object_or_404(Branch, pk=branch_id)
-    author = get_object_or_None(Author, pk=author_id)
-
-    return branch, author
+from parsr.views.author import parse_filters
 
 
 def track_action(branch, action, abort):
@@ -87,7 +80,7 @@ def resume_measure(request, branch_id):
 
 @ajax_request
 def info(request, branch_id):
-    branch = get_object_or_404(Branch, pk=branch_id)
+    branch = get_branch(branch_id)
 
     return branch.json()
 
@@ -115,9 +108,24 @@ def file_stats(request, branch_id):
 
 @ajax_request
 def contributors(request, branch_id):
-    branch = get_object_or_404(Branch, pk=branch_id)
+    branch = get_branch(branch_id)
 
     page = request.GET.get("page")
 
     return branch.contributors(page=page)
 
+
+@ajax_request
+def packages(request, branch_id):
+    branch = get_branch(branch_id)
+
+    return branch.packages()
+
+
+@ajax_request
+def metrics(request, branch_id):
+    branch = get_branch(branch_id)
+
+    language, package, start, end = parse_filters(request, branch)
+
+    return branch.metrics(language=language, package=package, start=start, end=end)
