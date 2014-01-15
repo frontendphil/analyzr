@@ -80,7 +80,6 @@ class Checker(object):
     def stub(self):
         return {
             "cyclomatic_complexity": 0,
-            "halstead_effort": 0,
             "halstead_volume": 0,
             "halstead_difficulty": 0,
             "fan_in": 0,
@@ -206,7 +205,6 @@ class JHawk(Checker):
         difficulty = self.get_decimal(effort) / self.get_decimal(volume)
 
         self.set(filename, "halstead_difficulty", difficulty)
-        self.set(filename, "halstead_effort", effort)
         self.set(filename, "halstead_volume", volume)
 
     def parse(self, connector):
