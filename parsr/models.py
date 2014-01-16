@@ -1155,6 +1155,9 @@ class File(models.Model):
     sloc = models.IntegerField(default=0)
     sloc_delta = models.IntegerField(default=0)
 
+    sloc_squale = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    sloc_squale_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
     hk = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     hk_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
@@ -1180,7 +1183,8 @@ class File(models.Model):
 
             fan_in = structure["Fan In"] + float(self.fan_in_delta)
             fan_out = structure["Fan Out"] + float(self.fan_out_delta)
-            sloc = structure["SLOC"] + self.sloc_delta
+            sloc = structure["SLOC Absolute"] + self.sloc_delta
+            sloc_squale = structure["SLOC"] + self.sloc_squale_delta
             hk = structure["HK"] + float(self.hk_delta)
         else:
             cyclomatic_complexity = float(self.cyclomatic_complexity)
@@ -1190,6 +1194,7 @@ class File(models.Model):
             fan_in = float(self.fan_in)
             fan_out = float(self.fan_out)
             sloc = self.sloc
+            sloc_squale = self.sloc_squale
             hk = float(self.hk)
 
         return {
@@ -1220,8 +1225,10 @@ class File(models.Model):
                     "Fan Out Delta": float(self.fan_out_delta),
                     "HK": hk,
                     "HK Delta": float(self.hk_delta),
-                    "SLOC": sloc,
-                    "SLOC Delta": self.sloc_delta
+                    "SLOC Absolute": sloc,
+                    "SLOC Absolute Delta": self.sloc_delta,
+                    "SLOC": sloc_squale,
+                    "SLOC Delta": self.sloc_squale_delta
                 },
                 "churn": {
                     "added": self.lines_added,
@@ -1248,7 +1255,8 @@ class File(models.Model):
 
         self.fan_in = measures["fan_in"]
         self.fan_out = measures["fan_out"]
-        self.sloc = measures["sloc"]
+        self.sloc = measures["sloc_absolute"]
+        self.sloc_squale = measures["sloc"]
 
         self.hk = self.sloc * pow(self.fan_in * self.fan_out, 2)
 
@@ -1263,6 +1271,7 @@ class File(models.Model):
             self.fan_in_delta = self.fan_in - previous.fan_in
             self.fan_out_delta = self.fan_out - previous.fan_out
             self.sloc_delta = self.sloc - previous.sloc
+            self.sloc_squale_delta = self.sloc_squale - previous.sloc_squale
 
             self.hk_delta = self.hk - previous.hk
 

@@ -84,6 +84,7 @@ class Checker(object):
             "halstead_difficulty": 0,
             "fan_in": 0,
             "fan_out": 0,
+            "sloc_absolute": 0,
             "sloc": 0
         }
 
@@ -314,6 +315,7 @@ class JHawk(Checker):
 
                     self.set(filename, "cyclomatic_complexity", self.get_cc_squale(methods))
                     self.set(filename, "sloc", self.get_sloc_squale(methods))
+                    self.set(filename, "sloc_absolute", self.get_node_value(class_metrics, "loc"))
 
                     fan_in = self.get_number(class_metrics, "fanIn")
                     fan_out = self.get_number(class_metrics, "fanOut")
@@ -366,7 +368,7 @@ class ComplexityReport(Checker):
 
         return True
 
-    def get_cc_squale(self, sloc, functions):
+    def get_cc_squale(self, functions):
         # cc = sum([function["cyclomatic"] for function in functions])
         # nom = len(functions)
 
@@ -436,6 +438,7 @@ class ComplexityReport(Checker):
                 self.set(filename, "halstead_volume", self.get_hv_squale(functions))
                 self.set(filename, "halstead_difficulty", self.get_hd_squale(functions))
                 self.set(filename, "sloc", self.get_sloc_squale(functions))
+                self.set(filename, "sloc_absolute", data["aggregate"]["sloc"]["logical"])
 
         return self.measures
 
