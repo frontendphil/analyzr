@@ -1,0 +1,38 @@
+{% load filters %}
+
+<div
+    class='punchcard'
+    {% if author %}data-author="{{ author|href }}"{% endif %}
+    data-branch="{{ branch|href }}"></div>
+
+{% if branch.measured %}
+    <hr />
+
+    <div
+        class='metrics complexity centered'
+        {% if author %}data-author="{{ author|href }}"{% endif %}
+        data-branch="{{ branch|href }}">
+
+        <h3>Complexity Metrics</h3>
+    </div>
+
+    <hr />
+
+    <div
+        class='metrics structure centered'
+        {% if author %}data-author="{{ author|href }}"{% endif %}
+        data-branch="{{ branch|href }}">
+
+        <h3>Structural Metrics</h3>
+    </div>
+
+    <hr />
+
+    <div
+        class='churn centered'
+        {% if author %}data-author="{{ author|href }}"{% endif %}
+        data-branch="{{ branch|href }}">
+
+        <h3>Code Churn</h3>
+    </div>
+{% endif %}

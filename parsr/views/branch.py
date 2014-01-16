@@ -129,3 +129,12 @@ def metrics(request, branch_id):
     language, package, start, end = parse_filters(request, branch)
 
     return branch.metrics(language=language, package=package, start=start, end=end)
+
+
+@ajax_request
+def churn(request, branch_id):
+    branch = get_branch(branch_id)
+
+    language, package, start, end = parse_filters(request, branch)
+
+    return branch.churn(language=language, package=package, start=start, end=end)

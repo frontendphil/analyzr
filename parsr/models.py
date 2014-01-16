@@ -1,7 +1,6 @@
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
-from decimal import Decimal
 
 from django.db import models
 from django.db.models import Count, Sum, Avg, Min, Max
@@ -828,7 +827,7 @@ class Branch(models.Model):
 
         return result
 
-    def churn(self, author, language=None, package=None, start=None, end=None):
+    def churn(self, author=None, language=None, package=None, start=None, end=None):
         response = self.response_stub(language=language, package=package, start=start, end=end)
 
         if not language:
@@ -842,7 +841,7 @@ class Branch(models.Model):
         max_added = 0
         max_removed = 0
 
-        files = self.files(author, action=Action.readable(), language=language, package=package, start=start, end=end)
+        files = self.files(author=author, action=Action.readable(), language=language, package=package, start=start, end=end)
         revisions = files.values("date").annotate(added=Sum("lines_added"), removed=Sum("lines_removed"))
 
         for revision in revisions:

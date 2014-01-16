@@ -72,44 +72,6 @@
                 var score = new analyzr.plugins.Score(this);
                 score.load();
             });
-
-            $(".metrics.complexity").each(function() {
-                var complexity = new analyzr.plugins.graph.metrics.ComplexityMetrics(this, {
-                    height: 400,
-                    margins: {
-                        top: 40,
-                        left: 100,
-                        right: 100,
-                        bottom: 40
-                    }
-                });
-                complexity.load();
-            });
-
-            $(".metrics.structure").each(function() {
-                var structure = new analyzr.plugins.graph.metrics.StructuralMetrics(this, {
-                    height: 400,
-                    margins: {
-                        top: 40,
-                        left: 100,
-                        right: 100,
-                        bottom: 40
-                    }
-                });
-                structure.load();
-            });
-
-            $(".churn").each(function() {
-                var churn = new analyzr.plugins.graph.CodeChurn(this, {
-                    height: 300,
-                    margins: {
-                        top: 20,
-                        left: 40,
-                        bottom: 40
-                    }
-                });
-                churn.load();
-            });
         });
     </script>
 {% endblock %}
