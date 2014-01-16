@@ -143,17 +143,17 @@ ns("plugins.graph.metrics");
                         metrics = d3.keys(data[file][0].rep[kind])
                             .sort()
                             .filter(function(key) {
-                                return key !== "date" && key !== "deleted" && !key.endsWith("Delta");
+                                return !key.endsWith("delta");
                             })
                             .map(function(type) {
                                 return {
-                                    type: type,
-                                    id: type.replace(" ", "_").toLowerCase(),
+                                    type: type.capitalize(),
+                                    id: type,
                                     values: data[file].map(function(d) {
                                         deleted = deleted || d.rep.deleted;
 
                                         return {
-                                            id: type.replace(" ", "_").toLowerCase(),
+                                            id: type,
                                             date: new Date(d.rep.date),
                                             revision: d.rep.revision,
                                             value: d.rep[kind][type]

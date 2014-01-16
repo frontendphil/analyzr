@@ -1202,26 +1202,29 @@ class File(models.Model):
                 "changeType": self.change_type,
                 "copyOf": utils.href(File, self.copy_of_id) if self.copy_of else None,
                 "complexity": {
-                    "Cyclomatic Complexity": cyclomatic_complexity,
-                    "Cyclomatic Complexity Delta": float(self.cyclomatic_complexity_delta),
-                    "Halstead Volume": halstead_volume,
-                    "Halstead Volume Delta": float(self.halstead_volume_delta),
-                    "Halstead Difficulty": halstead_difficulty,
-                    "Halstead Difficulty Delta": float(self.halstead_difficulty_delta)
+                    "cyclomatic_complexity": cyclomatic_complexity,
+                    "cyclomatic_complexity_delta": float(self.cyclomatic_complexity_delta),
+                    "halstead_volume": halstead_volume,
+                    "halstead_volume_delta": float(self.halstead_volume_delta),
+                    "halstead_difficulty": halstead_difficulty,
+                    "halstead_difficulty_delta": float(self.halstead_difficulty_delta)
                 },
                 "structure": {
-                    "Fan In": fan_in,
-                    "Fan In Delta": float(self.fan_in_delta),
-                    "Fan Out": fan_out,
-                    "Fan Out Delta": float(self.fan_out_delta),
-                    "SLOC Absolute": sloc,
-                    "SLOC Absolute Delta": self.sloc_delta,
-                    "SLOC": sloc_squale,
-                    "SLOC Delta": float(self.sloc_squale_delta)
+                    "fan_in": fan_in,
+                    "fan_in_delta": float(self.fan_in_delta),
+                    "fan_out": fan_out,
+                    "fan_out_delta": float(self.fan_out_delta),
+                    "sloc_absolute": sloc,
+                    "sloc_absolute_delta": self.sloc_delta,
+                    "sloc": sloc_squale,
+                    "sloc_delta": float(self.sloc_squale_delta)
                 },
                 "churn": {
                     "added": self.lines_added,
-                    "removed": self.lines_removed
+                    "removed": self.lines_removed,
+                    "churned_to_total": self.lines_added / sloc,
+                    "deleted_to_total": self.lines_removed / sloc,
+                    "churned_to_deleted": self.lines_added / self.lines_removed
                 }
 
             }
