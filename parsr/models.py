@@ -204,6 +204,7 @@ class Branch(models.Model):
 
     measured = models.BooleanField(default=False)
     measuring = models.BooleanField(default=False)
+    measured_date = models.DateTimeField(null=True, blank=True)
 
     revision_count = models.IntegerField(default=0)
     last_analyze_error = models.TextField(null=True, blank=True)
@@ -345,6 +346,7 @@ class Branch(models.Model):
 
         self.measuring = False
         self.measured = True
+        self.measured_date = datetime.now(self.repo.timezone)
         self.save()
 
     def abort_measure(self, error):
