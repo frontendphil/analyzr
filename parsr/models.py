@@ -1,3 +1,5 @@
+import math
+
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
@@ -437,7 +439,7 @@ class Branch(models.Model):
             "fan_in",
             "fan_out",
             "sloc",
-            "hk"
+            "sloc_absolute"
         ]
 
         aggregate, aggregations = self.compute_scores(files, metrics)
@@ -734,9 +736,7 @@ class Branch(models.Model):
             fan_out=Avg("fan_out"),
             fan_out_delta=Avg("fan_out_delta"),
             sloc=Sum("sloc"),
-            sloc_delta=Sum("sloc_delta"),
-            hk=Avg("hk"),
-            hk_delta=Avg("hk_delta")
+            sloc_delta=Sum("sloc_delta")
         )
 
         result["data"] = []
@@ -756,8 +756,7 @@ class Branch(models.Model):
                     "halstead_volume": rev["halstead_volume"],
                     "fan_in": rev["fan_in"],
                     "fan_out": rev["fan_out"],
-                    "sloc": rev["sloc"],
-                    "hk": rev["hk"]
+                    "sloc": rev["sloc"]
                 }
             else:
                 value["cyclomatic_complexity"] += rev["cyclomatic_complexity_delta"]
@@ -766,7 +765,6 @@ class Branch(models.Model):
                 value["fan_in"] += rev["fan_in_delta"]
                 value["fan_out"] += rev["fan_out_delta"]
                 value["sloc"] += rev["sloc_delta"]
-                value["hk"] += rev["hk_delta"]
 
             result["data"].append({
                 "href": "/file/all",
@@ -788,9 +786,7 @@ class Branch(models.Model):
                         "Fan Out": value["fan_out"],
                         "Fan Out Delta": rev["fan_out_delta"],
                         "SLOC": value["sloc"],
-                        "SLOC Delta": rev["sloc_delta"],
-                        "HK": value["hk"],
-                        "HK Delta": rev["hk_delta"]
+                        "SLOC Delta": rev["sloc_delta"]
                     }
                 }
             })
@@ -1158,9 +1154,6 @@ class File(models.Model):
     sloc_squale = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     sloc_squale_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
-    hk = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    hk_delta = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
     lines_added = models.IntegerField(default=0)
     lines_removed = models.IntegerField(default=0)
 
@@ -1184,8 +1177,7 @@ class File(models.Model):
             fan_in = structure["Fan In"] + float(self.fan_in_delta)
             fan_out = structure["Fan Out"] + float(self.fan_out_delta)
             sloc = structure["SLOC Absolute"] + self.sloc_delta
-            sloc_squale = structure["SLOC"] + self.sloc_squale_delta
-            hk = structure["HK"] + float(self.hk_delta)
+            sloc_squale = structure["SLOC"] + float(self.sloc_squale_delta)
         else:
             cyclomatic_complexity = float(self.cyclomatic_complexity)
             halstead_difficulty = float(self.halstead_difficulty)
@@ -1194,8 +1186,7 @@ class File(models.Model):
             fan_in = float(self.fan_in)
             fan_out = float(self.fan_out)
             sloc = self.sloc
-            sloc_squale = self.sloc_squale
-            hk = float(self.hk)
+            sloc_squale = float(self.sloc_squale)
 
         return {
             "href": utils.href(File, self.id),
@@ -1223,12 +1214,10 @@ class File(models.Model):
                     "Fan In Delta": float(self.fan_in_delta),
                     "Fan Out": fan_out,
                     "Fan Out Delta": float(self.fan_out_delta),
-                    "HK": hk,
-                    "HK Delta": float(self.hk_delta),
                     "SLOC Absolute": sloc,
                     "SLOC Absolute Delta": self.sloc_delta,
                     "SLOC": sloc_squale,
-                    "SLOC Delta": self.sloc_squale_delta
+                    "SLOC Delta": float(self.sloc_squale_delta)
                 },
                 "churn": {
                     "added": self.lines_added,
@@ -1258,8 +1247,6 @@ class File(models.Model):
         self.sloc = measures["sloc_absolute"]
         self.sloc_squale = measures["sloc"]
 
-        self.hk = self.sloc * pow(self.fan_in * self.fan_out, 2)
-
         previous = self.get_previous()
 
         if previous:
@@ -1272,8 +1259,6 @@ class File(models.Model):
             self.fan_out_delta = self.fan_out - previous.fan_out
             self.sloc_delta = self.sloc - previous.sloc
             self.sloc_squale_delta = self.sloc_squale - previous.sloc_squale
-
-            self.hk_delta = self.hk - previous.hk
 
         self.save()
 
