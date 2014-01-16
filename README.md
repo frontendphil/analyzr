@@ -3,9 +3,9 @@ analyzr
 
 ## Background ##
 
-## Installation ##
+Master thesis background description
 
-### Dependencies ###
+## Installation ##
 
 The following dependencies have to be installed manually as they are a prerequisite or can't be handled by a package manager.
 
