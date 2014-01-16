@@ -143,7 +143,7 @@ ns("plugins.graph.metrics");
                         metrics = d3.keys(data[file][0].rep[kind])
                             .sort()
                             .filter(function(key) {
-                                return !key.endsWith("delta");
+                                return !key.endsWith("_delta");
                             })
                             .map(function(type) {
                                 return {

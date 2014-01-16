@@ -19,7 +19,7 @@ CONTRIBUTORS_PER_PAGE = 10
 
 # defines hardness of the squale aggregation algorithm
 # LOW = 3, MEDIUM = 9, HARD = 30
-LAMBDA = 9
+LAMBDA = 9.0
 
 DATABASES = {
     'default': {

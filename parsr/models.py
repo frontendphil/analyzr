@@ -1,5 +1,3 @@
-import math
-
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
@@ -19,6 +17,13 @@ from parsr.analyzers import Analyzer
 from parsr import sql, utils
 
 from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE
+
+
+def system_busy():
+    analyzing = Branch.objects.filter(analyzing=True).count() > 0
+    measuring = Branch.objects.filter(measuring=True).count() > 0
+
+    return analyzing or measuring
 
 
 class Repo(models.Model):
@@ -91,7 +96,7 @@ class Repo(models.Model):
         return Branch.objects.filter(repo=self).count()
 
     def author_count(self):
-        return Author.objects.filter(revision__branch__repo=self).distinct().count()
+        return Author.objects.filter(revisions__branch__repo=self).distinct().count()
 
     def default_branch(self):
         default = Branch.objects.filter(repo=self, analyzed=True)[0:1]
@@ -221,12 +226,12 @@ class Branch(models.Model):
         if self.analyzing:
             info["action"] = "analyzing"
             info["count"] = self.revision_count,
-            info["progress"] = self.revision_set.all().count()
+            info["progress"] = self.revisions.all().count()
 
         if self.measuring:
             info["action"] = "measuring"
-            info["progress"] = self.revision_set.filter(measured=True).count()
-            info["count"] = self.revision_set.all().count()
+            info["progress"] = self.revisions.filter(measured=True).count()
+            info["count"] = self.revisions.all().count()
 
         return {
             "href": utils.href(Branch, self.id),
@@ -254,17 +259,17 @@ class Branch(models.Model):
         }
 
     def analyzing_interrupted(self):
-        return not self.analyzed and self.revision_set.count() > 0
+        return not self.analyzed and self.revisions.count() > 0
 
     def measuring_interrupted(self):
-        measured = self.revision_set.filter(measured=True).count()
+        measured = self.revisions.filter(measured=True).count()
 
-        return measured > 0 and not measured == self.revision_set.all().count()
+        return measured > 0 and not measured == self.revisions.all().count()
 
     def cleanup(self):
         self.remove_all(File, File.objects.filter(revision__branch=self))
-        self.remove_all(Package, Package.objects.filter(branch=self))
-        self.remove_all(Revision, Revision.objects.filter(branch=self))
+        self.remove_all(Package, self.packages.all())
+        self.remove_all(Revision, self.revisions.all())
         self.remove_all(Author, Author.objects.filter(revision__branch=self))
 
     def remove_all(self, cls, elements):
@@ -273,6 +278,9 @@ class Branch(models.Model):
         sql.execute(query)
 
     def analyze(self, resume=False):
+        if system_busy():
+            return
+
         self.last_analyze_error = None
 
         self.analyzed = False
@@ -318,10 +326,10 @@ class Branch(models.Model):
         root.update()
 
     def last_analyzed_revision(self):
-        return self.revision_set.get(previous=None)
+        return self.revisions.get(previous=None)
 
     def last_measured_revision(self):
-        revisions = self.revision_set.filter(measured=True).order_by("-date")
+        revisions = self.revisions.filter(measured=True).order_by("-date")
 
         if revisions.count() == 0:
             return None
@@ -329,6 +337,9 @@ class Branch(models.Model):
         return revisions[0]
 
     def measure(self, resume=False):
+        if system_busy():
+            return
+
         self.last_measure_error = None
 
         self.measured = False
@@ -360,11 +371,11 @@ class Branch(models.Model):
         self.save()
 
     def age(self):
-        if not self.analyzed or self.revision_set.count() == 0:
+        if not self.analyzed or self.revisions.count() == 0:
             return "n/a"
 
-        start = self.revision_set.order_by("date")[0:1][0]
-        end = self.revision_set.order_by("-date")[0:1][0]
+        start = self.revisions.order_by("date")[0:1][0]
+        end = self.revisions.order_by("-date")[0:1][0]
 
         return end.date - start.date
 
@@ -438,8 +449,8 @@ class Branch(models.Model):
             "halstead_volume",
             "fan_in",
             "fan_out",
-            "sloc",
-            "sloc_absolute"
+            "sloc_squale",
+            "sloc"
         ]
 
         aggregate, aggregations = self.compute_scores(files, metrics)
@@ -484,7 +495,7 @@ class Branch(models.Model):
     def contributors(self, page=None):
         response = self.response_stub()
 
-        authors = self.authors().annotate(rev_count=Count("revision")).order_by("-rev_count")
+        authors = self.authors().annotate(rev_count=Count("revisions")).order_by("-rev_count")
 
         paginator = Paginator(authors, CONTRIBUTORS_PER_PAGE)
 
@@ -619,13 +630,13 @@ class Branch(models.Model):
         return response
 
     def authors(self):
-        return Author.objects.filter(revision__branch=self).distinct().order_by("name")
+        return Author.objects.filter(revisions__branch=self).distinct().order_by("name")
 
     def author_count(self):
-        return Author.objects.filter(revision__branch=self).distinct().count()
+        return Author.objects.filter(revisions__branch=self).distinct().count()
 
     def first_revision(self):
-        revisions = self.revision_set.all().order_by("date")
+        revisions = self.revisions.all().order_by("date")
 
         if revisions.count() == 0:
             return None
@@ -694,10 +705,10 @@ class Branch(models.Model):
         return [language["mimetype"] for language in languages]
 
     def get_earliest_revision(self):
-        return self.revision_set.order_by("date")[0:1][0]
+        return self.revisions.order_by("date")[0:1][0]
 
     def get_latest_revision(self):
-        return self.revision_set.order_by("-date")[0:1][0]
+        return self.revisions.order_by("-date")[0:1][0]
 
     def response_stub(self, language=None, package=None, start=None, end=None):
         return {
@@ -773,20 +784,20 @@ class Branch(models.Model):
                     "date": date,
                     "revision": utils.href(Revision, rev["revision"]),
                     "complexity": {
-                        "Cyclomatic Complexity": value["cyclomatic_complexity"],
-                        "Cyclomatic Complexity Delta": rev["cyclomatic_complexity_delta"],
-                        "Halstead Volume": value["halstead_volume"],
-                        "Halstead Volume Delta": rev["halstead_volume_delta"],
-                        "Halstead Difficulty": value["halstead_difficulty"],
-                        "Halstead Difficulty Delta": rev["halstead_difficulty_delta"]
+                        "cyclomatic_complexity": value["cyclomatic_complexity"],
+                        "cyclomatic_complexity_delta": rev["cyclomatic_complexity_delta"],
+                        "halstead_volume": value["halstead_volume"],
+                        "halstead_volume_delta": rev["halstead_volume_delta"],
+                        "halstead_difficulty": value["halstead_difficulty"],
+                        "halstead_difficulty_delta": rev["halstead_difficulty_delta"]
                     },
                     "structure": {
-                        "Fan In": value["fan_in"],
-                        "Fan In Delta": rev["fan_in_delta"],
-                        "Fan Out": value["fan_out"],
-                        "Fan Out Delta": rev["fan_out_delta"],
-                        "SLOC": value["sloc"],
-                        "SLOC Delta": rev["sloc_delta"]
+                        "fan_in": value["fan_in"],
+                        "fan_in_delta": rev["fan_in_delta"],
+                        "fan_out": value["fan_out"],
+                        "fan_out_delta": rev["fan_out_delta"],
+                        "sloc": value["sloc"],
+                        "sloc_delta": rev["sloc_delta"]
                     }
                 }
             })
@@ -866,8 +877,8 @@ class Revision(models.Model):
 
     identifier = models.CharField(max_length=255)
 
-    branch = models.ForeignKey("Branch", null=True)
-    author = models.ForeignKey("Author", null=True)
+    branch = models.ForeignKey("Branch", related_name="revisions", null=True)
+    author = models.ForeignKey("Author", related_name="revisions", null=True)
 
     next = models.ForeignKey("Revision", related_name='previous', null=True)
 
@@ -903,7 +914,7 @@ class Revision(models.Model):
                 "next": utils.href(Revision, self.next_id) if self.next else None,
                 "measured": self.measured,
                 "date": self.date.isoformat(),
-                "files": [f.json() for f in self.file_set.all()],
+                "files": [f.json() for f in self.files.all()],
                 "complexDate": {
                     "year": self.year,
                     "month": self.month,
@@ -986,7 +997,7 @@ class Revision(models.Model):
         return self.identifier == identifier
 
     def modified_files(self):
-        return self.file_set.filter(
+        return self.files.filter(
             change_type__in=Action.readable(),
             mimetype__in=Analyzer.parseable_types()
         )
@@ -994,7 +1005,7 @@ class Revision(models.Model):
     def includes(self, filename):
         package, filename = File.parse_name(filename)
 
-        return not self.file_set.filter(name=filename,
+        return not self.files.filter(name=filename,
                                         package__endswith=package,
                                         change_type__in=Action.readable()).count() == 0
 
@@ -1002,7 +1013,7 @@ class Revision(models.Model):
         package, filename = File.parse_name(filename)
 
         try:
-            return self.file_set.get(name=filename,
+            return self.files.get(name=filename,
                                      package__endswith=package,
                                      change_type__in=Action.readable())
         except File.DoesNotExist:
@@ -1122,8 +1133,8 @@ class File(models.Model):
         "x-sql"
     ]
 
-    revision = models.ForeignKey("Revision")
-    author = models.ForeignKey("Author", null=True)
+    revision = models.ForeignKey("Revision", related_name="files")
+    author = models.ForeignKey("Author", related_name="files", null=True)
     date = models.DateTimeField(null=True)
 
     name = models.CharField(max_length=255)
@@ -1170,14 +1181,14 @@ class File(models.Model):
             complexity = previous["complexity"]
             structure = previous["structure"]
 
-            cyclomatic_complexity = complexity["Cyclomatic Complexity"] + float(self.cyclomatic_complexity_delta)
-            halstead_difficulty = complexity["Halstead Difficulty"] + float(self.halstead_difficulty_delta)
-            halstead_volume = complexity["Halstead Volume"] + float(self.halstead_volume_delta)
+            cyclomatic_complexity = complexity["cyclomatic_complexity"] + float(self.cyclomatic_complexity_delta)
+            halstead_difficulty = complexity["halstead_difficulty"] + float(self.halstead_difficulty_delta)
+            halstead_volume = complexity["halstead_volume"] + float(self.halstead_volume_delta)
 
-            fan_in = structure["Fan In"] + float(self.fan_in_delta)
-            fan_out = structure["Fan Out"] + float(self.fan_out_delta)
-            sloc = structure["SLOC Absolute"] + self.sloc_delta
-            sloc_squale = structure["SLOC"] + float(self.sloc_squale_delta)
+            fan_in = structure["fan_in"] + float(self.fan_in_delta)
+            fan_out = structure["fan_out"] + float(self.fan_out_delta)
+            sloc = structure["sloc_absolute"] + self.sloc_delta
+            sloc_squale = structure["sloc"] + float(self.sloc_squale_delta)
         else:
             cyclomatic_complexity = float(self.cyclomatic_complexity)
             halstead_difficulty = float(self.halstead_difficulty)
@@ -1222,9 +1233,9 @@ class File(models.Model):
                 "churn": {
                     "added": self.lines_added,
                     "removed": self.lines_removed,
-                    "churned_to_total": self.lines_added / sloc,
-                    "deleted_to_total": self.lines_removed / sloc,
-                    "churned_to_deleted": self.lines_added / self.lines_removed
+                    "churned_to_total": self.lines_added / sloc if sloc else 0,
+                    "deleted_to_total": self.lines_removed / sloc if sloc else 0,
+                    "churned_to_deleted": self.lines_added / self.lines_removed if self.lines_removed else 0
                 }
 
             }
@@ -1293,9 +1304,7 @@ class Author(models.Model):
         return self.name
 
     def revision_count(self, branch):
-        revisions = Revision.objects.filter(author=self, branch=branch).distinct()
-
-        return revisions.count()
+        return self.revisions.filter(branch=branch).distinct().count()
 
     def get_icon(self):
         size = 40

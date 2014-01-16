@@ -99,17 +99,17 @@ class Checker(object):
         low = low * 1.0
 
         if value <= low:
-            return 3
+            return 3.0
 
         if value >= high:
-            return 1
+            return 1.0
 
         return 3.0 - 2.0 * (value / high)
 
     def squale(self, marks):
-        sum_marks = math.fsum([math.pow(LAMBDA, -1 * mark) for mark in marks])
+        sum_marks = math.fsum([math.pow(LAMBDA, -1.0 * mark) for mark in marks])
 
-        return -1 * math.log(sum_marks / len(marks), LAMBDA)
+        return -1.0 * math.log(sum_marks / (1.0 * len(marks)), LAMBDA)
 
     def get_hv_mark(self, value):
         return self.get_value_in_range(value, 20, 1000)
@@ -122,13 +122,13 @@ class Checker(object):
 
     def get_sloc_mark(self, value):
         # 30 is the threshold for good methods
-        return math.pow(2, (30 - value) / 21)
+        return math.pow(2, (30 - value) / 21.0)
 
     def get_fan_in_mark(self, value):
-        return math.pow(2, (30 - value) / 7)
+        return math.pow(2, (30 - value) / 7.0)
 
     def get_fan_out_mark(self, value):
-        return math.pow(2, (10 - value) / 2)
+        return math.pow(2, (10 - value) / 2.0)
 
     def configure(self, files, revision, connector):
         for f in files:

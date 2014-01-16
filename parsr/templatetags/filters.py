@@ -52,7 +52,7 @@ def gravatar(parser, token):
 
 @register.filter
 def ranked(authors):
-    return authors.annotate(revision_count=Count("revision")).order_by("-revision_count")
+    return authors.annotate(revision_count=Count("revisions")).order_by("-revision_count")
 
 
 @register.filter
