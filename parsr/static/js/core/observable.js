@@ -13,7 +13,7 @@ ns("core");
         return result;
     };
 
-    analyzr.core.Observeable = analyzr.core.Class.extend({
+    analyzr.core.Observable = analyzr.core.Class.extend({
 
         init: function() {
             this.listeners = {};

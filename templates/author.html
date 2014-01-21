@@ -23,7 +23,7 @@
 
 {% block content %}
     <div class='container'>
-    <h1>
+    <h1 class='hidden-print'>
         {% gravatar author.email %}
         {{ author.name }}
 
@@ -32,7 +32,7 @@
         {% endif %}
     </h1>
 
-    <select class='compare'>
+    <select class='compare hidden-print'>
         <option>Compare To</option>
 
         {% with author as current_author %}
@@ -44,7 +44,7 @@
         {% endwith %}
     </select>
 
-    <hr />
+    <hr class='hidden-print' />
 
     {% include "includes/metrics.html" %}
 </div>

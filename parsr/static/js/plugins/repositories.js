@@ -4,7 +4,7 @@ ns("plugins");
 
     var REFRESH_INTERVAL = 30 * 1000;
 
-    analyzr.plugins.Repositories = analyzr.core.Observeable.extend({
+    analyzr.plugins.Repositories = analyzr.core.Observable.extend({
 
         init: function(target) {
             this._super();

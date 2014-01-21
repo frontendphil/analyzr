@@ -35,7 +35,7 @@ ns("plugins");
             var createTH = function(abbr, description) {
                 return "<th>" +
                     "<i class='icon-exchange'></i> " +
-                    "<abbr title='" + description + "'>" + abbr + "</abbr>" +
+                    "<abbr title='" + description.capitalize() + "'>" + abbr + "</abbr>" +
                 "</th>";
             };
 
@@ -46,13 +46,12 @@ ns("plugins");
                             "<th>Package</th>" +
                             "<th>Name</th>" +
                             "<th>Change</th>" +
-                            createTH("CC", "Cyclomatic Complexity Delta") +
-                            createTH("HSV", "Halstead Volume Delta") +
-                            createTH("HSD", "Halstead Difficulty Delta") +
-                            createTH("FI", "Fan In Delta") +
-                            createTH("FO", "Fan Out Delta") +
-                            createTH("SLOC", "Source Lines of Code Delta") +
-                            createTH("HK", "Information Flow Delta") +
+                            createTH("CC", "cyclomatic_complexity_delta") +
+                            createTH("HSV", "halstead_volume_delta") +
+                            createTH("HSD", "halstead_difficulty_delta") +
+                            createTH("FI", "fan_in_delta") +
+                            createTH("FO", "fan_out_delta") +
+                            createTH("SLOC", "sloc_delta") +
                         "</tr>" +
                     "</thead>" +
                     "<tbody></tbody>" +
@@ -64,9 +63,9 @@ ns("plugins");
 
             var createTD = function(metrics, metric) {
                 return "" +
-                    "<td class='delta " + metrics[metric + " Delta"].cls + "'>" +
+                    "<td class='delta " + metrics[metric + "_delta"].cls + "'>" +
                         "<abbr title='" + metrics[metric].value + "'>" +
-                            metrics[metric + " Delta"].value +
+                            metrics[metric + "_delta"].value +
                         "</abbr>" +
                     "</td>";
             };
@@ -91,13 +90,12 @@ ns("plugins");
                         "<td>" + packageName + "</td>" +
                         "<td>" + this.rep.name + "</td>" +
                         "<td class='delta'>" + this.rep.changeType + "</td>" +
-                        createTD(complexity, "Cyclomatic Complexity") +
-                        createTD(complexity, "Halstead Volume") +
-                        createTD(complexity, "Halstead Difficulty") +
-                        createTD(structure, "Fan In") +
-                        createTD(structure, "Fan Out") +
-                        createTD(structure, "SLOC") +
-                        createTD(structure, "HK") +
+                        createTD(complexity, "cyclomatic_complexity") +
+                        createTD(complexity, "halstead_volume") +
+                        createTD(complexity, "halstead_difficulty") +
+                        createTD(structure, "fan_in") +
+                        createTD(structure, "fan_out") +
+                        createTD(structure, "sloc") +
                     "</tr>"
                 ));
             });

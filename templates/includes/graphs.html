@@ -16,7 +16,7 @@
         <h3>Complexity Metrics</h3>
     </div>
 
-    <hr />
+    <hr class='hidden-print' />
 
     <div
         class='metrics structure centered'
@@ -26,13 +26,13 @@
         <h3>Structural Metrics</h3>
     </div>
 
-    <hr />
+    <hr class='hidden-print' />
 
     <div
-        class='churn centered'
+        class='churn centered hidden-print'
         {% if author %}data-author="{{ author|href }}"{% endif %}
         data-branch="{{ branch|href }}">
 
-        <h3>Code Churn</h3>
+        <h3 class='hidden-print'>Code Churn</h3>
     </div>
 {% endif %}

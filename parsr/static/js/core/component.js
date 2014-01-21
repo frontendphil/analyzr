@@ -2,7 +2,7 @@ ns("core");
 
 (function() {
 
-    analyzr.core.Component = analyzr.core.Observeable.extend({
+    analyzr.core.Component = analyzr.core.Observable.extend({
 
         init: function(action, target) {
             this._super();

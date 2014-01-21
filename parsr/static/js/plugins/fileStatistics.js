@@ -77,7 +77,10 @@ ns("plugins");
                 var box = $("<div class='box' />");
 
                 box.css({
-                    background: color
+                    background: color,
+                    borderColor: color,
+                    borderStyle: "solid",
+                    borderWidth: 0
                 });
 
                 entry.css({
@@ -89,12 +92,61 @@ ns("plugins");
 
                 container.css({
                     width: 100 * this.share + "%",
-                    background: color
+                    background: color,
+                    borderColor: color,
+                    borderStyle: "solid",
+                    borderWidth: 0
                 });
 
                 parts.append(container);
             });
+
+            if(window.matchMedia) {
+                window.matchMedia("print").addListener(function(media) {
+                    if(media.matches) {
+                        that.handlePrint();
+                    } else {
+                        $(document).one("mousemove", function() {
+                            that.handleAfterPrint();
+                        });
+                    }
+                });
+            }
         },
+
+        handlePrint: function() {
+            this.dom.find(".stat").each(function() {
+                var stat = $(this);
+                var height = stat.height();
+
+                stat.css({
+                    borderWidth: Math.ceil(height/2)
+                });
+            });
+
+            this.dom.find(".box").each(function() {
+                var box = $(this);
+                var width = box.width();
+
+                box.css({
+                    borderWidth: Math.ceil(width/2)
+                });
+            });
+        },
+
+        handleAfterPrint: function() {
+            this.dom.find(".stat").each(function() {
+                $(this).css({
+                    borderWidth: 0
+                });
+            });
+
+            this.dom.find(".box").each(function() {
+                $(this).css({
+                    borderWidth: 0
+                });
+            });
+        }
 
     });
 }());

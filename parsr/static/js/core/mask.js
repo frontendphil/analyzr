@@ -2,7 +2,7 @@ ns("core");
 
 (function() {
 
-	analyzr.core.Mask = analyzr.core.Observeable.extend({
+	analyzr.core.Mask = analyzr.core.Observable.extend({
 
 		init: function(target, text) {
 			this._super();
