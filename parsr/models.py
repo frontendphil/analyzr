@@ -3,7 +3,7 @@ from hashlib import md5
 from urllib import urlencode
 
 from django.db import models
-from django.db.models import Count, Sum, Avg, Min, Max
+from django.db.models import Count, Sum, Avg, Min, Max, Q
 from django.db.models.signals import post_save, pre_save, pre_delete
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.dispatch import receiver
@@ -20,10 +20,7 @@ from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE
 
 
 def system_busy():
-    analyzing = Branch.objects.filter(analyzing=True).count() > 0
-    measuring = Branch.objects.filter(measuring=True).count() > 0
-
-    return analyzing or measuring
+    return Branch.objects.filter(Q(analyzing=True) | Q(measuring=True)).count() > 0
 
 
 class Repo(models.Model):
@@ -268,9 +265,9 @@ class Branch(models.Model):
 
     def cleanup(self):
         self.remove_all(File, File.objects.filter(revision__branch=self))
-        self.remove_all(Package, self.packages.all())
+        self.remove_all(Package, self.package_set.all())
         self.remove_all(Revision, self.revisions.all())
-        self.remove_all(Author, Author.objects.filter(revision__branch=self))
+        self.remove_all(Author, Author.objects.filter(revisions__branch=self))
 
     def remove_all(self, cls, elements):
         query = sql.delete(cls, str(elements.values("id").query))
@@ -438,10 +435,10 @@ class Branch(models.Model):
 
         return result, aggregations
 
-    def score(self, author):
+    def score(self, author=None):
         result = self.response_stub()
 
-        files = self.files(author)
+        files = self.files(author=author)
 
         metrics = [
             "cyclomatic_complexity",

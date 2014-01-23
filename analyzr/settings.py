@@ -150,6 +150,7 @@ INSTALLED_APPS = (
     'timezone_field',
     'annoying',
     'compressor',
+    'django_extensions',
 )
 
 # A sample logging configuration. The only tangible logging

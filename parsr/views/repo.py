@@ -82,7 +82,7 @@ def save(request):
 def remove(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
 
-    for branch in repo.branches():
+    for branch in repo.branches.all():
         branch.cleanup()
 
     repo.delete()

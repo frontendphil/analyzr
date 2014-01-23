@@ -12,7 +12,9 @@
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/font-awesome.min.css" charset="utf-8" />
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/datepicker.css" />
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/jquery.qtip.min.css" />
+    {% endcompress %}
 
+    {% compress css %}
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/css/analyzr.css" />
     {% endcompress %}
 </head>
@@ -65,7 +67,9 @@
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/bootstrap-datepicker.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/imagesloaded.pkg.min.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery.qtip.min.js"></script>
+    {% endcompress %}
 
+    {% compress js%}
         <script type="text/javascript" src="{{ STATIC_URL }}js/utils.js"></script>
 
         <script type="text/javascript" src="{{ STATIC_URL }}js/core/class.js"></script>

@@ -62,16 +62,3 @@
         });
     </script>
 {% endblock %}
-
-{% block script %}
-    {{ block.super }}
-
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $(".score").each(function() {
-                var score = new analyzr.plugins.Score(this);
-                score.load();
-            });
-        });
-    </script>
-{% endblock %}

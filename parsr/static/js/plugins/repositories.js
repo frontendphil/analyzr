@@ -332,7 +332,12 @@ ns("plugins");
 
                 remove.click(function() {
                     analyzr.plugins.Dialog.confirm("Do you really want to delete the repo?", function() {
+                        var mask = new analyzr.core.Mask(that.dom, "Removing the repository...");
+                        mask.show();
+
                         that.request(remove.data("action"), function() {
+                            mask.remove();
+
                             $("tr[data-href='" + info.href + "']").fadeOut(function() {
                                 $(this).remove();
                             });

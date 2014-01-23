@@ -2,13 +2,13 @@
 
 <div
     class='stats'
-    data-author="{{ author|href }}"
+    {% if author %}data-author="{{ author|href }}"{% endif %}
     data-branch="{{ branch|href }}"></div>
 
 {% if branch.measured %}
     <div
         class="score"
-        data-author="{{ author|href }}"
+        {% if author %}data-author="{{ author|href }}"{% endif %}
         data-branch="{{ branch|href }}">
     </div>
 {% endif %}
