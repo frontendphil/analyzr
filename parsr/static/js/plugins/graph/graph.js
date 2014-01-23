@@ -22,6 +22,10 @@ ns("plugins.graph");
 
             var that = this;
 
+            if(attrs.noFilter) {
+                return;
+            }
+
             this.filter = new analyzr.plugins.Filter(this.dom, function() {
                 that.setup(that.url + "?" + this.toQueryString(), that.branch);
             });
@@ -33,7 +37,7 @@ ns("plugins.graph");
 
         handleFileSelect: function() {},
 
-        updateXAxis: function(start, end) {
+        updateXAxis: function() {
             var axis = d3.svg.axis()
                 .scale(this.scale.x)
                 .orient("bottom")
@@ -136,7 +140,7 @@ ns("plugins.graph");
         },
 
         getDiagramHeight: function() {
-            return this.height + this.margins.top + this.margins.bottom
+            return this.height + this.margins.top + this.margins.bottom;
         },
 
         getDiagramWidth: function() {

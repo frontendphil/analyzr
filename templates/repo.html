@@ -66,6 +66,12 @@
     <hr class='hidden-print' />
 
     <div class='container'>
+        <div
+            class='impact hidden-print'
+            data-branch='{{ branch|href }}'></div>
+
+        <hr class='hidden-print' />
+
         {% include "includes/metrics.html" %}
     </div>
 {% endblock %}
@@ -141,6 +147,17 @@
                 var score = new analyzr.plugins.Score(this);
                 score.load();
             });
+
+            $(".impact").each(function() {
+                var impact = new analyzr.plugins.graph.ContributerImpact(this, {
+                    margins: {
+                        top: 20,
+                        left: 40,
+                        bottom: 40
+                    }
+                });
+                impact.load();
+            })
         });
     </script>
 {% endblock %}

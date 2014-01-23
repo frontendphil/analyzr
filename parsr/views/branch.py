@@ -145,3 +145,10 @@ def score(request, branch_id):
     branch = get_branch(branch_id)
 
     return branch.score()
+
+
+@ajax_request
+def impact(request, branch_id):
+    branch = get_branch(branch_id)
+
+    return branch.impact()

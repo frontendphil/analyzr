@@ -118,7 +118,13 @@ class Checker(object):
         return self.get_value_in_range(value, 10, 50)
 
     def get_cc_mark(self, value):
-        return self.get_value_in_range(value, 2, 11)
+        if value <= 2:
+            return 3.0
+
+        if value >= 20:
+            return 0.0
+
+        return math.pow(2, (7 - value) / 3.5)
 
     def get_sloc_mark(self, value):
         if value <= 37:

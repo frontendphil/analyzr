@@ -57,9 +57,11 @@ def view(request, branch_id, author_id):
 
 @ajax_request
 def info(request, author_id):
-    author = get_object_or_404(Author, pk=author_id)
+    branch_id = request.GET.get("branch").replace("/branch/", "")
 
-    return author.json()
+    branch, author = get_branch_and_author(branch_id, author_id)
+
+    return author.json(branch)
 
 
 @ajax_request

@@ -327,6 +327,14 @@ ns("plugins");
 
             var that = this;
 
+            files = $.map(files, function(file) {
+                if(file.count <= 1) {
+                    return null;
+                }
+
+                return file;
+            }).compact();
+
             $.each(files, function() {
                 that.files[this.name] = this;
             });

@@ -376,6 +376,26 @@ class Branch(models.Model):
 
         return end.date - start.date
 
+    def impact(self):
+        authors = Author.objects\
+                        .filter(revisions__branch=self)\
+                        .distinct()\
+                        .annotate(revision_count=Count("revisions"))\
+                        .order_by("-revision_count")
+
+        response = self.response_stub()
+
+        response["info"]["authorCount"] = authors.count()
+        response["data"] = []
+
+        for author in authors:
+            response["data"].append({
+                "href": utils.href(Author, author.id),
+                "count": author.revision_count
+            })
+
+        return response
+
     def compute_statistics(self, files, metric):
         file_count = files.count() * 1.0
 
