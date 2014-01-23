@@ -61,7 +61,7 @@ class Checker(object):
         return False
 
     def get_decimal(self, value):
-        return Decimal("%d" % round(float(value), 2))
+        return Decimal("%s" % round(float(value), 2))
 
     def execute(self, cmd):
         # close_fds must be true as python would otherwise reuse created
@@ -102,9 +102,9 @@ class Checker(object):
             return 3.0
 
         if value >= high:
-            return 1.0
+            return 0.0
 
-        return 3.0 - 2.0 * (value / high)
+        return 3.0 - 3.0 * (value / high)
 
     def squale(self, marks):
         sum_marks = math.fsum([math.pow(LAMBDA, -1.0 * mark) for mark in marks])
@@ -121,13 +121,30 @@ class Checker(object):
         return self.get_value_in_range(value, 2, 11)
 
     def get_sloc_mark(self, value):
-        # 30 is the threshold for good methods
-        return math.pow(2, (30 - value) / 21.0)
+        if value <= 37:
+            return 3.0
+
+        if value >= 162:
+            return 0.0
+
+        return math.pow(2, (70 - value) / 21.0)
 
     def get_fan_in_mark(self, value):
+        if value <= 19:
+            return 3.0
+
+        if value >= 60:
+            return 0.0
+
         return math.pow(2, (30 - value) / 7.0)
 
     def get_fan_out_mark(self, value):
+        if value <= 6:
+            return 3.0
+
+        if value >= 19:
+            return 0.0
+
         return math.pow(2, (10 - value) / 2.0)
 
     def configure(self, files, revision, connector):

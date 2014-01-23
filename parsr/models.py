@@ -398,7 +398,7 @@ class Branch(models.Model):
             "percent_increase": percent_increase * 100,
             "percent_decrease": percent_decrease * 100,
             "percent_unmodified": percent_unmodified * 100,
-            "increse_to_decrease": percent_increase / percent_decrease if percent_decrease else 1,
+            "decreases_to_increase": percent_decrease / percent_increase if percent_increase else 1,
             "unmodified_to_increase": percent_unmodified / percent_increase if percent_increase else 1,
             "unmodified_to_decrease": percent_unmodified / percent_decrease if percent_decrease else 1
         }

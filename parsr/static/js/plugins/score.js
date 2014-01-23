@@ -38,8 +38,10 @@ ns("plugins");
             var rows = [];
             var row;
 
-            $.each(d3.keys(data.statistics), function(index) {
-                if(row && index % entries === 0) {
+            var keys = d3.keys(data.statistics);
+
+            $.each(keys, function(index) {
+                if(row && index !== 0 && index % entries === 0) {
                     rows.push(row);
                     row = null;
                 }
@@ -56,6 +58,10 @@ ns("plugins");
 
                 row.headers.push(key.capitalize());
                 row.values.push(value.toFixed(2));
+
+                if(index === keys.length - 1) {
+                    rows.push(row);
+                }
             });
 
             var createTable = function(headers, values) {

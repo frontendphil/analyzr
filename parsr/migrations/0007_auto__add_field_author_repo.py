@@ -10,12 +10,14 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
 
         # Changing field 'Author.repo'
-        db.alter_column(u'parsr_author', 'repo_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['parsr.Repo'], null=True))
+        db.add_column(u'parsr_author', 'repo',
+                        self.gf('django.db.models.fields.related.ForeignKey')(to=orm['parsr.Repo'], null=True),
+                        keep_default=False)
 
     def backwards(self, orm):
 
         # Changing field 'Author.repo'
-        db.alter_column(u'parsr_author', 'repo_id', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['parsr.Repo']))
+        db.delete_column(u'parsr_author', 'repo_id')
 
     models = {
         u'parsr.author': {

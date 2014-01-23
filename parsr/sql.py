@@ -99,7 +99,7 @@ def count_entries(query):
 
 def delete(cls, query):
     return """
-        DELETE FROM %s WHERE id IN ( %s )
+        DELETE FROM %s WHERE id IN ( SELECT * FROM (%s) AS TMP )
     """ % (cls._meta.db_table, query)
 
 def reset(branch):
