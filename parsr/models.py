@@ -1048,7 +1048,7 @@ class Package(models.Model):
 
         return parent
 
-    name = models.CharField(max_length=255)
+    name = models.TextField()
 
     branch = models.ForeignKey("Branch", null=True)
     parent = models.ForeignKey("Package", null=True, related_name="children")
@@ -1135,7 +1135,7 @@ class File(models.Model):
     date = models.DateTimeField(null=True)
 
     name = models.CharField(max_length=255)
-    package = models.CharField(max_length=255)
+    package = models.TextField()
     pkg = models.ForeignKey("Package", related_name="files", null=True)
 
     mimetype = models.CharField(max_length=255, null=True)

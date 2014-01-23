@@ -36,15 +36,15 @@ def newest_files(query, date=None):
         FROM (
             SELECT
                 *,
-                group_concat(change_type, '') AS change_history
+                GROUP_CONCAT(A.change_type ORDER BY A.date SEPARATOR "") AS change_history
             FROM
-                ( %(query)s %(filter)s ORDER BY "parsr_file"."date" ASC )
+                ( %(query)s %(filter)s ) AS A
             WHERE
-                change_type IS NOT NULL GROUP BY name
-        ) WHERE
-            change_history NOT LIKE '%%D'
+                A.change_type IS NOT NULL GROUP BY A.name
+        ) AS B WHERE
+            B.change_history NOT LIKE '%%D'
         ORDER BY
-            date
+            B.date
     """ % { "query": query, "filter": date_filter }
 
     return sql.replace("%", "%%")
@@ -73,28 +73,28 @@ def median(query, field):
 def mimetype_count(files):
     return """
         SELECT
-            id,
-            name,
-            revision_id,
-            mimetype,
-            change_type,
-            copy_of_id,
-            COUNT(mimetype) AS count
+            A.id,
+            A.name,
+            A.revision_id,
+            A.mimetype,
+            A.change_type,
+            A.copy_of_id,
+            COUNT(A.mimetype) AS count
         FROM
-            ( %s )
+            ( %s ) AS A
         WHERE
-            mimetype IS NOT NULL
+            A.mimetype IS NOT NULL
         GROUP BY
-            mimetype
+            A.mimetype
     """ % files
 
 def count_entries(query):
     return """
         SELECT
-            id,
+            A.id,
             COUNT(*) AS count
         FROM
-            ( %s )
+            ( %s ) AS A
     """ % query
 
 def delete(cls, query):
