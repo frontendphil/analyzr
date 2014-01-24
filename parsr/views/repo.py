@@ -95,4 +95,22 @@ def edit(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
     form = RepoForm(instance=repo)
 
-    return { "form": form }
+    return { "form": form, "repo": repo }
+
+
+@require_POST
+def update(request, repo_id):
+    repo = get_object_or_404(Repo, pk=repo_id)
+    form = RepoForm(request.POST, instance=repo)
+
+    if not form.is_valid():
+        return HttpResponse(json.dumps(form.errors), status=403, mimetype="application/json")
+
+    try:
+        form.save()
+    except Exception:
+        traceback.print_exc(file=sys.stdout)
+
+        return HttpResponse(json.dump({"repo": True}), status=500, mimetype="application/json")
+
+    return HttpResponse(status=200)

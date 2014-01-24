@@ -14,6 +14,7 @@ urlpatterns = patterns('parsr.views.branch',
     url(r"^/churn$", "churn"),
     url(r'^/score$', 'score'),
     url(r'^/impact$', 'impact'),
+    url(r'^/cleanup$', 'cleanup'),
 
     url(r"^/analyze$", "analyze"),
     url(r"^/analyze/resume$", "resume_analyze"),

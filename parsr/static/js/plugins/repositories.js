@@ -149,18 +149,43 @@ ns("plugins");
             return container;
         },
 
-        request: function(url, clb) {
+        request: function(url, attrs) {
             if(!url) {
                 return;
             }
 
-            $.ajax(url, {
-                type: "POST",
-                data: {
-                    csrfmiddlewaretoken: $.cookie("csrftoken")
-                },
-                success: clb
-            });
+            var that = this;
+
+            var action = function() {
+                $.ajax(url, {
+                    type: "POST",
+                    data: {
+                        csrfmiddlewaretoken: $.cookie("csrftoken")
+                    },
+                    beforeSend: function() {
+                        if(!attrs.reload) {
+                            return;
+                        }
+
+                        that.reload();
+                    },
+                    success: attrs.clb
+                });
+            };
+
+            if(attrs.cleanup) {
+                $.ajax(attrs.cleanup, {
+                    type: "POST",
+                    data: {
+                        csrfmiddlewaretoken: $.cookie("csrftoken")
+                    },
+                    success: function() {
+                        action();
+                    }
+                });
+            } else {
+                action();
+            }
         },
 
         reload: function() {
@@ -192,16 +217,19 @@ ns("plugins");
                     {
                         text: "Restart",
                         handler: function() {
-                            that.request(link.data("rel"));
-                            that.reload();
+                            that.request(link.data("rel"), {
+                                cleanup: link.data("cleanup"),
+                                reload: true
+                            });
                         }
                     },
                     {
                         text: "Resume",
                         cls: "btn-primary",
                         handler: function() {
-                            that.request(link.data("rel") + "/resume");
-                            that.reload();
+                            that.request(link.data("rel") + "/resume", {
+                                reload: true
+                            });
                         }
                     }
                 ]
@@ -210,28 +238,36 @@ ns("plugins");
             dialog.show();
         },
 
-        createLink: function(branch, action, clb) {
+        createLink: function(attrs) {
             var that = this;
+            var branch = attrs.branch;
 
             var link = $(
-                "<a href='#' data-rel='" + branch.href + "/" + action + "'>" +
+                "<a href='#' data-rel='" + branch.href + "/" + attrs.action + "'>" +
                     branch.rep.name +
                 "</a>"
             );
 
+            if(attrs.cleanup) {
+                link.data("cleanup", branch.href + "/cleanup");
+            }
+
             link.click(function() {
                 var url = $(this).data("rel");
+                var cleanup = $(this).data("cleanup");
 
                 var performAction = function() {
-                    if(clb && !clb(link, branch)) {
+                    if(attrs.clb && !attrs.clb(link, branch)) {
                         return false;
                     }
 
-                    that.request(url);
-                    that.reload();
+                    that.request(url, {
+                        cleanup: cleanup,
+                        reload: true
+                    });
                 };
 
-                if(branch.rep[action].finished) {
+                if(branch.rep[attrs.action].finished) {
                     analyzr.plugins.Dialog.confirm("This action has already finished on the selected branch. Do you want to restart it?", performAction);
                 } else {
                     performAction();
@@ -243,24 +279,30 @@ ns("plugins");
             return link;
         },
 
-        createAction: function(title, action, repo, filter) {
+        createAction: function(attrs) {
             var that = this;
+            var action = attrs.action;
 
-            filter = filter || function() { return true; };
+            var filter = attrs.filter || function() { return true; };
 
-            return this.createDropdown(title, repo, function(branch) {
+            return this.createDropdown(attrs.title, attrs.repo, function(branch) {
                 if(!filter(branch)) {
                     return false;
                 }
 
-                var link = that.createLink(branch, action, function(link, branch) {
-                    if(!branch.rep[action].interrupted && !branch.rep[action].lastError) {
-                        return true;
+                var link = that.createLink({
+                    branch: branch,
+                    action: action,
+                    cleanup: attrs.cleanup,
+                    clb: function(link, branch) {
+                        if(!branch.rep[action].interrupted && !branch.rep[action].lastError) {
+                            return true;
+                        }
+
+                        that.showResumeDialog(link, branch.rep[action].lastError);
+
+                        return false;
                     }
-
-                    that.showResumeDialog(link, branch.rep[action].lastError);
-
-                    return false;
                 });
 
                 if(branch.rep[action].finished) {
@@ -292,14 +334,24 @@ ns("plugins");
                 return this.wrap("Measuring branch " + status.rep.rep.name + "...");
             }
 
-            var wrap = this.wrap(this.createAction("Analyze", "analyze", repo));
+            var wrap = this.wrap(this.createAction({
+                title: "Analyze",
+                action: "analyze",
+                cleanup: true,
+                repo: repo
+            }));
 
             if(!rep.measurable) {
                 return wrap;
             }
 
-            wrap.append(this.createAction("Measure", "measure", repo, function(branch) {
-                return branch.rep.analyze.finished;
+            wrap.append(this.createAction({
+                title: "Measure",
+                action: "measure",
+                repo: repo,
+                filter: function(branch) {
+                    return branch.rep.analyze.finished;
+                }
             }));
 
             return wrap;
@@ -335,12 +387,14 @@ ns("plugins");
                         var mask = new analyzr.core.Mask(that.dom, "Removing the repository...");
                         mask.show();
 
-                        that.request(remove.data("action"), function() {
-                            mask.remove();
+                        that.request(remove.data("action"), {
+                            clb: function() {
+                                mask.remove();
 
-                            $("tr[data-href='" + info.href + "']").fadeOut(function() {
-                                $(this).remove();
-                            });
+                                $("tr[data-href='" + info.href + "']").fadeOut(function() {
+                                    $(this).remove();
+                                });
+                            }
                         });
                     });
 
@@ -360,8 +414,10 @@ ns("plugins");
                         var mask = new analyzr.core.Mask(that.dom, "Removing files...");
                         mask.show();
 
-                        that.request(purge.data("action"), function() {
-                            mask.remove();
+                        that.request(purge.data("action"), {
+                            clb: function() {
+                                mask.remove();
+                            }
                         });
                     });
 

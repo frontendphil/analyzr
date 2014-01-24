@@ -1,6 +1,7 @@
 from datetime import datetime
 from hashlib import md5
 from urllib import urlencode
+from fractions import Fraction
 
 from django.db import models
 from django.db.models import Count, Sum, Avg, Min, Max, Q
@@ -14,6 +15,7 @@ from mimetypes import guess_type
 
 from parsr.connectors import Connector, Action
 from parsr.analyzers import Analyzer
+from parsr.classification import Classify
 from parsr import sql, utils
 
 from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE
@@ -264,10 +266,18 @@ class Branch(models.Model):
         return measured > 0 and not measured == self.revisions.all().count()
 
     def cleanup(self):
+        # ForeignKey constraints ensure that all revision are being deleted
+        latest = self.get_latest_revision()
+        if latest:
+            latest.delete()
+
         self.remove_all(File, File.objects.filter(revision__branch=self))
-        self.remove_all(Package, self.package_set.all())
-        self.remove_all(Revision, self.revisions.all())
         self.remove_all(Author, Author.objects.filter(revisions__branch=self))
+
+        # ForeignKey constraints ensure that all packages re being deleted
+        root = Package.root(self)
+        if root:
+            root.delete()
 
     def remove_all(self, cls, elements):
         query = sql.delete(cls, str(elements.values("id").query))
@@ -725,7 +735,12 @@ class Branch(models.Model):
         return self.revisions.order_by("date")[0:1][0]
 
     def get_latest_revision(self):
-        return self.revisions.order_by("-date")[0:1][0]
+        revisions = self.revisions.order_by("-date")[0:1]
+
+        if not revisions:
+            return None
+
+        return revisions[0]
 
     def response_stub(self, language=None, package=None, start=None, end=None):
         return {
@@ -1046,7 +1061,10 @@ class Package(models.Model):
 
     @classmethod
     def root(cls, branch):
-        return Package.objects.get(parent=None, branch=branch)
+        try:
+            return Package.objects.get(parent=None, branch=branch)
+        except Package.DoesNotExist:
+            return None
 
     @classmethod
     def get(cls, name, branch):
@@ -1385,7 +1403,24 @@ class Author(models.Model):
         all_revisions = Revision.objects.filter(branch=branch, author=self).count()
         revisions_per_day = Revision.objects.filter(branch=branch, author=self).values("day", "year", "month").distinct().count()
 
-        return all_revisions / (revisions_per_day * 1.0)
+        return Fraction(all_revisions, revisions_per_day)
+
+    def classify(self, branch):
+        file_count = File.objects.filter(revision__branch=branch, mimetype__in=Classify.all()).distinct().count()
+        frontend_count = File.objects.filter(revision__branch=branch, mimetype__in=Classify.frontend()).distinct().count()
+        backend_count = File.objects.filter(revision__branch=branch, mimetype__in=Classify.backend()).distinct().count()
+
+        files = File.objects.filter(author=self, revision__branch=branch).distinct().count()
+        frontend = File.objects.filter(author=self, revision__branch=branch, mimetype__in=Classify.frontend()).count()
+        backend = File.objects.filter(author=self, revision__branch=branch, mimetype__in=Classify.backend()).count()
+
+        frontend_share = Fraction(frontend_count, file_count)
+        backend_share = Fraction(backend_count, file_count)
+
+        return {
+            "frontend": Fraction(frontend, files) * frontend_share,
+            "backend": Fraction(backend, files) * backend_share
+        }
 
     def json(self, branch):
         start, end = self.get_age(branch)
@@ -1400,7 +1435,7 @@ class Author(models.Model):
                 "age": str(end - start),
                 "firstAction": start.isoformat(),
                 "lastAction": end.isoformat(),
-                "workIndex": self.get_work_index(branch),
+                "workIndex": float(self.get_work_index(branch)),
                 "icon": self.get_icon(),
                 "revisions": self.revision_count(branch),
                 "primeLanguage": self.get_prime_language(branch),

@@ -152,3 +152,12 @@ def impact(request, branch_id):
     branch = get_branch(branch_id)
 
     return branch.impact()
+
+
+@ajax_request
+def cleanup(request, branch_id):
+    branch = get_branch(branch_id)
+
+    branch.cleanup()
+
+    return {"status": "ok"}

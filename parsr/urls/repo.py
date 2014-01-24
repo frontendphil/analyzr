@@ -11,5 +11,6 @@ urlpatterns = patterns('parsr.views.repo',
     url(r"^/edit$", "edit"),
     url(r"^/remove$", "remove"),
     url(r"^/purge$", "purge"),
+    url(r"^/update$", "update"),
 
 )

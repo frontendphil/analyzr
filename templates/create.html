@@ -1,8 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<form class='add-repo form-horizontal' role='form' method='post' action='{% url "parsr.views.repo.save" %}'>
+	<form
+        class='add-repo form-horizontal'
+        role='form'
+        method='post'
+        action='{% url "parsr.views.repo.save" %}'>
+
 		{% include "includes/repo_form.html" %}
+
+        <div class='form-group'>
+            <div class='col-sm-offset-2 col-sm-10'>
+                <input type='submit' class='btn btn-primary' value='Add repoistory' />
+            </div>
+        </div>
 	</form>
 {% endblock %}
 
