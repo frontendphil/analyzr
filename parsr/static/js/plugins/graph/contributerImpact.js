@@ -63,10 +63,6 @@ ns("plugins.graph");
             });
         },
 
-        handleMouseLeave: function() {
-
-        },
-
         handleData: function(svg, response) {
             var data = [];
 
@@ -79,6 +75,24 @@ ns("plugins.graph");
             });
 
             var that = this;
+
+            var line = d3.svg.line()
+                .interpolate("basis")
+                .x(function(d) {
+                    var offset = ((that.getInnerWidth() / data.length) / 2);
+                    var position = that.scale.x(d.position);
+
+                    return Math.max(0, Math.min(position, position - offset));
+                })
+                .y(function(d) {
+                    return that.scale.y(d.value);
+                });
+
+            svg.append("clipPath")
+                .attr("id", "clip")
+                .append("rect")
+                    .attr("width", this.getInnerWidth())
+                    .attr("height", this.getInnerHeight());
 
             svg.selectAll(".y.axis")
                 .call(this.axis.y);
@@ -98,12 +112,15 @@ ns("plugins.graph");
                     return that.getInnerHeight() - that.scale.y(d.value);
                 });
 
+            svg.append("path")
+                .datum(data)
+                .attr("class", "curve")
+                .attr("clip-path", "url(#clip)")
+                .attr("d", line);
+
             svg.selectAll(".bar")
                 .on("mouseenter", function() {
                     that.handleMouseEnter(this, data);
-                })
-                .on("mouseleave", function() {
-                    that.handleMouseLeave();
                 });
         }
 

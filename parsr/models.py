@@ -387,11 +387,17 @@ class Branch(models.Model):
         return end.date - start.date
 
     def impact(self):
-        authors = Author.objects\
+        objects = Author.objects\
                         .filter(revisions__branch=self)\
                         .distinct()\
                         .annotate(revision_count=Count("revisions"))\
-                        .order_by("-revision_count")
+
+        average = objects.aggregate(value=Avg("revision_count"))
+        bounds = objects.aggregate(max=Max("revision_count"), min=Min("revision_count"))
+
+        pivot = ((bounds["max"] - bounds["min"]) / 2) / average["value"]
+
+        authors = objects.filter(revision_count__gte=pivot).order_by("-revision_count")
 
         response = self.response_stub()
 

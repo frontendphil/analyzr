@@ -59,6 +59,10 @@ ns("core");
 			this.dom.hide();
 		},
 
+		hideSpinner: function() {
+			this.dom.find(".icon-spin").hide();
+		},
+
 		layout: function() {
 			var cHeight = Math.min(this.container.height(), window.innerHeight);
 			var mHeight = this.dom.find(".body").height();

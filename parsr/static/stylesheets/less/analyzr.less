@@ -61,6 +61,24 @@
     .x.axis {
         display: none;
     }
+
+    .canvas {
+        .bar {
+            &:hover {
+                fill: #1f77b4;
+            }
+        }
+    }
+
+    .curve {
+        fill: none;
+
+        opacity: 0.6;
+
+        stroke: #e377c2;
+        stroke-width: 5px;
+        stroke-linecap: round;
+    }
 }
 
 .breadcrumb {
@@ -531,6 +549,8 @@ table {
         .avatar {
             width: 40px;
             height: 40px;
+
+            background-repeat: no-repeat;
         }
 
         .lang {

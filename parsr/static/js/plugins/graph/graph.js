@@ -217,6 +217,13 @@ ns("plugins.graph");
             this.mask("Loading graph data...");
 
             d3.json(url, function(response) {
+                if(!response) {
+                    that.unmask();
+                    that.error("Component could not be loaded.");
+
+                    return;
+                }
+
                 that.unmask();
                 that.parseInfos(response.info);
                 that.createDomain(that.svg, response.data, response.info);

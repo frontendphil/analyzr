@@ -34,6 +34,11 @@ ns("core");
             this.elementMask.remove();
         },
 
+        error: function(msg) {
+            this.mask(msg);
+            this.elementMask.hideSpinner();
+        },
+
         load: function() {
             if(this.dom.length === 0) {
                 return;
