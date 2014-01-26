@@ -33,6 +33,24 @@ if encoding.lower() == "utf":
 locale.setlocale(locale.LC_ALL, "%s.%s" % (language_code, encoding))
 
 
+class ConnectionError(Exception):
+
+    def __init__(self, error, repo):
+        self.error = error
+        self.repo = repo
+
+        super(ConnectionError, self).__init__()
+
+    def __str__(self):
+        return "%s\n\ncause by repo\n\n%s" % (self.error, self.repo)
+
+    def __unicode__(self):
+        return sel.__str__()
+
+    def __repr__(self):
+        return self.__unicode__()
+
+
 class Action(object):
     ADD = "A"
     MODIFY = "M"
@@ -153,7 +171,10 @@ class Git(Connector):
         if os.path.exists(folder):
             return git.Repo(folder)
 
-        return git.Repo.clone_from(repo.url, folder)
+        try:
+            return git.Repo.clone_from(repo.url, folder)
+        except git.GitCommandError, e:
+            raise ConnectionError(e, repo)
 
     def lock(self, revision):
         self.commit = self.repo.commit(revision.identifier)

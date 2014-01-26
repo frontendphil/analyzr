@@ -13,7 +13,7 @@ from timezone_field import TimeZoneField
 
 from mimetypes import guess_type
 
-from parsr.connectors import Connector, Action
+from parsr.connectors import Connector, Action, ConnectionError
 from parsr.analyzers import Analyzer
 from parsr.classification import Classify
 from parsr import sql, utils
@@ -48,7 +48,11 @@ class Repo(models.Model):
         return "%s (%s)" % (self.url, self.kind)
 
     def purge(self):
-        connector = Connector.get(self)
+        try:
+            connector = Connector.get(self)
+        except ConnectionError:
+            return
+
         connector.clear()
 
     def busy(self):
@@ -158,7 +162,10 @@ def add_branches_to_repo(sender, **kwargs):
     if instance.branch_count() > 0:
         return
 
-    connector = Connector.get(instance)
+    try:
+        connector = Connector.get(instance)
+    except ConnectionError:
+        return
 
     for name, path in connector.get_branches():
         branch, created = Branch.objects.get_or_create(
