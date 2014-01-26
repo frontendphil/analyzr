@@ -1068,6 +1068,12 @@ class Revision(models.Model):
             )
 
             raise Exception(message)
+        except File.MultipleObjectsReturned:
+            # This  happens only in very rare cases... Let's hope what we do
+            # about it does not harm
+            return self.files.filter(name=filename,
+                                     package__endswith=package,
+                                     change_type__in=Action.readable())[0]
 
 
 class Package(models.Model):
