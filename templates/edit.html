@@ -1,5 +1,9 @@
 {% extends "create.html" %}
 
+{% block active %}
+    <li class='active'>Edit {{ repo }}</li>
+{% endblock %}
+
 {% block content %}
     <form
         class='add-repo form-horizontal'
@@ -11,6 +15,7 @@
 
         <div class='form-group'>
             <div class='col-sm-offset-2 col-sm-10'>
+                <a href='{% url "parsr.views.app.index" %}' class='btn btn-default'>Cancel</a>
                 <input type='submit' class='btn btn-primary' value='Update repoistory' />
             </div>
         </div>
