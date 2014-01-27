@@ -93,12 +93,18 @@ ns("plugins");
         },
 
         getRepoLink: function(repo) {
+            var error = "";
+
+            if(repo.rep.error) {
+                error = " <a href='#' class='repo-error'><span class='label label-warning'>Attention!</span></a>";
+            }
+
             if(repo.rep.busy || !repo.rep.analyzed) {
-                return this.wrap(repo.rep.name);
+                return this.wrap(repo.rep.name + error);
             }
 
             return this.wrap($(
-                "<a href='" + repo.view + "'>" + repo.rep.name + "</a>"
+                "<a href='" + repo.view + "'>" + repo.rep.name + "</a>" + error
             ));
         },
 
@@ -369,7 +375,20 @@ ns("plugins");
                 "class": "status"
             }));
             repo.append(this.wrap(rep.kind));
-            repo.append(this.getRepoLink(info));
+
+            var link = this.getRepoLink(info);
+            repo.append(link);
+
+            if(info.rep.error) {
+                link.find(".repo-error").click(function() {
+                    var dialog = new analyzr.plugins.Dialog({
+                        text: info.rep.error
+                    });
+                    dialog.show();
+
+                    return false;
+                });
+            }
 
             repo.append(this.createActions(info));
 

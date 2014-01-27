@@ -27,11 +27,11 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th colspan='3'>Repository</th>
-                    <th colspan='4' class='split'>Branch</th>
+                    <th colspan='2'>Repository</th>
+                    <th colspan='5' class='split'>Branch</th>
                 </tr>
                 <tr>
-                    <th>Location</th>
+                    <!-- <th>Location</th> -->
                     <th>Branches</th>
                     <th>Authors</th>
                     <th class='split'>Name</th>
@@ -39,11 +39,12 @@
                     <th>Last measured</th>
                     <th>Age</th>
                     <th>Authors</th>
+                    <th>Author Ratio</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>{{ repo.url }}</td>
+                    <!-- <td>{{ repo.url }}</td> -->
                     <td>{{ repo.branch_count }}</td>
                     <td>{{ repo.author_count }}</td>
                     <td class='split'>{{ branch.name }}</td>
@@ -51,6 +52,7 @@
                     <td>{{ branch.measured_date }}</td>
                     <td>{{ branch.age }}</td>
                     <td>{{ branch.author_count }}</td>
+                    <td>{{ branch.author_ratio }}</td>
                 </tr>
             </tbody>
         </table>

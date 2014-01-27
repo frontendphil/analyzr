@@ -45,7 +45,7 @@ class ConnectionError(Exception):
         return "%s\n\ncause by repo\n\n%s" % (self.error, self.repo)
 
     def __unicode__(self):
-        return sel.__str__()
+        return self.__str__()
 
     def __repr__(self):
         return self.__unicode__()

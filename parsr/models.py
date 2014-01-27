@@ -132,6 +132,15 @@ class Repo(models.Model):
         return connector.is_checked_out()
 
     def json(self):
+        error = None
+
+        checked_out = False
+
+        try:
+            checked_out = self.is_checked_out()
+        except ConnectionError, e:
+            error = e
+
         return {
             "href": utils.href(Repo, self.id),
             "view": utils.view(Repo, self.id),
@@ -141,7 +150,7 @@ class Repo(models.Model):
                 "name": self.url,
                 "kind": self.kind,
                 "busy": self.busy(),
-                "checkedOut": self.is_checked_out(),
+                "checkedOut": checked_out,
                 "status": self.get_status(),
                 "anonymous": self.anonymous,
                 "analyzed": self.analyzed(),
@@ -150,7 +159,8 @@ class Repo(models.Model):
                 "measured": self.measured(),
                 "measuring": self.measuring(),
                 "branchCount": self.branch_count(),
-                "authorCount": self.author_count()
+                "authorCount": self.author_count(),
+                "error": str(error) if error else None
             }
         }
 
@@ -393,7 +403,10 @@ class Branch(models.Model):
 
         return end.date - start.date
 
-    def impact(self):
+    def author_ratio(self):
+        return round(100 * (self.main_contributors().count() / (1.0 * self.author_count())), 2)
+
+    def main_contributors(self):
         objects = Author.objects\
                         .filter(revisions__branch=self)\
                         .distinct()\
@@ -404,7 +417,10 @@ class Branch(models.Model):
 
         pivot = ((bounds["max"] - bounds["min"]) / 2) / average["value"]
 
-        authors = objects.filter(revision_count__gte=pivot).order_by("-revision_count")
+        return objects.filter(revision_count__gte=pivot).order_by("-revision_count")
+
+    def impact(self):
+        authors = self.main_contributors()
 
         response = self.response_stub()
 
@@ -707,23 +723,23 @@ class Branch(models.Model):
 
         return Revision.objects.filter(**filters).order_by("date")
 
-    def files(self, author=None, language=None, package=None, start=None, end=None, action=Action.checkable()):
+    def files(self, author=None, language=None, package=None, start=None, end=None, actions=Action.checkable(), escaped=False):
         filters = {
             "revision__branch": self,
-            "change_type__in": action
+            "change_type__in": ['"%s"' % action for action in actions] if escaped else actions
         }
 
         if author:
             filters["author"] = author
 
         if language:
-            filters["mimetype"] = language
+            filters["mimetype"] = '%s' % language if escaped else language
 
         if start:
-            filters["date__gte"] = start
+            filters["date__gte"] = '%s' % start.strftime("%Y-%m-%d %H:%M:%S") if escaped else start
 
         if end:
-            filters["date__lte"] = end
+            filters["date__lte"] = '%s' % end.strftime("%Y-%m-%d %H:%M:%S") if escaped else end
 
         if package:
             filters["pkg__left__gte"] = package.left
@@ -778,7 +794,13 @@ class Branch(models.Model):
         if not language:
             return result
 
-        files = self.files(author=author, language=language, package=package, start=start, end=end)
+        files = self.files(
+            author=author,
+            language=language,
+            package=package,
+            start=start,
+            end=end
+        )
 
         files = files.values("date", "revision").annotate(
             cyclomatic_complexity=Avg("cyclomatic_complexity"),

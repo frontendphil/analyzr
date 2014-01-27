@@ -1,5 +1,7 @@
 from django.db import connection, transaction
 
+from analyzr.settings import LAMBDA
+
 
 def execute(query):
     cursor = connection.cursor()
@@ -113,3 +115,38 @@ def reset(branch):
     """ % branch.id
 
     execute(query)
+
+
+def squale(fields, group_by, query):
+    def convert(field):
+        return """
+            -1 * LOG(
+                %(lambda)s,
+                SUM(
+                    POW(
+                        %(lambda)s,
+                        -1 * A.%(field)s
+                    )
+                ) / COUNT(A.%(field)s)
+            ) AS %(field)s_squale
+        """ % {
+            "field": field,
+            "lambda": LAMBDA
+        }
+
+    select = ", ".join([convert(field) for field in fields])
+
+    return """
+        SELECT DISTINCT
+            A.id,
+            %(group_by)s,
+            %(fields)s
+        FROM
+            ( %(query)s ) AS A
+        GROUP BY
+            A.%(group_by)s
+    """ % {
+        "fields": select,
+        "query": query,
+        "group_by": ", ".join(["A.%s" % group for group in group_by])
+    }

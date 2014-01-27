@@ -4,7 +4,7 @@ Jinja2==2.7.1
 MarkupSafe==0.18
 MySQL-python==1.2.5
 Pygments==1.6
-South==0.8.3
+South==0.8.4
 async==0.6.1
 cffi==0.8.1
 django-annoying==0.7.7
