@@ -494,10 +494,10 @@ class Branch(models.Model):
 
         return result, aggregations
 
-    def score(self, author=None):
-        result = self.response_stub()
+    def score(self, author=None, language=None):
+        result = self.response_stub(language=language)
 
-        files = self.files(author=author)
+        files = self.files(author=author, language=language)
 
         metrics = [
             "cyclomatic_complexity",

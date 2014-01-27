@@ -107,7 +107,9 @@ def churn(request, branch_id, author_id):
 def score(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
-    return branch.score(author)
+    language, package, start, end = parse_filters(request, branch)
+
+    return branch.score(author=author, language=language)
 
 
 @render_to("compare.html")

@@ -12,6 +12,26 @@ ns("plugins");
             this.dom.html("");
         },
 
+        createFilter: function(info) {
+            var select = $(
+                "<select>"+
+                    "<option value='all'>All</option>" +
+                "</select>"
+            );
+
+            $.each(info.languages, function() {
+                select.append($(
+                    "<option value='" + this +"'>" + this + "</option>"
+                ));
+            });
+
+            if(info.options.language) {
+                select.val(info.options.language);
+            }
+
+            return select;
+        },
+
         createTable: function(columns) {
             var table = $(
                 "<table class='table table-bordered'>" +
@@ -107,6 +127,20 @@ ns("plugins");
             });
 
             var that = this;
+
+            var filter = this.createFilter(response.info);
+            filter.change(function() {
+                var language = "";
+                var select = $(this);
+
+                if(select.val() !== "all") {
+                    language = "?language=" + select.val();
+                }
+
+                that.setup(that.url + language, that.branch);
+            });
+
+            this.dom.append(filter);
 
             $.each(metrics.sort(), function() {
                 var table = that.createTable(fields);
