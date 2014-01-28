@@ -11,6 +11,22 @@ from decimal import Decimal
 
 from analyzr.settings import CONFIG_PATH, PROJECT_PATH, LAMBDA
 
+XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])|([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])'
+RE_XML_ILLEGAL = XML_ILLEGAL % (
+    unichr(0xd800),
+    unichr(0xdbff),
+    unichr(0xdc00),
+    unichr(0xdfff),
+    unichr(0xd800),
+    unichr(0xdbff),
+    unichr(0xdc00),
+    unichr(0xdfff),
+    unichr(0xd800),
+    unichr(0xdbff),
+    unichr(0xdc00),
+    unichr(0xdfff)
+)
+
 
 class CheckerException(Exception):
 
@@ -306,7 +322,11 @@ class JHawk(Checker):
 
     def parse(self, connector):
         for result in self.results:
-            xml_doc = minidom.parse("%s.xml" % result)
+            with open("%s.xml" % result, "r") as f:
+                content = f.read()
+
+            content = re.sub(RE_XML_ILLEGAL, "?", content)
+            xml_doc = minidom.parseString(content.encode("utf-8"))
             packages = xml_doc.getElementsByTagName("Package")
 
             for package in packages:
