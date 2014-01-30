@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from hashlib import md5
 from urllib import urlencode
 from fractions import Fraction
@@ -404,13 +404,23 @@ class Branch(models.Model):
         return end.date - start.date
 
     def author_ratio(self):
-        return round(100 * (self.main_contributors().count() / (1.0 * self.author_count())), 2)
+        # this value might needs to be normalized using the age of the repository
+        # because the longer a repository exists, the more devs come and go
 
-    def main_contributors(self):
-        objects = Author.objects\
-                        .filter(revisions__branch=self)\
-                        .distinct()\
-                        .annotate(revision_count=Count("revisions"))\
+        return round(100 * (self.main_contributors(active=True).count() / (1.0 * self.author_count())), 2)
+
+    def main_contributors(self, active=False):
+        if active:
+            objects = Author.objects\
+                            .filter(revisions__branch=self)\
+                            .distinct()\
+                            .annotate(revision_count=Count("revisions"), last_revision=Max("revisions__date"))\
+                            .filter(last_revision__gte=datetime.now() - timedelta(days=31))
+        else:
+            objects = Author.objects\
+                            .filter(revisions__branch=self)\
+                            .distinct()\
+                            .annotate(revision_count=Count("revisions"))\
 
         average = objects.aggregate(value=Avg("revision_count"))
         bounds = objects.aggregate(max=Max("revision_count"), min=Min("revision_count"))
@@ -787,6 +797,28 @@ class Branch(models.Model):
             },
             "data": {}
         }
+
+    def experts(self, language=None, package=None, start=None, end=None):
+        filters = {}
+
+        if language:
+            filters["revisions__files__mimetype"] = language
+
+        if package:
+            filters["revisions__files__pkg__left__gt"] = package.left
+            filters["revisions__files__pkg__right__lt"] = package.right
+
+        if start:
+            filters["revisions__date__gte"] = start
+
+        if end:
+            filters["revisions__date__lte"] = end
+
+        authors = Author.objects.filter(**filters).distinct().annotate(last_revision=Max("revisions__date")).filter(
+            last_revision__gte=datetime.now() - timedelta(days=31)
+        )
+
+        query = sql.experts(str(authors.query))
 
     def aggregated_metrics(self, author=None, language=None, package=None, start=None, end=None):
         result = self.response_stub(language=language, package=package, start=start, end=end)
@@ -1379,8 +1411,8 @@ class Author(models.Model):
 
         return self.name
 
-    def revision_count(self, branch):
-        return self.revisions.filter(branch=branch).distinct().count()
+    def revision_count(self, branch=None):
+        return self.get_revisions().count()
 
     def get_icon(self):
         size = 40
@@ -1395,12 +1427,8 @@ class Author(models.Model):
 
         return "http://www.gravatar.com/avatar/%s?%s" % (mail, params)
 
-    def get_prime_language(self, branch):
-        files = File.objects.filter(
-                                revision__branch=branch,
-                                author=self,
-                                mimetype__in=File.KNOWN_LANGUAGES
-                            )\
+    def get_prime_language(self, branch=None):
+        files = self.get_files(branch=branch, languages=File.KNOWN_LANGUAGES)\
                             .values("mimetype")\
                             .annotate(count=Count("mimetype"))\
                             .order_by("-count")
@@ -1410,13 +1438,12 @@ class Author(models.Model):
 
         return files[0]
 
-    def get_complexity_index(self, branch):
-        aggregate = File.objects.filter(revision__branch=branch, author=self)\
-                            .aggregate(
-                                cyclomatic=Sum("cyclomatic_complexity_delta"),
-                                halstead_difficulty=Sum("halstead_difficulty_delta"),
-                                halstead_volume=Sum("halstead_volume_delta")
-                            )
+    def get_complexity_index(self, branch=None):
+        aggregate = self.get_files(branch=branch).aggregate(
+            cyclomatic=Sum("cyclomatic_complexity_delta"),
+            halstead_difficulty=Sum("halstead_difficulty_delta"),
+            halstead_volume=Sum("halstead_volume_delta")
+        )
 
         cyclomatic = aggregate["cyclomatic"] or 0
         halstead_volume = aggregate["halstead_volume"] or 0
@@ -1435,25 +1462,27 @@ class Author(models.Model):
             )
         }
 
-    def get_age(self, branch):
-        timeframe = Revision.objects.filter(branch=branch, author=self).aggregate(start=Min("date"), end=Max("date"))
+    def get_age(self, branch=None):
+        timeframe = self.get_revisions(branch=branch).aggregate(start=Min("date"), end=Max("date"))
 
         return timeframe["start"], timeframe["end"]
 
-    def get_work_index(self, branch):
-        all_revisions = Revision.objects.filter(branch=branch, author=self).count()
-        revisions_per_day = Revision.objects.filter(branch=branch, author=self).values("day", "year", "month").distinct().count()
+    def get_work_index(self, branch=None):
+        revisions = self.get_revisions(branch)
+
+        all_revisions = revisions.count()
+        revisions_per_day = revisions.values("day", "year", "month").distinct().count()
 
         return Fraction(all_revisions, revisions_per_day)
 
-    def classify(self, branch):
-        file_count = File.objects.filter(revision__branch=branch, mimetype__in=Classify.all()).distinct().count()
-        frontend_count = File.objects.filter(revision__branch=branch, mimetype__in=Classify.frontend()).distinct().count()
-        backend_count = File.objects.filter(revision__branch=branch, mimetype__in=Classify.backend()).distinct().count()
+    def classify(self, branch=None):
+        file_count = self.get_files(branch=branch, mine=False, languages=Classify.all()).count()
+        frontend_count = self.get_files(branch=branch, mime=False, langauges=Classify.frontend()).count()
+        backend_count = self.get_files(branch=branch, mine=False, langauges=Classify.backend()).count()
 
-        files = File.objects.filter(author=self, revision__branch=branch).distinct().count()
-        frontend = File.objects.filter(author=self, revision__branch=branch, mimetype__in=Classify.frontend()).count()
-        backend = File.objects.filter(author=self, revision__branch=branch, mimetype__in=Classify.backend()).count()
+        files = self.get_files(branch=branch).count()
+        frontend = self.get_files(branch=branch, languages=Classify.frontend()).count()
+        backend = self.get_files(branch=branch, languages=Classify.backend()).count()
 
         frontend_share = Fraction(frontend_count, file_count)
         backend_share = Fraction(backend_count, file_count)
@@ -1463,7 +1492,32 @@ class Author(models.Model):
             "backend": Fraction(backend, files) * backend_share
         }
 
-    def json(self, branch):
+    def get_revisions(self, branch=None):
+        filters = {
+            "author": self
+        }
+
+        if branch:
+            filters["branch"] = branch
+
+        return Revision.objects.filter(**filters).distinct()
+
+    def get_files(self, branch=None, languages=None, mine=True):
+        filters = {}
+
+        if mine:
+            filters["author"] = self
+
+        if branch:
+            filters["revision__branch"] = branch
+
+        if languages:
+            filters["mimetype__in"] = languages
+
+        return File.objects.filter(**filters).distinct()
+
+
+    def json(self, branch=None):
         start, end = self.get_age(branch)
 
         return {

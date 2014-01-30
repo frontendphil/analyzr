@@ -11,10 +11,19 @@ from parsr.models import Author, Package, Branch
 
 
 def get_branch_and_author(branch_id, author_id):
-    branch = get_object_or_404(Branch, pk=branch_id)
-    author = get_object_or_None(Author, pk=author_id)
+    branch = get_object_or_None(Branch, pk=branch_id)
+    author = get_object_or_404(Author, pk=author_id)
 
     return branch, author
+
+
+def get_branch(request):
+    branch_id = request.GET.get("branch")
+
+    if branch_id:
+        return branch_id.replace("/branch/", "")
+
+    return None
 
 
 def parse_filters(request, branch):
@@ -57,7 +66,7 @@ def view(request, branch_id, author_id):
 
 @ajax_request
 def info(request, author_id):
-    branch_id = request.GET.get("branch").replace("/branch/", "")
+    branch_id = get_branch(request)
 
     branch, author = get_branch_and_author(branch_id, author_id)
 

@@ -163,3 +163,12 @@ def cleanup(request, branch_id):
     branch.cleanup()
 
     return {"status": "ok"}
+
+
+@ajax_request
+def experts(request, branch_id):
+    branch = get_branch(branch_id)
+
+    language, package, start, end = parse_filters(request, branch)
+
+    return branch.experts(language=language, package=package, start=start, end=end)

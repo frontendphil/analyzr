@@ -162,6 +162,12 @@ ns("plugins");
                         "</h5>"
                     );
 
+                    $.ajax(revision.rep.author, {
+                        success: function(author) {
+                            content.find("h5").append(" - Created by <emph>" + author.rep.name + "</emph>");
+                        }
+                    });
+
                     var fileChanges = that.createFileChanges(revision.rep.files);
                     content.append(fileChanges);
 
