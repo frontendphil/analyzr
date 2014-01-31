@@ -814,9 +814,17 @@ class Branch(models.Model):
         if end:
             filters["revisions__date__lte"] = end
 
-        authors = Author.objects.filter(**filters).distinct().annotate(last_revision=Max("revisions__date")).filter(
-            last_revision__gte=datetime.now() - timedelta(days=31)
-        )
+        authors = Author.objects.filter(**filters).distinct()\
+            .annotate(
+                last_revision=Max("revisions__date"))\
+            .filter(
+                last_revision__gte=datetime.now() - timedelta(days=31)
+            )\
+            .values("id", "revisions__date")\
+            .annotate(Count("revisions"))\
+            .order_by("-revisions__date")
+
+        return { "query": str(authors.query) }
 
         query = sql.experts(str(authors.query))
 

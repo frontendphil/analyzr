@@ -12,20 +12,6 @@ def execute(query):
     return cursor
 
 
-def aggregate_metrics(query):
-    return """
-        SELECT
-            AVG(cyclomatic_complexity) AS cyclomatic_complexity,
-            AVG(halstead_volume) AS halstead_volume,
-            AVG(halstead_effort) AS halstead_effort,
-            AVG(halstead_difficulty) AS halstead_difficulty,
-            AVG(fan_in) AS fan_in,
-            AVG(fan_out) AS fan_out,
-            AVG(hk) AS hk,
-            SUM(sloc) AS sloc
-        FROM ( %s )
-    """ % query
-
 def newest_files(query, date=None):
     date_filter = ""
 
@@ -51,26 +37,6 @@ def newest_files(query, date=None):
 
     return sql.replace("%", "%%")
 
-def median(query, field):
-    return """
-        SELECT
-            AVG(%(field)s)
-        FROM (
-            SELECT
-                %(field)s
-            FROM
-                %(query)s
-            ORDER BY
-                %(field)s
-            LIMIT
-                2 - (SELECT COUNT(*) FROM ( %(query)s )) % 2    -- odd 1, even 2
-            OFFSET (
-                SELECT
-                    (COUNT(*) - 1) / 2
-                FROM %(query)s
-            )
-        )
-    """ % { "field": field, "query": query }
 
 def mimetype_count(files):
     return """
@@ -90,6 +56,7 @@ def mimetype_count(files):
             A.mimetype
     """ % files
 
+
 def count_entries(query):
     return """
         SELECT
@@ -99,10 +66,12 @@ def count_entries(query):
             ( %s ) AS A
     """ % query
 
+
 def delete(cls, query):
     return """
         DELETE FROM %s WHERE id IN ( SELECT * FROM (%s) AS TMP )
     """ % (cls._meta.db_table, query)
+
 
 def reset(branch):
     query = """
@@ -138,7 +107,7 @@ def squale(fields, group_by, query):
 
     return """
         SELECT DISTINCT
-            A.id,
+            A.author_id,
             %(group_by)s,
             %(fields)s
         FROM
@@ -150,3 +119,15 @@ def squale(fields, group_by, query):
         "query": query,
         "group_by": ", ".join(["A.%s" % group for group in group_by])
     }
+
+
+def experts():
+    return """
+        SELECT
+            A.author_id,
+
+        FROM
+            ( %(query)s ) AS A
+        GROUP BY
+            A.date, A.author_id
+    """
