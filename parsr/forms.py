@@ -8,8 +8,18 @@ class RepoForm(forms.ModelForm):
 		model = Repo
 		fields = ["url", "kind", "timezone", "ignored_folders", "ignored_files", "anonymous", "user", "password"]
 
-		def get_widget(widget, cls=""):
-			return widget(attrs={"class": "form-control %s" % cls})
+		def get_widget(widget, optional=False, autocomplete=True):
+			attrs = {
+				"class": "form-control"
+			}
+
+			if optional:
+				attrs["class"] = "%s optional" % attrs["class"]
+
+			if not autocomplete:
+				attrs["autocomplete"] = "off"
+
+			return widget(attrs=attrs)
 
 		widgets = {
 			"url": get_widget(forms.TextInput),

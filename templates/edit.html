@@ -9,6 +9,7 @@
         class='add-repo form-horizontal'
         role='form'
         method='post'
+        autocomplete="off"
         action='{% url "parsr.views.repo.update" repo_id=repo.id %}'>
 
         {% include "includes/repo_form.html" %}
