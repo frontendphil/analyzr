@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
+from dateutil import parser
 from hashlib import md5
 from urllib import urlencode
 from fractions import Fraction
+from copy import copy
 
 from django.db import models
 from django.db.models import Count, Sum, Avg, Min, Max, Q
@@ -26,6 +28,9 @@ def system_busy():
 
 
 class Repo(models.Model):
+    """
+    Repository, BITCH!
+    """
 
     TYPES = (
         ("svn", "Subversion"),
@@ -798,35 +803,131 @@ class Branch(models.Model):
             "data": {}
         }
 
+    def get_tzinfo(self):
+        now = datetime.now()
+        tz_abbr = self.repo.timezone.tzname(now)
+
+        tzinfo = {}
+        tzinfo[tz_abbr] = self.repo.timezone.zone
+
+        return tzinfo
+
+    def parse_revision_authors(self, files, metrics):
+        data = {}
+        dates = []
+        authors = {}
+
+        for f in files:
+            author = utils.href(Author, f["author"])
+            date = f["date"]
+
+            if not date in dates:
+                dates.append(date)
+
+            if not author in authors:
+                authors[author] = {
+                    "href": author,
+                    "increases": 0,
+                    "decreases": 0,
+                    "score": 0
+                }
+
+            current = authors[author]
+
+            for metric in metrics:
+                value = f["%s_sum" % metric]
+
+                if value > 0:
+                    current["increases"] += 1
+
+                if value < 0:
+                    current["decreases"] += 1
+
+            if current["decreases"]:
+                current["score"] = Fraction(current["increases"], current["decreases"])
+            else:
+                current["score"] = current["increases"]
+
+            date = date.isoformat()
+
+            authors[author]["last_active"] = date
+
+            if not date in data:
+                data[date] = []
+
+            data[date].append(copy(authors[author]))
+
+        return data, dates
+
+    def clean_active_authors(self, authors, date, tzinfo):
+        inactive = []
+
+        for href, stat in authors.iteritems():
+            last_active = parser.parse(stat["last_active"], tzinfos=tzinfo)
+
+            if date - last_active > timedelta(days=31):
+                inactive.append(href)
+
+        for author in inactive:
+            del authors[author]
+
+    def get_top_author(self, authors):
+        author = None
+
+        for href, stat in authors.iteritems():
+            if not author:
+                author = stat
+
+            if author["score"] < stat["score"]:
+                author = stat
+
+        return author
+
     def experts(self, language=None, package=None, start=None, end=None):
-        filters = {}
+        metrics = [
+            "cyclomatic_complexity",
+            "halstead_volume",
+            "halstead_difficulty",
+            "fan_in",
+            "fan_out",
+            "sloc_squale"
+        ]
 
-        if language:
-            filters["revisions__files__mimetype"] = language
+        def get_annotation(metrics):
+            annotation = {}
 
-        if package:
-            filters["revisions__files__pkg__left__gt"] = package.left
-            filters["revisions__files__pkg__right__lt"] = package.right
+            for metric in metrics:
+                annotation["%s_sum" % metric] = Sum("%s_delta" % metric)
 
-        if start:
-            filters["revisions__date__gte"] = start
+            return annotation
 
-        if end:
-            filters["revisions__date__lte"] = end
+        files = self.files(language=language, package=package, start=start, end=end)
+        files = files.values("revision", "author", "date").order_by("date").annotate(**get_annotation(metrics))
 
-        authors = Author.objects.filter(**filters).distinct()\
-            .annotate(
-                last_revision=Max("revisions__date"))\
-            .filter(
-                last_revision__gte=datetime.now() - timedelta(days=31)
-            )\
-            .values("id", "revisions__date")\
-            .annotate(Count("revisions"))\
-            .order_by("-revisions__date")
+        response = self.response_stub(language=language, package=package, start=start, end=end)
 
-        return { "query": str(authors.query) }
+        data, dates = self.parse_revision_authors(files, metrics)
 
-        query = sql.experts(str(authors.query))
+        active_authors = {}
+
+        tzinfo = self.get_tzinfo()
+
+        for date in dates:
+            actions = data[date.isoformat()]
+
+            for action in actions:
+                active_authors[action["href"]] = action
+
+            self.clean_active_authors(active_authors, date, tzinfo)
+
+            top_author = self.get_top_author(active_authors)
+
+            response["data"][date.isoformat()] = top_author
+
+        for date, author in response["data"].iteritems():
+            author["score"] = float(author["score"])
+
+        return response
 
     def aggregated_metrics(self, author=None, language=None, package=None, start=None, end=None):
         result = self.response_stub(language=language, package=package, start=start, end=end)

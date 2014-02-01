@@ -119,15 +119,3 @@ def squale(fields, group_by, query):
         "query": query,
         "group_by": ", ".join(["A.%s" % group for group in group_by])
     }
-
-
-def experts():
-    return """
-        SELECT
-            A.author_id,
-
-        FROM
-            ( %(query)s ) AS A
-        GROUP BY
-            A.date, A.author_id
-    """
