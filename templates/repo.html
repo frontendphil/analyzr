@@ -74,6 +74,12 @@
 
         <hr class='hidden-print' />
 
+        <div
+            class='class experts hidden-print'
+            data-branch="{{ branch|href }}"></div>
+
+        <hr class='hidden-print' />
+
         {% include "includes/metrics.html" %}
     </div>
 {% endblock %}
@@ -159,7 +165,18 @@
                     }
                 });
                 impact.load();
-            })
+            });
+
+            $(".experts").each(function() {
+                var experts = new analyzr.plugins.graph.Experts(this, {
+                    margins: {
+                        top: 20,
+                        left: 40,
+                        bottom: 40
+                    }
+                });
+                experts.load();
+            });
         });
     </script>
 {% endblock %}

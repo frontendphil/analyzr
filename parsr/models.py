@@ -829,10 +829,13 @@ class Branch(models.Model):
                     "href": author,
                     "increases": 0,
                     "decreases": 0,
+                    "revisions": 0,
                     "score": 0
                 }
 
             current = authors[author]
+
+            current["revisions"] += 1
 
             for metric in metrics:
                 value = f["%s_sum" % metric]
@@ -847,6 +850,8 @@ class Branch(models.Model):
                 current["score"] = Fraction(current["increases"], current["decreases"])
             else:
                 current["score"] = current["increases"]
+
+            current["score"] = current["score"] * current["revisions"]
 
             date = date.isoformat()
 
@@ -884,6 +889,11 @@ class Branch(models.Model):
         return author
 
     def experts(self, language=None, package=None, start=None, end=None):
+        response = self.response_stub(language=language, package=package, start=start, end=end)
+
+        if not language:
+            return response
+
         metrics = [
             "cyclomatic_complexity",
             "halstead_volume",
@@ -903,8 +913,6 @@ class Branch(models.Model):
 
         files = self.files(language=language, package=package, start=start, end=end)
         files = files.values("revision", "author", "date").order_by("date").annotate(**get_annotation(metrics))
-
-        response = self.response_stub(language=language, package=package, start=start, end=end)
 
         data, dates = self.parse_revision_authors(files, metrics)
 

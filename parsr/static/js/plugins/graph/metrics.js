@@ -653,8 +653,6 @@ ns("plugins.graph.metrics");
 
             this.handleMouseLeave();
             this.updateFilters(response.info, this.files);
-
-
         }
     });
 }());
