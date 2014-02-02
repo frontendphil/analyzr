@@ -5,36 +5,27 @@
     {% if author %}data-author="{{ author|href }}"{% endif %}
     data-branch="{{ branch|href }}"></div>
 
-{% if branch.measured %}
-    <hr />
+<div
+    class='impact hidden-print'
+    data-branch='{{ branch|href }}'></div>
 
+<div
+    class='class experts hidden-print'
+    data-branch="{{ branch|href }}"></div>
+
+{% if branch.measured %}
     <div
         class='metrics complexity centered'
         {% if author %}data-author="{{ author|href }}"{% endif %}
-        data-branch="{{ branch|href }}">
-
-        <h3 class='hidden-print'>Complexity Metrics</h3>
-        <h6 class='visible-print'>Complexity Metrics</h6>
-    </div>
-
-    <hr class='hidden-print' />
+        data-branch="{{ branch|href }}"></div>
 
     <div
         class='metrics structure centered'
         {% if author %}data-author="{{ author|href }}"{% endif %}
-        data-branch="{{ branch|href }}">
-
-        <h3 class='hidden-print'>Structural Metrics</h3>
-        <h6 class='visible-print'>Structural Metrics</h6>
-    </div>
-
-    <hr class='hidden-print' />
+        data-branch="{{ branch|href }}"></div>
 
     <div
         class='churn centered hidden-print'
         {% if author %}data-author="{{ author|href }}"{% endif %}
-        data-branch="{{ branch|href }}">
-
-        <h3 class='hidden-print'>Code Churn</h3>
-    </div>
+        data-branch="{{ branch|href }}"></div>
 {% endif %}

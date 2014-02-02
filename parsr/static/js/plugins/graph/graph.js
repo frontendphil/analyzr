@@ -15,6 +15,12 @@ ns("plugins.graph");
             this.height = (attrs.height || 400) - this.margins.top - this.margins.bottom;
 
             this.dom = $(target);
+
+            if(attrs.title) {
+                this.dom.append("<h3 class='graph-title hidden-print'>" + attrs.title + "</h3>");
+                this.dom.append("<h6 class='graph-title visible-print'>" + attrs.title + "</h6>");
+            }
+
             this.svg = this.prepareSVG();
             this.addAxis(this.svg);
 

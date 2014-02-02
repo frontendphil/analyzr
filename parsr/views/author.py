@@ -93,7 +93,7 @@ def commits(request, branch_id, author_id):
 def file_stats(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
-    return branch.file_statistics(author)
+    return branch.file_statistics(author=author)
 
 
 @ajax_request

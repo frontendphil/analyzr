@@ -1,3 +1,5 @@
+import numpy
+
 from datetime import datetime, timedelta
 from dateutil import parser
 from hashlib import md5
@@ -55,10 +57,9 @@ class Repo(models.Model):
     def purge(self):
         try:
             connector = Connector.get(self)
+            connector.clear()
         except ConnectionError:
-            return
-
-        connector.clear()
+            pass
 
     def busy(self):
         return self.analyzing() or self.measuring()
@@ -623,36 +624,21 @@ class Branch(models.Model):
 
         return response
 
-    def file_statistics(self, author=None, language=None, start=None, end=None):
-        response = self.response_stub(language=language, start=start, end=end)
-        filters = {
-            "revision__branch": self
-        }
+    def file_statistics(self, author=None):
+        response = self.response_stub()
+        files = self.files(author=author, escaped=(author is None))
 
         if author:
-            # Author specific stats need to consider all files and changes to them
-            # but not deletes
-            filters["mimetype__in"] = Analyzer.parseable_types()
-            filters["revision__author"] = author
-            filters["change_type__in"] = [Action.ADD, Action.MODIFY, Action.MOVE]
-
-            files = File.objects.filter(**filters)
-
-            count = files.values("mimetype").count()
+            count = files.count()
 
             for stat in files.values("mimetype").annotate(count=Count("mimetype")).order_by("count"):
                 response["data"][stat["mimetype"]] = stat["count"] / (1.0 * count)
 
             return response
 
-        # raw query processing seems to work a little different. that is why we need to
-        # manually put the strings into quotes.
-        filters["mimetype__in"] = ["'%s'" % t for t in Analyzer.parseable_types()]
-
-        query = sql.newest_files(str(File.objects.filter(**filters).query))
+        query = sql.newest_files(str(files.query))
         count = File.objects.raw(sql.count_entries(query))[0].count
 
-        # Order by
         for stat in File.objects.raw(sql.mimetype_count(query)):
             response["data"][stat.mimetype] = stat.count / (1.0 * count)
 
@@ -688,10 +674,7 @@ class Branch(models.Model):
 
             response["data"][year][month][day] = {
                 "commits": count,
-                "files": File.objects.filter(revision__day=day,
-                                             revision__month=month,
-                                             revision__year=year,
-                                             revision__branch=self).count()
+                "files": File.objects.filter(day=day, month=month, year=year, branch=self).count()
             }
 
         self.set_options(response, {
@@ -704,7 +687,7 @@ class Branch(models.Model):
         return Author.objects.filter(revisions__branch=self).distinct().order_by("name")
 
     def author_count(self):
-        return Author.objects.filter(revisions__branch=self).distinct().count()
+        return self.authors().count()
 
     def first_revision(self):
         revisions = self.revisions.all().order_by("date")
@@ -812,10 +795,19 @@ class Branch(models.Model):
 
         return tzinfo
 
+    def get_average_revisions(self):
+        authors = self.authors()\
+                   .values("id")\
+                   .annotate(rev_count=Count("revisions"))
+
+        return sql.average(str(authors.query), "rev_count")
+
     def parse_revision_authors(self, files, metrics):
         data = {}
         dates = []
         authors = {}
+
+        average_revisions = self.get_average_revisions()
 
         for f in files:
             author = utils.href(Author, f["author"])
@@ -851,7 +843,7 @@ class Branch(models.Model):
             else:
                 current["score"] = current["increases"]
 
-            current["score"] = current["score"] * current["revisions"]
+            current["score"] = numpy.log(1 + float(current["score"] * (current["revisions"] / average_revisions)))
 
             date = date.isoformat()
 
@@ -916,9 +908,12 @@ class Branch(models.Model):
 
         data, dates = self.parse_revision_authors(files, metrics)
 
-        active_authors = {}
+        response["info"]["dates"] = [date.isoformat() for date in dates]
+        response["info"]["options"]["startDate"] = dates[0].isoformat()
+        response["info"]["options"]["endDate"] = dates[-1].isoformat()
 
         tzinfo = self.get_tzinfo()
+        active_authors = {}
 
         for date in dates:
             actions = data[date.isoformat()]

@@ -5,6 +5,10 @@ ns("plugins.graph");
     analyzr.plugins.graph.CodeChurn = analyzr.plugins.graph.Graph.extend({
 
         init: function(target, attrs) {
+            attrs = attrs || {};
+
+            attrs.title = attrs.title || "Code Churn";
+
             this._super("churn", target, attrs);
 
             this.svg.append("path")

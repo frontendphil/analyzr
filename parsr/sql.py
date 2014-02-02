@@ -119,3 +119,17 @@ def squale(fields, group_by, query):
         "query": query,
         "group_by": ", ".join(["A.%s" % group for group in group_by])
     }
+
+
+def average(query, field):
+    query = """
+        SELECT
+            AVG(A.%(field)s)
+        FROM
+            ( %(query)s ) AS A
+    """ % {
+        "query": query,
+        "field": field
+    }
+
+    return float(execute(query).fetchone()[0])

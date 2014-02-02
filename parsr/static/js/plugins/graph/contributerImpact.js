@@ -5,7 +5,10 @@ ns("plugins.graph");
     analyzr.plugins.graph.ContributerImpact = analyzr.plugins.graph.Graph.extend({
 
         init: function(target, attrs) {
+            attrs = attrs || {};
+
             attrs.noFilter = attrs.noFilter || true;
+            attrs.title = attrs.title || "Contributor Impact";
 
             this._super("impact", target, attrs);
         },

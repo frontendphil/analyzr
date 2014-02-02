@@ -5,6 +5,8 @@ ns("plugins.graph");
     analyzr.plugins.graph.Experts = analyzr.plugins.graph.Graph.extend({
 
         init: function(target, attrs) {
+            attrs.title = "Code Experts";
+
             this._super("experts", target, attrs);
         },
 
@@ -16,7 +18,7 @@ ns("plugins.graph");
             }));
         },
 
-        parse: function(data) {
+        parse: function(data, info) {
             var authors = {};
             var current;
 
@@ -62,6 +64,16 @@ ns("plugins.graph");
                     start: entry.date
                 };
             });
+
+            if(current && !authors[current.author]) {
+                authors[current.author] = {
+                    href: current.author,
+                    score: current.score,
+                    ranges: [
+                        [current.start, info.options.maxDate]
+                    ]
+                };
+            }
 
             var ranges = [];
 
@@ -137,11 +149,11 @@ ns("plugins.graph");
             d3.select(element).attr("fill", $(element).data("fill"));
         },
 
-        handleData: function(svg, response) {
-            this.updateFilters(response.info);
-
+        prepareDiagram: function(svg, data, info) {
             var that = this;
-            var data = this.parse(response.data);
+
+            // this.createAxis(svg, data, info);
+
             var colors = d3.scale.category20c();
             colors.domain(d3.keys(data.authors));
 
@@ -180,6 +192,14 @@ ns("plugins.graph");
                 .on("mouseleave", function() {
                     that.handleMouseLeave(this);
                 });
+        },
+
+        handleData: function(svg, response) {
+            this.updateFilters(response.info);
+
+            var data = this.parse(response.data, response.info);
+
+            this.prepareDiagram(svg, data, response.info);
         }
 
     });
