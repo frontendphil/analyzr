@@ -843,7 +843,7 @@ class Branch(models.Model):
             else:
                 current["score"] = current["increases"]
 
-            current["score"] = numpy.log(1 + float(current["score"] * (current["revisions"] / average_revisions)))
+            current["score"] = current["score"] + numpy.log(1 + float((current["revisions"] / average_revisions)))
 
             date = date.isoformat()
 

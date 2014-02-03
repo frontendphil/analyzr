@@ -57,8 +57,8 @@ ns("plugins");
             var packages = this.createPackageSelector();
             var files = this.createFileSelector();
 
-            mandatory.append(language);
-            optional.append(packages, files);
+            mandatory.append(language, files);
+            optional.append(packages);
 
             container.append(mandatory, optional);
 
@@ -255,71 +255,42 @@ ns("plugins");
             return select;
         },
 
-        getCurrentPackage: function() {
-            return this.currentPackage;
-        },
-
         createPackageSelector: function() {
             if(this.dom.length === 0) {
                 return;
             }
 
-            var parse = function(parent, result, level) {
-                level = level || 1;
-
-                if(!result) {
-                    result = [{
-                        name: "/",
-                        pkg: parent,
-                        indent: ""
-                    }];
-                }
-
-                $.each(parent.rep.children, function() {
-                    result.push({
-                        name: this.rep.name.replace(parent.rep.name, ""),
-                        pkg: this,
-                        indent: "|&nbsp;&nbsp;".repeat(level)
-                    });
-
-                    parse(this, result, level + 1);
-                });
-
-                return result;
-            };
-
+            var selector = $(
+                "<div class='col-sm-10 col-md-10 col-lg-10'>" +
+                    "<a href='#'>Choose Package...</a>" +
+                    "<div class='packages' />" +
+                "</div>"
+            );
             var that = this;
 
-            this.packages = {};
+            selector.find(".packages").hide();
+            selector.find("a").click(function() {
+                $(this).hide(function() {
+                    selector.find(".packages").slideDown();
+                });
+
+                return false;
+            });
 
             $.ajax(this.dom.data("branch") + "/packages", {
                 success: function(root) {
-                    var children = parse(root);
+                    var browser = new analyzr.plugins.ColumnBrowser(selector.find(".packages"), {
+                        root: root,
+                        height: 200
+                    });
 
-                    that.createSelect("package", children, function(child) {
-                        that.packages[child.pkg.href] = child.pkg;
-
-                        return {
-                            value: child.pkg.href,
-                            text: child.indent + child.name
-                        };
+                    browser.on("select", function(value) {
+                        that.changeParam("package", value);
                     });
                 }
             });
 
-            var select = this.createSelect("package");
-
-            select.change(function() {
-                if(!this.value) {
-                    return;
-                }
-
-                that.currentPackage = that.packages[this.value];
-
-                that.changeParam("package", this.value.replace("/package/", ""));
-            });
-
-            return select;
+            return selector;
         },
 
         updateFileSelector: function(files) {

@@ -50,6 +50,84 @@ body {
     }
 }
 
+.column-browser {
+    overflow-x: scroll;
+    overflow-y: hidden;
+
+    text-align: left;
+
+    white-space: nowrap;
+
+    .children {
+        display: inline-block;
+
+        ul {
+            position: relative;
+            display: inline-block;
+
+            overflow-y: scroll;
+
+            list-style-type: none;
+            padding-left: 0;
+
+            margin-right: 10px;
+
+            li {
+                font-size: 12px;
+                font-weight: 400;
+
+                width: 200px;
+
+                text-overflow: ellipsis;
+                overflow: hidden;
+
+                white-space: nowrap;
+
+                padding: 5px;
+                padding-left: 15px;
+                padding-right: 20px;
+
+                border-bottom: 2px solid #fff;
+
+                background-color: rgba(0, 0, 0, 0.05);
+
+                cursor: pointer;
+
+                &:hover {
+                    background-color: rgba(0, 0, 0, 0.1);
+                }
+
+                &.active {
+                    background-color: rgba(0, 0, 0, 0.1);
+
+                    &:after {
+                        color: rgba(0, 0, 0, 0.4);
+                    }
+                }
+
+                &.leaf {
+                    font-weight: 300;
+
+                    &:after {
+                        content: "";
+                    }
+                }
+
+                &:after {
+                    position: absolute;
+
+                    right: 10px;
+
+                    content: "\f105";
+
+                    font-family: "FontAwesome";
+                    color: rgba(0, 0, 0, 0.2);
+                }
+            }
+        }
+    }
+}
+
 .graph-title {
     font-weight: 100;
 
@@ -337,7 +415,11 @@ body > .content {
 }
 
 .punchcard {
+    margin-bottom: 40px;
+
     table {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+
         thead {
             th {
                 .center;
@@ -594,6 +676,8 @@ table {
 }
 
 .filters {
+    text-align: left;
+
     .row {
         margin-bottom: 10px;
     }

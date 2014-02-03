@@ -28,7 +28,13 @@ def get_branch(request):
 
 def parse_filters(request, branch):
     language = request.GET.get("language")
-    package = get_object_or_None(Package, pk=request.GET.get("package"))
+
+    pkg = request.GET.get("package")
+
+    if pkg:
+        pkg = pkg.replace("/package/", "")
+
+    package = get_object_or_None(Package, pk=pkg)
 
     start, end = parse_date_range(request, branch)
 

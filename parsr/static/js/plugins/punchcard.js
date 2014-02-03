@@ -19,7 +19,7 @@ ns("plugins");
         },
 
         handleData: function(response) {
-            var table = $("<table class='table' />");
+            var table = $("<table class='table table-hover' />");
             var that = this;
             var data = response.data;
             var info = response.info;
