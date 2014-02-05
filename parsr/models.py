@@ -289,11 +289,6 @@ class Branch(models.Model):
         return measured > 0 and not measured == self.revisions.all().count()
 
     def cleanup(self):
-        # ForeignKey constraints ensure that all revision are being deleted
-        # latest = self.get_latest_revision()
-        # if latest:
-        #     latest.delete()
-
         self.remove_all(Revision, Revision.objects.filter(branch=self))
         self.remove_all(File, File.objects.filter(revision__branch=self))
         self.remove_all(Author, Author.objects.filter(revisions__branch=self))

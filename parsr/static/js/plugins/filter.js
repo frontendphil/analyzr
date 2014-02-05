@@ -46,6 +46,10 @@ ns("plugins");
             return params.join("&");
         },
 
+        getCurrentPackage: function() {
+            return this.currentPackage;
+        },
+
         initFilters: function() {
             var container = $("<div class='filters hidden-print col-sm-10 col-lg-10 col-md-10' />");
 
@@ -277,7 +281,7 @@ ns("plugins");
                 return false;
             });
 
-            $.ajax(this.dom.data("branch") + "/packages", {
+            analyzr.core.data.get(this.dom.data("branch") + "/packages", {
                 success: function(root) {
                     var browser = new analyzr.plugins.ColumnBrowser(selector.find(".packages"), {
                         root: root,
@@ -285,7 +289,8 @@ ns("plugins");
                     });
 
                     browser.on("select", function(value) {
-                        that.changeParam("package", value);
+                        that.changeParam("package", value.href);
+                        that.currentPackage = value;
                     });
                 }
             });

@@ -41,15 +41,18 @@ ns("plugins.graph");
             var position = Math.floor(this.scale.x.invert(x));
             var author = data[position];
 
+            var that = this;
+
             $(element).qtip({
                 content: {
-                    text: "Loading...",
-                    ajax: {
-                        url: author.href + "?branch=" + this.dom.data("branch"),
-                        type: "GET",
-                        success: function(data) {
-                            this.set("content.text", data.rep.name + "<br />" + data.rep.revisions + " commits");
-                        }
+                    text: function(event, api) {
+                        analyzr.core.data.get(author.href + "?branch=" + that.dom.data("branch"), {
+                            success: function(data) {
+                                api.set("content.text", data.rep.name + "<br />" + data.rep.revisions + " commits");
+                            }
+                        });
+
+                        return "Loading...";
                     }
                 },
                 position: {

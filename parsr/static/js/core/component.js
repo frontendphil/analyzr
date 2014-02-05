@@ -52,7 +52,7 @@ ns("core");
 
             this.mask("Loading...");
 
-            $.ajax(url, {
+            analyzr.core.data.get(url, {
                 success: function(data) {
                     that.unmask();
                     that.handleData(data, branch);

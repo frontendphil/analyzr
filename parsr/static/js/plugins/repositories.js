@@ -133,7 +133,7 @@ ns("plugins");
             var dropdown = container.find("ul");
 
             container.one("click", function() {
-                $.ajax(repo.href + "/branches", {
+                analyzr.core.data.get(repo.href + "/branches", {
                     success: function(branches) {
                         container.find(".loading").remove();
 
@@ -469,11 +469,12 @@ ns("plugins");
             var that = this;
 
             var updateProgress = function() {
-                $.ajax(branch.href, {
+                analyzr.core.data.get(branch.href, {
+                    update: true,
                     success: function(branch) {
                         if(typeof branch.rep.activity.progress === "undefined") {
                             container.fadeOut(function() {
-                                that.load();
+                                that.load(true);
                             });
 
                             return;
@@ -497,7 +498,7 @@ ns("plugins");
                             window.setTimeout(updateProgress, REFRESH_INTERVAL);
                         } else {
                             container.fadeOut(function() {
-                                that.load();
+                                that.load(true);
                             });
                         }
                     }
@@ -509,7 +510,7 @@ ns("plugins");
             return container;
         },
 
-        load: function() {
+        load: function(update) {
             var that = this;
 
             this.dom.html("");
@@ -523,7 +524,8 @@ ns("plugins");
 
             var body = table.find("tbody");
 
-            $.ajax("/repositories", {
+            analyzr.core.data.get("/repositories", {
+                update: update,
                 success: function(repositories) {
                     $.each(repositories, function() {
                         var repo = that.createRepo(this);

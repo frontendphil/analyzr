@@ -59,49 +59,58 @@ ns("analyzr.plugins");
             });
 
             $.each(children, function() {
-                var name = this.rep.name.replace(parent.rep.name, "").replace("/", "");
-
-                if(!name) {
-                    return;
-                }
-
-                var entry = $("<li>" + name + "</li>");
-                var child = this;
-
-                if(this.rep.children.length === 0) {
-                    entry.addClass("leaf");
-                }
-
-                entry.click(function() {
-                    var link = $(this);
-
-                    if(link.hasClass("active")) {
-                        link.removeClass("active");
-                        that.raise("select", parent.href);
-                        that.reset(container);
-
-                        return;
-                    }
-
-                    that.reset(container);
-
-                    that.raise("select", child.href);
-
-                    link.addClass("active");
-
-                    if(link.hasClass("leaf")) {
-                        return;
-                    }
-
-                    var list = that.getListContainer();
-                    container.append(list);
-
-                    that.loadData(child, list);
-                    that.updateScroll();
-                });
+                var entry = that.createChild(this, parent, container);
 
                 list.append(entry);
             });
+        },
+
+        createChild: function(child, parent, container) {
+            var name = child.rep.name.replace(parent.rep.name, "").replace("/", "");
+
+            if(!name) {
+                return;
+            }
+
+            var entry = $("<li>" + name + "</li>");
+
+            if(child.rep.children.length === 0) {
+                entry.addClass("leaf");
+            }
+
+            var that = this;
+
+            entry.click(function() {
+                that.handleClick($(this), child, parent, container);
+            });
+
+            return entry;
+        },
+
+        handleClick: function(link, child, parent, container) {
+            if(link.hasClass("active")) {
+                link.removeClass("active");
+                this.raise("select", parent);
+                this.reset(container);
+
+                return;
+            }
+
+            this.reset(container);
+
+            this.raise("select", child);
+
+            link.addClass("active");
+
+            if(link.hasClass("leaf")) {
+                return;
+            }
+
+            var list = this.getListContainer();
+            container.append(list);
+
+            this.loadData(child, list);
+            this.updateScroll();
         },
 
         updateScroll: function() {

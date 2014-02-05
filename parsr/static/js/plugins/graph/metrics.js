@@ -518,10 +518,9 @@ ns("plugins.graph.metrics");
             }
 
             var pkg = this.filter.getCurrentPackage();
-            var file = this.filter.getCurrentFile();
 
             var info = new analyzr.plugins.RevisionInfo(nearest.revision);
-            info.show(pkg, file);
+            info.show(pkg, this.filter.getCurrentFile());
         },
 
         handleMouseMove: function(args, metrics) {
