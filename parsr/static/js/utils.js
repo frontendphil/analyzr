@@ -248,4 +248,16 @@
         };
     }
 
+    if(!Date.prototype.tomorrow) {
+        Date.prototype.tomorrow = function() {
+            return new Date(this.getTime() + (24 * 60 * 60 * 1000));
+        };
+    }
+
+    if(!Date.prototype.flat) {
+        Date.prototype.flat = function() {
+            return new Date(this.getUTCFullYear(), this.getUTCMonth(), this.getUTCDate());
+        };
+    }
+
 }());

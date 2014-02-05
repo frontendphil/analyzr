@@ -9,11 +9,11 @@
     class='impact hidden-print'
     data-branch='{{ branch|href }}'></div>
 
-<div
-    class='class experts hidden-print'
-    data-branch="{{ branch|href }}"></div>
-
 {% if branch.measured %}
+    <div
+        class='class experts hidden-print'
+        data-branch="{{ branch|href }}"></div>
+
     <div
         class='metrics complexity centered'
         {% if author %}data-author="{{ author|href }}"{% endif %}

@@ -99,7 +99,8 @@ ns("plugins.graph.metrics");
 
             var el = d3.select(this.dom.get(0)).select("svg");
 
-            el.append("clipPath")
+            el.append("defs")
+                .append("clipPath")
                 .attr("id", "clip")
                 .append("rect")
                     .attr("height", this.getInnerHeight())
@@ -133,6 +134,10 @@ ns("plugins.graph.metrics");
         },
 
         parse: function(data, kind) {
+            this.activity = {};
+
+            var that = this;
+
             return d3.keys(data)
                 .map(function(file) {
                     var deleted = false;
@@ -151,6 +156,16 @@ ns("plugins.graph.metrics");
                                     id: type,
                                     values: data[file].map(function(d) {
                                         deleted = deleted || d.rep.deleted;
+
+                                        // Group activity by day
+                                        var activityPoint = (new Date(d.rep.date)).flat();
+                                        var key = activityPoint.toString();
+
+                                        if(!that.activity[key]) {
+                                            that.activity[key] = 0;
+                                        }
+
+                                        that.activity[key] += 1;
 
                                         return {
                                             id: type,
@@ -262,7 +277,34 @@ ns("plugins.graph.metrics");
                 .call(axis);
         },
 
+        addActivity: function(context, height, scale) {
+            var that = this;
+
+            var activities = context.append("g")
+                .attr("class", "activities");
+
+            activities.selectAll(".activity")
+                .data(this.activity)
+                .enter().append("rect")
+                .attr("class", "activity")
+                .attr("clip-path", "url(#clip)")
+                .attr("x", function(d) {
+                    return that.scale.x(d.date);
+                })
+                .attr("width", function(d) {
+                    return that.scale.x(d.date.tomorrow()) - that.scale.x(d.date);
+                })
+                .attr("y", function(d) {
+                    return scale(d.value);
+                })
+                .attr("height", function(d) {
+                    return height - scale(d.value);
+                });
+        },
+
         createBrush: function(data, info, color) {
+            this.addActivity(this.context, this.brushHeight, this.getBrushScale({ id: "activity" }));
+
             var metric = this.context.selectAll(".metric")
                 .data(data)
                 .enter().append("g")
@@ -313,6 +355,24 @@ ns("plugins.graph.metrics");
                         .attr("d", function(d) {
                             return line(d.values);
                         });
+
+                    that.svg.selectAll(".activity")
+                        .data(that.activity)
+                        .attr("x", function(d) {
+                            var width = that.scale.x(d.date.tomorrow()) - that.scale.x(d.date);
+
+                            return Math.max(0, that.scale.x(d.date) - (width / 2));
+                        })
+                        .attr("width", function(d) {
+                            var pos = that.scale.x(d.date);
+                            var width = that.scale.x(d.date.tomorrow()) - pos;
+
+                            if(pos < width) {
+                                return Math.max(0, pos);
+                            }
+
+                            return width;
+                        });
                 });
 
                 that.context.select(".brush").call(brush);
@@ -331,13 +391,14 @@ ns("plugins.graph.metrics");
 
             this.createAxis(data, info, color);
             this.createBrush(data, info, color);
+            this.addActivity(this.svg, this.getInnerHeight(), this.scales.activity);
 
-            var metric = that.svg.selectAll(".metric")
+            var metric = this.svg.selectAll(".metric")
                 .data(data)
                 .enter().append("g")
                 .attr("class", "metric");
 
-            var circle = that.svg.selectAll(".circle")
+            var circle = this.svg.selectAll(".circle")
                 .data(data)
                 .enter().append("g")
                 .attr("class", function(d) {
@@ -425,6 +486,21 @@ ns("plugins.graph.metrics");
                     })
                     .text(this.type);
             });
+
+            this.createActivityAxis();
+        },
+
+        createActivityAxis: function() {
+            var scale = d3.scale.linear().range([this.getInnerHeight(), 0]);
+
+            this.scales["activity"] = scale;
+            this.scales["activity-brush"] = d3.scale.linear().range([this.brushHeight, 0]);
+
+            scale.domain(d3.extent(this.activity, function(d) {
+                return d.value;
+            }));
+
+            this.scales["activity-brush"].domain(scale.domain());
         },
 
         handleMouseEnter: function() {
@@ -627,10 +703,22 @@ ns("plugins.graph.metrics");
 
         getKind: function() {},
 
+        prepareActivity: function() {
+            var that = this;
+
+            this.activity = $.map(d3.keys(this.activity), function(key) {
+                return {
+                    date: new Date(key),
+                    value: that.activity[key]
+                };
+            });
+        },
+
         handleData: function(svg, response) {
             var that = this;
 
             this.files = this.parse(response.data, this.getKind());
+            this.prepareActivity();
 
             if(this.files.length === 0) {
                 this.updateFilters(response.info, this.files);
