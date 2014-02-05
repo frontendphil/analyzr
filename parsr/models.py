@@ -683,8 +683,15 @@ class Branch(models.Model):
 
         return response
 
-    def authors(self):
-        return Author.objects.filter(revisions__branch=self).distinct().order_by("name")
+    def authors(self, language=None, raw=False):
+        filters = {
+            "revisions__branch": self
+        }
+
+        if language:
+            filters["revisions__files__mimetype"] = "'%s'" % language if raw else language
+
+        return Author.objects.filter(**filters).distinct().order_by("name")
 
     def author_count(self):
         return self.authors().count()
@@ -795,19 +802,19 @@ class Branch(models.Model):
 
         return tzinfo
 
-    def get_average_revisions(self):
-        authors = self.authors()\
+    def get_average_revisions(self, language=None):
+        authors = self.authors(language=language, raw=True)\
                    .values("id")\
                    .annotate(rev_count=Count("revisions"))
 
         return sql.average(str(authors.query), "rev_count")
 
-    def parse_revision_authors(self, files, metrics):
+    def parse_revision_authors(self, files, metrics, language=None):
         data = {}
         dates = []
         authors = {}
 
-        average_revisions = self.get_average_revisions()
+        average_revisions = self.get_average_revisions(language=language)
 
         for f in files:
             author = utils.href(Author, f["author"])
@@ -906,7 +913,7 @@ class Branch(models.Model):
         files = self.files(language=language, package=package, start=start, end=end)
         files = files.values("revision", "author", "date").order_by("date").annotate(**get_annotation(metrics))
 
-        data, dates = self.parse_revision_authors(files, metrics)
+        data, dates = self.parse_revision_authors(files, metrics, language=language)
 
         response["info"]["dates"] = [date.isoformat() for date in dates]
         response["info"]["options"]["startDate"] = dates[0].isoformat()

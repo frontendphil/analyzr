@@ -47,11 +47,11 @@ ns("analyzr.plugins");
             var that = this;
 
             var children = parent.rep.children.sort(function(a, b) {
-                if(a.rep.name < b.rep.name) {
+                if(a.rep.name.toLowerCase() < b.rep.name.toLowerCase()) {
                     return -1;
                 }
 
-                if(a.rep.name > b.rep.name) {
+                if(a.rep.name.toLowerCase() > b.rep.name.toLowerCase()) {
                     return 1;
                 }
 
@@ -59,7 +59,7 @@ ns("analyzr.plugins");
             });
 
             $.each(children, function() {
-                var name = this.rep.name.replace(parent.rep.name, "");
+                var name = this.rep.name.replace(parent.rep.name, "").replace("/", "");
 
                 if(!name) {
                     return;
@@ -73,10 +73,23 @@ ns("analyzr.plugins");
                 }
 
                 entry.click(function() {
+                    var link = $(this);
+
+                    if(link.hasClass("active")) {
+                        link.removeClass("active");
+                        that.raise("select", parent.href);
+                        that.reset(container);
+
+                        return;
+                    }
+
                     that.reset(container);
+
                     that.raise("select", child.href);
 
-                    if($(this).hasClass("leaf")) {
+                    link.addClass("active");
+
+                    if(link.hasClass("leaf")) {
                         return;
                     }
 
@@ -84,12 +97,19 @@ ns("analyzr.plugins");
                     container.append(list);
 
                     that.loadData(child, list);
-
-                    $(this).addClass("active");
+                    that.updateScroll();
                 });
 
                 list.append(entry);
             });
+        },
+
+        updateScroll: function() {
+            var browser = this.dom.find(".column-browser");
+
+            browser.animate({
+                scrollLeft: browser.width()
+            }, 500);
         },
 
         reset: function(container) {
