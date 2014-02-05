@@ -180,12 +180,16 @@ ns("plugins");
             };
 
             if(attrs.cleanup) {
+                var mask = new analyzr.core.Mask(this.dom, "Cleaning the repository...");
+                mask.show();
+
                 $.ajax(attrs.cleanup, {
                     type: "POST",
                     data: {
                         csrfmiddlewaretoken: $.cookie("csrftoken")
                     },
                     success: function() {
+                        mask.remove();
                         action();
                     }
                 });
