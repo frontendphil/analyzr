@@ -37,6 +37,8 @@ ns("core.data");
 
                         clb.apply(this, args);
                     });
+
+                    delete LOADING[url];
                 };
             };
 
