@@ -231,7 +231,7 @@ class JHawk(Checker):
                 "project_path": PROJECT_PATH,
                 "base_path": connector.get_repo_path(),
                 "target": result_file,
-                "filepattern": "|".join(["%s" % f.name for f in chunk])
+                "filepattern": "|".join([".*/%s" % f.name for f in chunk])
             }
 
             with open(filename, "wb") as f:
