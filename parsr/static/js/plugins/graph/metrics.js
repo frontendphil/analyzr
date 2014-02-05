@@ -99,7 +99,7 @@ ns("plugins.graph.metrics");
 
             var el = d3.select(this.dom.get(0)).select("svg");
 
-            el.append("defs")
+            el.insert("defs", ":first-child")
                 .append("clipPath")
                 .attr("id", "clip")
                 .append("rect")
@@ -280,7 +280,9 @@ ns("plugins.graph.metrics");
         addActivity: function(context, height, scale) {
             var that = this;
 
-            var activities = context.append("g")
+            context.select(".activities").remove();
+
+            var activities = context.insert("g", ":first-child")
                 .attr("class", "activities");
 
             activities.selectAll(".activity")
