@@ -65,10 +65,14 @@ ns("core");
 
 		layout: function() {
 			var cHeight = Math.min(this.container.height(), window.innerHeight);
+			var cWidth = Math.min(this.container.width(), window.innerWidth);
+
 			var mHeight = this.dom.find(".body").height();
+			var mWidth = this.dom.find(".body").width();
 
 			this.dom.find(".body").css({
-				marginTop: this.container.scrollTop() + (cHeight / 2) - (mHeight / 2)
+				marginTop: this.container.scrollTop() + (cHeight / 2) - (mHeight / 2),
+				marginLeft: this.container.scrollLeft() + (cWidth / 2) - (mWidth / 2)
 			});
 
 			this.raise("layout");

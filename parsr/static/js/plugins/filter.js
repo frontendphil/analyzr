@@ -265,7 +265,7 @@ ns("plugins");
             }
 
             var selector = $(
-                "<div class='col-sm-10 col-md-10 col-lg-10'>" +
+                "<div class='col-sm-12 col-md-12 col-lg-12'>" +
                     "<a href='#'>Choose Package...</a>" +
                     "<div class='packages' />" +
                 "</div>"

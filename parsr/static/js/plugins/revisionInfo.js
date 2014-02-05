@@ -149,7 +149,7 @@ ns("plugins");
             var that = this;
             var content = body.find(".content");
 
-            $.ajax(this.revision, {
+            analyzr.core.data.get(this.revision, {
                 success: function(revision) {
                     content.html("");
 

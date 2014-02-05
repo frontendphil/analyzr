@@ -41,6 +41,8 @@ ns("plugins");
 		render: function() {
 			this._super();
 
+			this.initEvents();
+
 			this.dom.addClass("dialog");
 
 			var dialog = this.dom.find(".body");
@@ -78,6 +80,23 @@ ns("plugins");
 			dialog.css({
 				"marginTop": ($("body").height() / 2) - (dialog.height() / 2)
 			});
+		},
+
+		initEvents: function() {
+			var that = this;
+
+			var handler = function(e) {
+				if(e.which !== 27) {
+					// ESC key
+					return;
+				}
+
+				$(document).off("keydown", handler);
+
+				that.close();
+			};
+
+			$(document).on("keydown", handler);
 		}
 
 	});
