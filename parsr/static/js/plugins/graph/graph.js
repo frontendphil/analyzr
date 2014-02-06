@@ -224,17 +224,14 @@ ns("plugins.graph");
 
             analyzr.core.data.get(url, {
                 success: function(response) {
-                    if(!response) {
-                        that.unmask();
-                        that.error("Component could not be loaded.");
-
-                        return;
-                    }
-
                     that.unmask();
                     that.parseInfos(response.info);
                     that.createDomain(that.svg, response.data, response.info);
                     that.handleData(that.svg, response);
+                },
+                error: function() {
+                    that.unmask();
+                    that.error("Component could not be loaded.");
                 }
             });
         }

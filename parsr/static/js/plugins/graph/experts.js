@@ -13,9 +13,9 @@ ns("plugins.graph");
         createDomain: function(svg, data, info) {
             this.updateXScale(svg, info);
 
-            this.scale.y.domain(d3.extent(d3.keys(data), function(key) {
+            this.scale.y.domain([0, d3.max(d3.keys(data), function(key) {
                 return data[key].score;
-            }));
+            })]);
         },
 
         parse: function(data, info) {
@@ -35,15 +35,21 @@ ns("plugins.graph");
                 if(!current) {
                     current = {
                         author: entry.value.href,
-                        score: entry.value.score,
-                        start: entry.date
+                        start: entry.date,
+                        values: [{
+                            date: entry.date,
+                            score: entry.value.score
+                        }]
                     };
 
                     return;
                 }
 
                 if(current.author === entry.value.href) {
-                    current.score = Math.max(current.score, entry.value.score);
+                    current.values.push({
+                        date: entry.date,
+                        score: entry.value.score
+                    });
 
                     return;
                 }
@@ -51,27 +57,31 @@ ns("plugins.graph");
                 if(!authors[current.author]) {
                     authors[current.author] = {
                         href: current.author,
-                        score: current.score,
-                        ranges: []
+                        ranges: [],
+                        values: []
                     };
                 }
 
                 authors[current.author].ranges.push([current.start, entry.date]);
+                authors[current.author].values.push(current.values);
 
                 current = {
                     author: entry.value.href,
-                    score: entry.value.score,
-                    start: entry.date
+                    start: entry.date,
+                    values: [{
+                        date: entry.date,
+                        score: entry.value.score
+                    }]
                 };
             });
 
             if(current && !authors[current.author]) {
                 authors[current.author] = {
                     href: current.author,
-                    score: current.score,
                     ranges: [
                         [current.start, info.options.maxDate]
-                    ]
+                    ],
+                    values: [current.values]
                 };
             }
 
@@ -83,7 +93,7 @@ ns("plugins.graph");
                 author.ranges.forEach(function(range) {
                     ranges.push({
                         author: author.href,
-                        score: author.score,
+                        scores: author.scores,
                         range: range
                     });
                 });
@@ -93,6 +103,17 @@ ns("plugins.graph");
                 ranges: ranges,
                 authors: authors
             };
+        },
+
+        getAuthor: function(element) {
+            var classes = $(element).attr("class");
+            return classes.split(" ")[1];
+        },
+
+        allInstances: function(element) {
+            var author = this.getAuthor(element);
+
+            return d3.selectAll("." + author);
         },
 
         handleMouseEnter: function(element, data, color) {
@@ -115,20 +136,22 @@ ns("plugins.graph");
             });
 
             var fill = d3.rgb(color(author));
+            var that = this;
 
-            d3.select(element).attr("fill", fill.darker(0.5));
+            this.allInstances(element).attr("fill", fill.darker(0.6));
 
             $(element).data("fill", color(author));
 
             $(element).qtip({
                 content: {
-                    text: "Loading...",
-                    ajax: {
-                        url: author + "?branch=" + this.dom.data("branch"),
-                        type: "GET",
-                        success: function(data) {
-                            this.set("content.text", data.rep.name);
-                        }
+                    text: function(event, api) {
+                        analyzr.core.data.get(author + "?branch=" + that.dom.data("branch"), {
+                            success: function(data) {
+                                api.set("content.text", data.rep.name);
+                            }
+                        });
+
+                        return "Loading...";
                     }
                 },
                 position: {
@@ -146,13 +169,11 @@ ns("plugins.graph");
         },
 
         handleMouseLeave: function(element) {
-            d3.select(element).attr("fill", $(element).data("fill"));
+            this.allInstances(element).attr("fill", $(element).data("fill"));
         },
 
         prepareDiagram: function(svg, data, info) {
             var that = this;
-
-            // this.createAxis(svg, data, info);
 
             var colors = d3.scale.category20c();
             colors.domain(d3.keys(data.authors));
@@ -162,28 +183,70 @@ ns("plugins.graph");
 
             svg.selectAll(".author").remove();
 
-            svg.selectAll(".author")
-                .data(data.ranges)
-                .enter().append("rect")
-                .attr("class", "author")
-                .attr("x", function(d) {
-                    return that.scale.x(d.range[0]);
-                })
-                .attr("width", function(d) {
-                    var start = that.scale.x(d.range[0]);
-                    var end = that.scale.x(d.range[1]);
+            $.each(data.authors, function() {
+                var author = this.href;
 
-                    return end - start;
-                })
-                .attr("y", function(d) {
-                    return that.scale.y(d.score);
-                })
-                .attr("height", function(d) {
-                    return that.getInnerHeight() - that.scale.y(d.score);
-                })
-                .attr("fill", function(d) {
-                    return colors(d.author);
+                var fill = colors(author);
+                var stroke = d3.rgb(fill).darker(0.5);
+
+                $.each(this.values, function() {
+                    var area = svg.append("path")
+                        .attr("class", "author href" + author.replace(/\//g, "-"));
+
+                    var edge = svg.append("path")
+                        .attr("class", "author edge");
+
+                    var line = d3.svg.line()
+                        .x(function(d) {
+                            return that.scale.x(d.date);
+                        })
+                        .y(function(d) {
+                            return that.scale.y(d.score);
+                        });
+
+                    var score = d3.svg.area()
+                        .x(function(d) {
+                            return that.scale.x(d.date);
+                        })
+                        .y1(function(d) {
+                            return that.scale.y(d.score);
+                        })
+                        .y0(function() {
+                            return that.scale.y(0);
+                        });
+
+                    area.datum(this)
+                        .attr("d", score)
+                        .attr("fill", fill);
+
+                    edge.datum(this)
+                        .attr("d", line)
+                        .attr("stroke", stroke);
                 });
+            });
+
+            // svg.selectAll(".author")
+            //     .data(data.ranges)
+            //     .enter().append("rect")
+            //     .attr("class", "author")
+            //     .attr("x", function(d) {
+            //         return that.scale.x(d.range[0]);
+            //     })
+            //     .attr("width", function(d) {
+            //         var start = that.scale.x(d.range[0]);
+            //         var end = that.scale.x(d.range[1]);
+
+            //         return end - start;
+            //     })
+            //     .attr("y", function(d) {
+            //         return that.scale.y(d.score);
+            //     })
+            //     .attr("height", function(d) {
+            //         return that.getInnerHeight() - that.scale.y(d.score);
+            //     })
+            //     .attr("fill", function(d) {
+            //         return colors(d.author);
+            //     });
 
             svg.selectAll(".author")
                 .on("mouseenter", function() {

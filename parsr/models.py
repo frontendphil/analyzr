@@ -825,14 +825,19 @@ class Branch(models.Model):
                     "increases": 0,
                     "decreases": 0,
                     "revisions": 0,
+                    "loc": 0,
                     "score": 0
                 }
 
             current = authors[author]
 
             current["revisions"] += 1
+            current["loc"] = max(0, current["loc"] + f["sloc_sum"])
 
             for metric in metrics:
+                if metric == "sloc_sum":
+                    continue
+
                 value = f["%s_sum" % metric]
 
                 if value > 0:
@@ -846,7 +851,8 @@ class Branch(models.Model):
             else:
                 current["score"] = current["increases"]
 
-            current["score"] = current["score"] + numpy.log(1 + float((current["revisions"] / average_revisions)))
+            current["score"] = current["score"] + (numpy.log(1 + float((current["revisions"]))) / average_revisions)
+            # current["score"] = current["score"] + (numpy.log(1 + float(current["loc"])) / average_revisions)
 
             date = date.isoformat()
 
@@ -895,7 +901,8 @@ class Branch(models.Model):
             "halstead_difficulty",
             "fan_in",
             "fan_out",
-            "sloc_squale"
+            "sloc_squale",
+            "sloc"
         ]
 
         def get_annotation(metrics):
@@ -1064,7 +1071,7 @@ class Branch(models.Model):
         max_added = 0
         max_removed = 0
 
-        files = self.files(author=author, action=Action.readable(), language=language, package=package, start=start, end=end)
+        files = self.files(author=author, actions=Action.readable(), language=language, package=package, start=start, end=end)
         revisions = files.values("date").annotate(added=Sum("lines_added"), removed=Sum("lines_removed"))
 
         for revision in revisions:
