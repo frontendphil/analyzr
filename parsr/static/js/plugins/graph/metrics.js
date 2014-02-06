@@ -2,7 +2,7 @@ ns("plugins.graph.metrics");
 
 (function() {
 
-    analyzr.plugins.graph.metrics.MetricsBase = analyzr.plugins.graph.Graph.extend({
+    analyzr.plugins.graph.metrics.Metric = analyzr.plugins.graph.Graph.extend({
 
         init: function(target, attrs) {
             this.scales = {};

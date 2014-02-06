@@ -56,10 +56,10 @@ ns("plugins.graph");
                     }
                 },
                 position: {
-                    my: "bottom center",
-                    at: "top center",
+                    my: "top center",
+                    at: "bottom center",
                     adjust: {
-                        y: -10
+                        y: 10
                     }
                 },
                 style: {

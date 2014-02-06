@@ -2,7 +2,7 @@ ns("plugins.graph.metrics");
 
 (function() {
 
-    analyzr.plugins.graph.metrics.ComplexityMetrics = analyzr.plugins.graph.metrics.MetricsBase.extend({
+    analyzr.plugins.graph.metrics.Complexity = analyzr.plugins.graph.metrics.Metric.extend({
 
         init: function(target, attrs) {
             attrs = attrs || {};

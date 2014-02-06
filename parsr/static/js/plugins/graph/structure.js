@@ -2,7 +2,7 @@ ns("plugins.graph.metrics");
 
 (function() {
 
-    analyzr.plugins.graph.metrics.StructuralMetrics = analyzr.plugins.graph.metrics.MetricsBase.extend({
+    analyzr.plugins.graph.metrics.Structure = analyzr.plugins.graph.metrics.Metric.extend({
 
         init: function(target, attrs) {
             attrs = attrs || {};

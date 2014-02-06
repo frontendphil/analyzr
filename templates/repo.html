@@ -100,7 +100,7 @@
             });
 
             $(".metrics.complexity").each(function() {
-                var complexity = new analyzr.plugins.graph.metrics.ComplexityMetrics(this, {
+                var complexity = new analyzr.plugins.graph.metrics.Complexity(this, {
                     height: 400,
                     margins: {
                         top: 40,
@@ -113,7 +113,7 @@
             });
 
             $(".metrics.structure").each(function() {
-                var structure = new analyzr.plugins.graph.metrics.StructuralMetrics(this, {
+                var structure = new analyzr.plugins.graph.metrics.Structure(this, {
                     height: 400,
                     margins: {
                         top: 40,
