@@ -1,7 +1,7 @@
 from os.path import abspath, dirname
 # Django settings for analyzr project.
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -86,9 +86,10 @@ STATIC_ROOT = "%s/static" % PROJECT_PATH
 # Example: "http://example.com/static/", "http://static.example.com/"
 STATIC_URL = '/static/'
 
-COMPRESS_OFFLINE_CONTEXT = {
-    "STATIC_URL": STATIC_URL
-}
+COMPRESS_ENABLED = not DEBUG
+COMPRESS_URL = STATIC_URL
+COMPRESS_ROOT = STATIC_ROOT
+COMPRESS_OUTPUT_DIR = "cache"
 
 # Additional locations of static files
 STATICFILES_DIRS = (
