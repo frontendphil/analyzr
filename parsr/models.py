@@ -762,7 +762,12 @@ class Branch(models.Model):
         return [language["mimetype"] for language in languages]
 
     def get_earliest_revision(self):
-        return self.revisions.order_by("date")[0:1][0]
+        revisions = self.revisions.order_by("date")[0:1]
+
+        if not revisions:
+            return None
+
+        return revisions[0]
 
     def get_latest_revision(self):
         revisions = self.revisions.order_by("-date")[0:1]
@@ -773,6 +778,9 @@ class Branch(models.Model):
         return revisions[0]
 
     def response_stub(self, language=None, package=None, start=None, end=None):
+        earliest = self.get_earliest_revision()
+        latest = self.get_latest_revision()
+
         return {
             "info": {
                 "dates": [],
@@ -782,8 +790,8 @@ class Branch(models.Model):
                     "package": utils.href(Package, package.id) if package else None,
                     "startDate": start.isoformat() if start else None,
                     "endDate": end.isoformat() if end else None,
-                    "minDate": self.get_earliest_revision().date.isoformat(),
-                    "maxDate": self.get_latest_revision().date.isoformat()
+                    "minDate": earliest.date.isoformat() if earliest else None,
+                    "maxDate": latest.date.isoformat() if latest else None
                 }
             },
             "data": {}

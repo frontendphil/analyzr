@@ -86,6 +86,8 @@ STATIC_ROOT = "%s/static" % PROJECT_PATH
 # Example: "http://example.com/static/", "http://static.example.com/"
 STATIC_URL = '/static/'
 
+LOGIN_URL = "/login"
+
 COMPRESS_ENABLED = not DEBUG
 COMPRESS_URL = STATIC_URL
 COMPRESS_ROOT = STATIC_ROOT

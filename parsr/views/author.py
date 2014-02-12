@@ -2,7 +2,8 @@ from datetime import datetime
 
 from dateutil import parser
 
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 
 from annoying.decorators import ajax_request, render_to
 from annoying.functions import get_object_or_None
@@ -63,13 +64,18 @@ def get_tzinfo(timezone):
     return tzinfo
 
 
+@login_required
 @render_to("author.html")
 def view(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
 
+    if not branch.analyzed:
+        return redirect("parsr.views.app.index")
+
     return { "branch": branch, "author": author }
 
 
+@login_required
 @ajax_request
 def info(request, author_id):
     branch_id = get_branch(request)
@@ -79,6 +85,7 @@ def info(request, author_id):
     return author.json(branch)
 
 
+@login_required
 @ajax_request
 def metrics(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
@@ -88,6 +95,7 @@ def metrics(request, branch_id, author_id):
     return branch.metrics(author, language=language, package=package, start=start, end=end)
 
 
+@login_required
 @ajax_request
 def commits(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
@@ -95,6 +103,7 @@ def commits(request, branch_id, author_id):
     return branch.commit_history(author)
 
 
+@login_required
 @ajax_request
 def file_stats(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
@@ -102,6 +111,7 @@ def file_stats(request, branch_id, author_id):
     return branch.file_statistics(author=author)
 
 
+@login_required
 @ajax_request
 def punchcard(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
@@ -109,6 +119,7 @@ def punchcard(request, branch_id, author_id):
     return branch.punchcard(author)
 
 
+@login_required
 @ajax_request
 def churn(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
@@ -118,6 +129,7 @@ def churn(request, branch_id, author_id):
     return branch.churn(author, language=language, package=package, start=start, end=end)
 
 
+@login_required
 @ajax_request
 def score(request, branch_id, author_id):
     branch, author = get_branch_and_author(branch_id, author_id)
@@ -127,6 +139,7 @@ def score(request, branch_id, author_id):
     return branch.score(author=author, language=language)
 
 
+@login_required
 @render_to("compare.html")
 def compare(request, branch_id, author_id, compare_id):
     branch, author = get_branch_and_author(branch_id, author_id)

@@ -5,9 +5,11 @@
     {% if author %}data-author="{{ author|href }}"{% endif %}
     data-branch="{{ branch|href }}"></div>
 
-<div
-    class='impact hidden-print'
-    data-branch='{{ branch|href }}'></div>
+{% if not author %}
+    <div
+        class='impact hidden-print'
+        data-branch='{{ branch|href }}'></div>
+{% endif %}
 
 {% if branch.measured %}
     <div

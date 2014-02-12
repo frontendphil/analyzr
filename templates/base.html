@@ -38,6 +38,14 @@
                     {% block active %}{% endblock %}
                 </ol>
             </li>
+            {% block logout %}
+                <li class='pull-right'>
+                    <a href='{% url "parsr.views.app.logout" %}'>
+                        <i class='icon icon-signout'></i>
+                        Logout
+                    </a>
+                </li>
+            {% endblock %}
             <li class='pull-right branch-info'>
                 {% block branch %}{% endblock %}
             </li>

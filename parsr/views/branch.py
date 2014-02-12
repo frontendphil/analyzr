@@ -4,10 +4,11 @@ from pygments import highlight
 from pygments.lexers import PythonTracebackLexer
 from pygments.formatters import HtmlFormatter
 
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponseRedirect
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
+from django.contrib.auth.decorators import login_required
 
 from annoying.decorators import ajax_request
 
@@ -37,15 +38,20 @@ def get_branch(branch_id):
     return get_object_or_404(Branch, pk=branch_id)
 
 
+@login_required
 def view(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
-    return HttpResponseRedirect(reverse("parsr.views.repo.view", kwargs={
+    if not branch.analyzed:
+        return redirect("parsrs.view.app.index")
+
+    return redirect("parsr.views.repo.view", kwargs={
         "branch_id": branch.id,
         "repo_id": branch.repo.id
-    }))
+    })
 
 
+@login_required
 @ajax_request
 @require_POST
 def analyze(request, branch_id):
@@ -54,6 +60,7 @@ def analyze(request, branch_id):
     return track_action(branch, lambda: branch.analyze(), lambda x: branch.abort_analyze(x))
 
 
+@login_required
 @ajax_request
 @require_POST
 def resume_analyze(request, branch_id):
@@ -62,6 +69,7 @@ def resume_analyze(request, branch_id):
     return track_action(branch, lambda: branch.analyze(resume=True), lambda x: branch.abort_analyze(x))
 
 
+@login_required
 @ajax_request
 @require_POST
 def measure(request, branch_id):
@@ -70,6 +78,7 @@ def measure(request, branch_id):
     return track_action(branch, lambda: branch.measure(), lambda x: branch.abort_measure(x))
 
 
+@login_required
 @ajax_request
 @require_POST
 def resume_measure(request, branch_id):
@@ -78,6 +87,7 @@ def resume_measure(request, branch_id):
     return track_action(branch, lambda: branch.measure(resume=True), lambda x: branch.abort_measure(x))
 
 
+@login_required
 @ajax_request
 def info(request, branch_id):
     branch = get_branch(branch_id)
@@ -85,6 +95,7 @@ def info(request, branch_id):
     return branch.json()
 
 
+@login_required
 @ajax_request
 def commits(request, branch_id):
     branch = get_branch(branch_id)
@@ -92,6 +103,7 @@ def commits(request, branch_id):
     return branch.commit_history()
 
 
+@login_required
 @ajax_request
 def punchcard(request, branch_id):
     branch = get_branch(branch_id)
@@ -99,6 +111,7 @@ def punchcard(request, branch_id):
     return branch.punchcard()
 
 
+@login_required
 @ajax_request
 def file_stats(request, branch_id):
     branch= get_branch(branch_id)
@@ -106,6 +119,7 @@ def file_stats(request, branch_id):
     return branch.file_statistics()
 
 
+@login_required
 @ajax_request
 def contributors(request, branch_id):
     branch = get_branch(branch_id)
@@ -115,6 +129,7 @@ def contributors(request, branch_id):
     return branch.contributors(page=page)
 
 
+@login_required
 @ajax_request
 def packages(request, branch_id):
     branch = get_branch(branch_id)
@@ -122,6 +137,7 @@ def packages(request, branch_id):
     return branch.packages()
 
 
+@login_required
 @ajax_request
 def metrics(request, branch_id):
     branch = get_branch(branch_id)
@@ -131,6 +147,7 @@ def metrics(request, branch_id):
     return branch.metrics(language=language, package=package, start=start, end=end)
 
 
+@login_required
 @ajax_request
 def churn(request, branch_id):
     branch = get_branch(branch_id)
@@ -140,6 +157,7 @@ def churn(request, branch_id):
     return branch.churn(language=language, package=package, start=start, end=end)
 
 
+@login_required
 @ajax_request
 def score(request, branch_id):
     branch = get_branch(branch_id)
@@ -149,6 +167,7 @@ def score(request, branch_id):
     return branch.score(language=language)
 
 
+@login_required
 @ajax_request
 def impact(request, branch_id):
     branch = get_branch(branch_id)
@@ -156,6 +175,7 @@ def impact(request, branch_id):
     return branch.impact()
 
 
+@login_required
 @ajax_request
 def cleanup(request, branch_id):
     branch = get_branch(branch_id)
@@ -165,6 +185,7 @@ def cleanup(request, branch_id):
     return {"status": "ok"}
 
 
+@login_required
 @ajax_request
 def experts(request, branch_id):
     branch = get_branch(branch_id)

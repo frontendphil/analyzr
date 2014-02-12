@@ -11,6 +11,8 @@ admin.site.register(models.Branch)
 
 urlpatterns = patterns('',
     url(r"^$", "parsr.views.app.index"),
+    url(r'^login$', "parsr.views.app.login"),
+    url(r'^logout$', "parsr.views.app.logout"),
 
     url(r"^repositories$", "parsr.views.repo.list"),
 

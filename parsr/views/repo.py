@@ -5,6 +5,7 @@ import sys
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
 
 from annoying.decorators import render_to, ajax_request
 
@@ -12,6 +13,7 @@ from parsr.models import Repo, Branch
 from parsr.forms import RepoForm
 
 
+@login_required
 @render_to("repo.html")
 def view(request, repo_id, branch_id=None):
     repo = get_object_or_404(Repo, pk=repo_id)
@@ -20,6 +22,7 @@ def view(request, repo_id, branch_id=None):
     return { "repo": repo, "branch": branch }
 
 
+@login_required
 @ajax_request
 def info(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
@@ -27,6 +30,7 @@ def info(request, repo_id):
     return repo.json()
 
 
+@login_required
 @ajax_request
 def list(request):
     repos = Repo.objects.all().order_by("-url")
@@ -34,6 +38,7 @@ def list(request):
     return [repo.json() for repo in repos]
 
 
+@login_required
 @ajax_request
 def branches(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
@@ -41,6 +46,7 @@ def branches(request, repo_id):
     return [branch.json() for branch in repo.branches.all()]
 
 
+@login_required
 @require_POST
 def purge(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
@@ -49,6 +55,7 @@ def purge(request, repo_id):
     return HttpResponse(status=200)
 
 
+@login_required
 @render_to("create.html")
 def create(request):
     form = RepoForm()
@@ -56,6 +63,7 @@ def create(request):
     return { "form": form }
 
 
+@login_required
 @require_POST
 def save(request):
     form = RepoForm(request.POST)
@@ -78,6 +86,7 @@ def save(request):
     return HttpResponse(status=200)
 
 
+@login_required
 @require_POST
 def remove(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
@@ -90,6 +99,7 @@ def remove(request, repo_id):
     return HttpResponse(status=200)
 
 
+@login_required
 @render_to("edit.html")
 def edit(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
@@ -98,6 +108,7 @@ def edit(request, repo_id):
     return { "form": form, "repo": repo }
 
 
+@login_required
 @require_POST
 def update(request, repo_id):
     repo = get_object_or_404(Repo, pk=repo_id)
