@@ -212,7 +212,7 @@ class Git(Connector):
 
         revision = branch.create_revision(commit.hexsha)
         revision.set_author(commit.author.name, commit.author.email)
-        revision.set_date(self.parse_date(commit.committed_date, branch.repo.timezone))
+        revision.set_date(self.parse_date(commit.authored_date, branch.repo.timezone))
 
         if not parent:
             for filename, info in stats.files.iteritems():
