@@ -5,15 +5,13 @@ from pygments.lexers import PythonTracebackLexer
 from pygments.formatters import HtmlFormatter
 
 from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponseRedirect
 from django.views.decorators.http import require_POST
-from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
 
 from annoying.decorators import ajax_request
 
 from parsr.models import Branch
-from parsr.utils import send_mail
+from parsr.utils import send_error
 from parsr.views.author import parse_filters
 
 
@@ -29,7 +27,7 @@ def track_action(branch, action, abort):
         error = highlight(tb, lexer, formatter)
 
         abort(error)
-        send_mail(tb)
+        send_error(tb)
 
     return { "status": "ok" }
 

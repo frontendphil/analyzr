@@ -12,7 +12,17 @@ from django.core.urlresolvers import reverse
 from analyzr.settings import ADMINS, EMAIL, SEND_EMAILS
 
 
-def send_mail(traceback):
+def send_error(traceback):
+    lexer = PythonTracebackLexer()
+    html_formatter = HtmlFormatter(full=True, noclasses=True)
+    raw_formatter = NullFormatter()
+
+    html = highlight(traceback, lexer, html_formatter)
+    text = highlight(traceback, lexer, raw_formatter)
+
+    send_mail(text, html)
+
+def send_mail(text, html=None):
     if not SEND_EMAILS:
         return
 
@@ -22,18 +32,14 @@ def send_mail(traceback):
         message["To"] = email
         message["Subject"] = "Something went terribly wrong!"
 
-        lexer = PythonTracebackLexer()
-        html_formatter = HtmlFormatter(full=True, noclasses=True)
-        raw_formatter = NullFormatter()
-
-        html = highlight(traceback, lexer, html_formatter)
-        text = highlight(traceback, lexer, raw_formatter)
-
         part1 = MIMEText(text, "plain")
-        part2 = MIMEText(html, "html")
-
         message.attach(part1)
-        message.attach(part2)
+
+        part2 = None
+
+        if html:
+            part2 = MIMEText(html, "html")
+            message.attach(part2)
 
         connection = SMTP(EMAIL["host"])
         connection.login(EMAIL["account"], EMAIL["password"])
