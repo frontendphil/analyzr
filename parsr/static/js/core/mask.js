@@ -36,10 +36,12 @@ ns("core");
 		render: function() {
 			var mask = $("<div class='mask' />");
 			var body = $(
-				"<div class='body'>" +
-					"<div class='content'>" +
-						"<i class='icon-spinner icon-spin'></i> " +
-						"<span class='text'>" + this.text + "</span>" +
+				"<div class='body panel panel-default'>" +
+					"<div class='panel-body'>" +
+						"<div class='content'>" +
+							"<i class='icon-spinner icon-spin'></i> " +
+							"<span class='text'>" + this.text + "</span>" +
+						"</div>" +
 					"</div>" +
 				"</div>"
 			);

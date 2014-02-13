@@ -213,6 +213,7 @@ class Git(Connector):
         revision = branch.create_revision(commit.hexsha)
         revision.set_author(commit.author.name, commit.author.email)
         revision.set_date(self.parse_date(commit.authored_date, branch.repo.timezone))
+        revision.message = commit.summary
 
         if not parent:
             for filename, info in stats.files.iteritems():
@@ -250,14 +251,15 @@ class Git(Connector):
 
         return revision
 
-
     def analyze(self, branch, resume_at=None):
         last_commit = None
         last_revision = resume_at.next if resume_at else None
 
         self.switch_to(branch)
 
-        for commit in self.repo.iter_commits():
+        commit = self.repo.head.commit
+
+        while commit:
             if resume_at and not resume_at.represents(commit.hexsha):
                 last_commit = commit
 
@@ -276,6 +278,7 @@ class Git(Connector):
                 last_revision = revision
 
             last_commit = commit
+            commit = commit.parents[0] if commit.parents else None
 
         # create initial commit
         revision = self.parse(branch, None, last_commit)

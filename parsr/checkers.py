@@ -394,6 +394,8 @@ class ComplexityReport(Checker):
         return "%s/%s" % (self.base_path, f.full_path())
 
     def run(self):
+        self.failed = []
+
         for f in self.files:
             path = self.get_file_path(f)
             result = "%s_%s.json" % (self.result, f.get_identifier())
@@ -407,26 +409,11 @@ class ComplexityReport(Checker):
                     raise e
 
                 # Ignore syntax errors in checked files
-                return False
+                self.failed.append(f.get_identifier())
 
         return True
 
     def get_cc_squale(self, functions):
-        # cc = sum([function["cyclomatic"] for function in functions])
-        # nom = len(functions)
-
-        # if cc >= 80:
-        #     exponent = (30.0 - nom) / 10.0
-
-        #     return pow(2, exponent)
-
-        # if cc < 80 and cc >= 50 and nom >= 15:
-        #     return 2 + ((20 - nom) / 30)
-
-        # if cc < 50 and cc >= 30 and nom >= 15:
-        #     return 3 + ((15 - nom) / 15)
-
-        # return 3
         marks = []
 
         for function in functions:
@@ -460,7 +447,12 @@ class ComplexityReport(Checker):
 
     def parse(self, connector):
         for f in self.files:
-            path = "%s_%s.json" % (self.result, f.get_identifier())
+            identifier = f.get_identifier()
+
+            if identifier in self.failed:
+                continue
+
+            path = "%s_%s.json" % (self.result, identifier)
 
             with open(path) as result:
                 contents = json.load(result)

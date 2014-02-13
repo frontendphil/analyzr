@@ -45,14 +45,19 @@ ns("plugins");
 
 			this.dom.addClass("dialog");
 
-			var dialog = this.dom.find(".body");
+			var dialog = this.dom.find(".panel");
+			var body = this.dom.find(".panel-body");
+
+			if(this.attrs.title) {
+				dialog.append("<div class='panel-heading'>" + attrs.title + "</div>");
+			}
 
 			if(!this.attrs.waiting) {
 				this.dom.find(".icon-spinner").hide();
 			}
 
 			var actions = $("<div class='actions' />");
-			dialog.append(actions);
+			body.append(actions);
 
 			if(!this.attrs.actions || this.attrs.actions.length === 0) {
 				this.standardButton();

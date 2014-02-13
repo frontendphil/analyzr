@@ -162,6 +162,10 @@ ns("plugins");
                         "</h5>"
                     );
 
+                    if(revision.rep.message) {
+                        content.append("<div class='message well'>" + revision.rep.message + "</div>");
+                    }
+
                     $.ajax(revision.rep.author, {
                         success: function(author) {
                             content.find("h5").append(" - Created by <emph>" + author.rep.name + "</emph>");

@@ -205,12 +205,12 @@ def clean_ignores(sender, instance, **kwargs):
     if instance.ignored_folders:
         for foldername in instance.ignored_folders.split(","):
             if not foldername.startswith("/"):
-                foldername = "/%s" % foldername
+                foldername = "/%s" % foldername.strip()
 
             if not foldername.endswith("/"):
-                foldername = "%s/" % foldername
+                foldername = "%s/" % foldername.strip()
 
-            foldernames.append(foldername.strip())
+            foldernames.append(foldername)
 
     instance.ignored_folders = ",".join(foldernames)
 
@@ -927,8 +927,8 @@ class Branch(models.Model):
         data, dates = self.parse_revision_authors(files, metrics, language=language)
 
         response["info"]["dates"] = [date.isoformat() for date in dates]
-        response["info"]["options"]["startDate"] = dates[0].isoformat()
-        response["info"]["options"]["endDate"] = dates[-1].isoformat()
+        response["info"]["options"]["startDate"] = dates[0].isoformat() if dates else None
+        response["info"]["options"]["endDate"] = dates[-1].isoformat() if dates else None
 
         tzinfo = self.get_tzinfo()
         active_authors = {}
@@ -1108,6 +1108,7 @@ class Revision(models.Model):
 
     branch = models.ForeignKey("Branch", related_name="revisions", null=True)
     author = models.ForeignKey("Author", related_name="revisions", null=True)
+    message = models.TextField(default="")
 
     next = models.ForeignKey("Revision", related_name='previous', null=True)
 
@@ -1142,6 +1143,7 @@ class Revision(models.Model):
                 "author": utils.href(Author, self.author_id),
                 "next": utils.href(Revision, self.next_id) if self.next else None,
                 "measured": self.measured,
+                "message": self.message,
                 "date": self.date.isoformat(),
                 "files": [f.json() for f in self.files.all()],
                 "complexDate": {
