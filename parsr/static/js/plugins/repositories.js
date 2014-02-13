@@ -217,6 +217,7 @@ ns("plugins");
             var dialog = new analyzr.plugins.Dialog({
                 width: 500,
                 text: text,
+                title: "Interrupted Action",
                 actions: [
                     {
                         text: "Cancel",

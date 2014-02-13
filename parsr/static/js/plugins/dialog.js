@@ -49,7 +49,7 @@ ns("plugins");
 			var body = this.dom.find(".panel-body");
 
 			if(this.attrs.title) {
-				dialog.append("<div class='panel-heading'>" + attrs.title + "</div>");
+				dialog.prepend("<div class='panel-heading'>" + this.attrs.title + "</div>");
 			}
 
 			if(!this.attrs.waiting) {
@@ -109,6 +109,7 @@ ns("plugins");
 	analyzr.plugins.Dialog.confirm = function(text, clb) {
 		var dialog = new analyzr.plugins.Dialog({
 			text: text,
+			title: "Please Confirm",
 			actions: [
 				{
 					text: "Cancel",

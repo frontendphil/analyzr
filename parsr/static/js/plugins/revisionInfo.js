@@ -8,7 +8,8 @@ ns("plugins");
             this.revision = revision;
 
             this._super({
-                width: 900
+                width: 900,
+                title: "Revision Info"
             });
 
             var that = this;
