@@ -137,6 +137,24 @@ ns("plugins");
             delete this.dom;
         },
 
+        layout: function() {
+            var cHeight = Math.min(this.container.outerHeight(), window.innerHeight);
+            var cWidth = Math.min(this.container.outerWidth(), window.innerWidth);
+
+            var mHeight = this.dom.find(".body").outerHeight();
+            var mWidth = this.dom.find(".body").outerWidth();
+
+            var side = this.container.scrollLeft() + (cWidth / 2) - (mWidth / 2);
+
+            this.dom.find(".body").css({
+                marginTop: this.container.scrollTop() + (cHeight / 2) - (mHeight / 2),
+                marginLeft: side / 2,
+                marginRight: side / 2
+            });
+
+            this.raise("layout");
+        },
+
         render: function() {
             this._super();
 

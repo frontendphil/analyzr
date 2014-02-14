@@ -112,6 +112,12 @@ class Connector(object):
     def diff(self, left, right):
         raise NotImplementedError
 
+    def beauty_diff(self, diff):
+        lexer = DiffLexer()
+        html_formatter = HtmlFormatter()
+
+        return highlight(diff, lexer, html_formatter)
+
     def get_branches(self):
         return [("Root", "/")]
 
@@ -199,10 +205,7 @@ class Git(Connector):
 
                 diff = "\n".join(diff)
 
-                lexer = DiffLexer()
-                html_formatter = HtmlFormatter()
-
-                diff = highlight(diff, lexer, html_formatter)
+                diff = self.beauty_diff(diff)
 
             stat = stats[filename]
 
@@ -414,18 +417,7 @@ class SVN(Connector):
 
         return "%s%s/%s" % (repo.url, branch.path, filename)
 
-    def get_churn(self, revision, f):
-        previous = f.get_previous()
-
-        if not previous:
-            return
-
-        diff = self.repo.diff("/tmp",
-            urllib.quote(self.full_path(previous.revision, f.full_path()), ":/"),
-            revision1=Revision(revision_kind.number, previous.revision.identifier),
-            revision2=Revision(revision_kind.number, revision.identifier)
-        )
-
+    def parse_churn(self, diff):
         added = 0
         removed = 0
 
@@ -438,6 +430,45 @@ class SVN(Connector):
 
             if line.startswith("-"):
                 removed = removed + 1
+
+        return added, removed
+
+    def diff(self, left, right):
+        result = []
+
+        for f in right.files.all():
+            if f.change_type in [Action.DELETE, Action.ADD]:
+                continue
+
+            diff = self.repo.diff("/tmp",
+                urllib.quote(self.full_path(right, f.full_path()), ":/"),
+                revision1=Revision(revision_kind.number, left.identifier),
+                revision2=Revision(revision_kind.number, right.identifier))
+
+            added, removed = self.parse_churn(diff)
+
+            result.append({
+                "name": f.full_path,
+                "diff": self.beauty_diff(diff),
+                "lines_added": added,
+                "lines_removed": removed
+            })
+
+        return result
+
+    def get_churn(self, revision, f):
+        previous = f.get_previous()
+
+        if not previous:
+            return
+
+        diff = self.repo.diff("/tmp",
+            urllib.quote(self.full_path(previous.revision, f.full_path()), ":/"),
+            revision1=Revision(revision_kind.number, previous.revision.identifier),
+            revision2=Revision(revision_kind.number, revision.identifier)
+        )
+
+        added, removed = self.parse_churn(diff)
 
         return {
             "added": added,
