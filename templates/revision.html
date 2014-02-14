@@ -1,4 +1,93 @@
 {% extends "base.html" %}
 
+{% block breadcrumb %}
+    {{ block.super }}
+{% endblock %}
+
+{% block active %}
+    <li class='active'>Revision info for {{ revision.identifier }} on {{ revision.branch }}</li>
+{% endblock %}
+
 {% block content %}
+    <div class='container'>
+        <table class='table table-bordered'>
+            <tbody>
+                <tr>
+                    <th>Identifier:</th>
+                    <td>{{ revision.identifier }}</td>
+                </tr>
+                <tr>
+                    <th>Parent:</th>
+                    <td>
+                        <a href="{% url 'parsr.views.revision.view' revision.get_previous.id %}">
+                            {{ revision.get_previous.identifier}}
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Author:</th>
+                    <td>
+                        <a href="{% url 'parsr.views.author.view' revision.branch.id revision.author.id %}">
+                            {{ revision.author }}
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Date:</th>
+                    <td>{{ revision.date }}</td>
+                </tr>
+                <tr>
+                    <th>Branch:</th>
+                    <td>
+                        <a href="{% url 'parsr.views.branch.view' revision.branch.id %}">
+                            {{ revision.branch }}
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% with revision.diff as diff %}
+            <table class='table table-hover'>
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th class='center'>Insertions</th>
+                        <th class='center'>Deletions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in diff %}
+                        <tr>
+                            <td>
+                                <a href='#{{ file.name }}'>{{ file.name }}</a>
+                            </td>
+                            <td class='center'>{{file.lines_added}}</td>
+                            <td class='center'>{{file.lines_removed}}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <hr />
+
+            {% for file in diff %}
+                <h4>
+                    <a name='{{ file.name }}'></a>
+                    {{ file.name }}
+                    <div class='pull-right'>
+                        <span class='added'>
+                            <i class='icon icon-plus'></i>
+                            {{ file.lines_added }}
+                        </span>
+                        <span>
+                            <i class='icon icon-minus'></i>
+                            {{ file.lines_removed }}
+                        </span>
+                    </div>
+                </h4>
+                <div class='diff'>{{ file.diff|safe }}</div>
+            {% endfor %}
+        {% endwith %}
+    </div>
 {% endblock %}

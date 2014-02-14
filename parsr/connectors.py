@@ -8,6 +8,10 @@ import os
 import git
 import locale
 
+from pygments import highlight
+from pygments.lexers.text import DiffLexer
+from pygments.formatters import HtmlFormatter
+
 from mercurial import ui, hg, node
 
 from pysvn import Client, Revision
@@ -105,6 +109,9 @@ class Connector(object):
     def get_churn(self, revision, filename):
         raise NotImplementedError
 
+    def diff(self, left, right):
+        raise NotImplementedError
+
     def get_branches(self):
         return [("Root", "/")]
 
@@ -165,6 +172,49 @@ class Git(Connector):
     def checkout(self, revision):
         self.repo.head.reset(commit=revision.identifier, index=True, working_tree=True)
 
+    def diff(self, left, right):
+        parent = self.repo.commit(left.identifier)
+        child = self.repo.commit(right.identifier)
+
+        result = []
+
+        diffs = parent.diff(child)
+        stats = child.stats.files
+
+        for diff in diffs:
+            filename, action, original = self.parse_diff(diff)
+
+            diff = None
+
+            if not action in [Action.DELETE, Action.ADD]:
+                try:
+                    diff = self.repo.git.diff(parent, child, filename)
+                except:
+                    pass
+
+            if diff:
+                diff = diff.replace("\t", "    ")
+                diff = diff.split("\n")
+                diff.pop(0)
+
+                diff = "\n".join(diff)
+
+                lexer = DiffLexer()
+                html_formatter = HtmlFormatter()
+
+                diff = highlight(diff, lexer, html_formatter)
+
+            stat = stats[filename]
+
+            result.append({
+                "name": filename,
+                "diff": diff,
+                "lines_added": stat["insertions"],
+                "lines_removed": stat["deletions"]
+            })
+
+        return result
+
     def create_repo(self, repo):
         folder = self.get_repo_path()
 
@@ -201,6 +251,29 @@ class Git(Connector):
             "removed": stats[filename]["deletions"]
         }
 
+    def parse_diff(self, diff):
+        action = Action.MODIFY
+        filename = None
+        original = None
+
+        if diff.new_file:
+            action = Action.ADD
+            filename = diff.b_blob.path
+
+        if diff.deleted_file:
+            action = Action.DELETE
+
+        if diff.renamed:
+            action = Action.MOVE
+
+            filename = diff.b_blob.path
+            original = diff.a_blob.path
+
+        if not filename:
+            filename = diff.a_blob.path
+
+        return filename, action, original
+
     def parse(self, branch, parent, commit=None):
         if not commit:
             branch.revision_count = parent.count()
@@ -225,25 +298,7 @@ class Git(Connector):
         diffs = parent.diff(commit)
 
         for diff in diffs:
-            action = Action.MODIFY
-            filename = None
-            original = None
-
-            if diff.new_file:
-                action = Action.ADD
-                filename = diff.b_blob.path
-
-            if diff.deleted_file:
-                action = Action.DELETE
-
-            if diff.renamed:
-                action = Action.MOVE
-
-                filename = diff.b_blob.path
-                original = diff.a_blob.path
-
-            if not filename:
-                filename = diff.a_blob.path
+            filename, action, original = self.parse_diff(diff)
 
             revision.add_file(filename, action, original=original)
 

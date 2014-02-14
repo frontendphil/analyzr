@@ -15,7 +15,7 @@ def get_revision(revision_id):
 def view(request, revision_id):
     revision = get_revision(revision_id)
 
-    return { revision: revision }
+    return { "revision": revision }
 
 
 @login_required

@@ -1233,6 +1233,13 @@ class Revision(models.Model):
             mimetype__in=Analyzer.parseable_types()
         )
 
+    def diff(self):
+        previous = self.get_previous()
+
+        connector = Connector.get(self.branch.repo)
+
+        return connector.diff(previous, self)
+
     def includes(self, filename):
         package, filename = File.parse_name(filename)
 
@@ -1659,9 +1666,9 @@ class Author(models.Model):
             "rep": {
                 "id": self.id,
                 "name": str(self),
-                "age": str(end - start),
-                "firstAction": start.isoformat(),
-                "lastAction": end.isoformat(),
+                "age": str(end - start) if start and end else None,
+                "firstAction": start.isoformat() if start else None,
+                "lastAction": end.isoformat() if end else None,
                 "workIndex": float(self.get_work_index(branch)),
                 "icon": self.get_icon(),
                 "revisions": self.revision_count(branch),

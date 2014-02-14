@@ -154,7 +154,13 @@ ns("plugins");
                 success: function(revision) {
                     content.html("");
 
-                    content.append("<h3>" + revision.rep.identifier + "</h3>");
+                    content.append(
+                        "<h3>" +
+                            "<a href='" + revision.view + "' target='_blank'>" +
+                                revision.rep.identifier +
+                            "</a>" +
+                        "</h3>"
+                    );
                     content.append(
                         "<h5>" +
                             "<time datetime='" + revision.rep.date + "'>" +

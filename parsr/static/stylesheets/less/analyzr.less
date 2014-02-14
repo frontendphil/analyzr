@@ -50,6 +50,49 @@ body {
     }
 }
 
+@color-removed: #e04c4c;
+@background-removed: #e8b7b7;
+
+@color-added: #5fbd4f;
+@background-added: #ccecc7;
+
+.diff {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    pre {
+        background-color: #fff;
+        border: none;
+
+        font-size: 10pt;
+    }
+
+    span {
+        display: inline-block;
+        width: 100%;
+    }
+
+    .gd {
+        color: @color-removed;
+
+        background-color: lighten(@background-removed, 15%)
+    }
+
+    .gi {
+        color: @color-added;
+
+        background-color: lighten(@background-added, 10%);
+    }
+
+    .gh {
+        display: none;
+    }
+}
+
 .column-browser {
     overflow-x: scroll;
     overflow-y: hidden;
@@ -756,13 +799,13 @@ table {
 
     .area {
         &.added {
-            fill: #ccecc7;
-            stroke: #5fbd4f;
+            fill: @background-added;
+            stroke: @color-added;
         }
 
         &.removed {
-            fill: #e8b7b7;
-            stroke: #e04c4c;
+            fill: @background-removed;
+            stroke: @color-removed;
         }
     }
 }
