@@ -408,6 +408,7 @@ class SVN(Connector):
         revision = branch.create_revision(identifier)
         revision.set_author(log.author)
         revision.set_date(self.parse_date(log.date, branch.repo.timezone))
+        revision.message = log.message
 
         for filename in log.changed_paths:
             original = None
