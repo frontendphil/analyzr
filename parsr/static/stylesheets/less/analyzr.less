@@ -397,6 +397,25 @@ body > .content {
     }
 }
 
+.added, .removed {
+    margin-right: 10px;
+
+    font-size: 10pt;
+    font-weight: normal;
+}
+
+.added {
+    i {
+        color: @color-added;
+    }
+}
+
+.removed {
+    i {
+        color: @color-removed;
+    }
+}
+
 .revision-info {
     .body {
         display: inline-block;
@@ -430,6 +449,10 @@ body > .content {
             .delta {
                 width: 100px;
             }
+        }
+
+        th, td {
+            display: inline-block;
         }
 
         tbody {

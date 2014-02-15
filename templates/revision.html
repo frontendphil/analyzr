@@ -10,6 +10,8 @@
 
 {% block content %}
     <div class='container'>
+        <div class="well">{{ revision.message }}</div>
+
         <table class='table table-bordered'>
             <tbody>
                 <tr>
@@ -80,7 +82,7 @@
                             <i class='icon icon-plus'></i>
                             {{ file.lines_added }}
                         </span>
-                        <span>
+                        <span class='removed'>
                             <i class='icon icon-minus'></i>
                             {{ file.lines_removed }}
                         </span>

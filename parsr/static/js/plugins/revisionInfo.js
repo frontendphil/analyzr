@@ -2,6 +2,8 @@ ns("plugins");
 
 (function() {
 
+    var MAX_COLUMN_WIDTH = 300;
+
     analyzr.plugins.RevisionInfo = analyzr.plugins.Dialog.extend({
 
         init: function(revision) {
@@ -14,9 +16,9 @@ ns("plugins");
 
             var that = this;
 
-            this.on("layout", function() {
-                that.layoutTable();
-            });
+            // this.on("layout", function() {
+            //     that.layoutTable();
+            // });
         },
 
         parseMetrics: function(metrics) {
@@ -104,18 +106,54 @@ ns("plugins");
             return table;
         },
 
+        findWidestColumn: function(index) {
+            var max = 0;
+
+            this.dom.find("tbody tr").each(function() {
+                var row = $(this);
+                var probe = row.find("td:nth-child(" + index + ")");
+
+                max = Math.max(max, probe.outerWidth());
+            });
+
+            return Math.min(max, MAX_COLUMN_WIDTH);
+        },
+
+        setColumnWidth: function(index, width) {
+            this.dom.find("tbody tr").each(function() {
+                var row = $(this);
+
+                var cell = row.find("td:nth-child(" + index + ")");
+                cell.outerWidth(width);
+            });
+        },
+
         layoutTable: function() {
             var head = this.dom.find("thead");
             var body = this.dom.find("tbody");
 
-            var probe = body.find("tr:first-child").find("td");
+            var that = this;
 
             head.find("th").each(function(index) {
                 var th = $(this);
-                var ref = $(probe.get(index));
+                var widest = that.findWidestColumn(index + 1);
 
-                th.width(Math.max(ref.width(), th.width()));
+                th.outerWidth(Math.max(widest, th.outerWidth()));
             });
+
+            head.find("th").each(function(index) {
+                var th = $(this);
+
+                that.setColumnWidth(index + 1, th.outerWidth());
+            });
+
+            var width = 0;
+
+            this.dom.find("table thead th").each(function() {
+                width += $(this).outerWidth();
+            });
+
+            this.dom.find("table").width(width);
         },
 
         show: function(pkg, file) {
@@ -144,7 +182,7 @@ ns("plugins");
             var mHeight = this.dom.find(".body").outerHeight();
             var mWidth = this.dom.find(".body").outerWidth();
 
-            var side = this.container.scrollLeft() + (cWidth / 2) - (mWidth / 2);
+            var side = this.container.scrollLeft() + cWidth - mWidth;
 
             this.dom.find(".body").css({
                 marginTop: this.container.scrollTop() + (cHeight / 2) - (mHeight / 2),
@@ -200,6 +238,7 @@ ns("plugins");
                     var fileChanges = that.createFileChanges(revision.rep.files);
                     content.append(fileChanges);
 
+                    that.layoutTable();
                     that.layout();
                 }
             });
