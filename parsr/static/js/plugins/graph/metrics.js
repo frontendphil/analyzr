@@ -220,28 +220,14 @@ ns("plugins.graph.metrics");
         },
 
         createComplexCircle: function(parent, color) {
-            parent.append("circle")
-                .attr("class", "outer")
-                .attr("cx", 0)
-                .attr("cy", 0)
-                .attr("r", 7)
-                .style("fill", function(d) {
-                    return color(d.id);
-                });
+            var symbol = d3.svg.symbol();
+            symbol.type("circle");
 
-            parent.append("circle")
-                .attr("class", "ring")
-                .attr("cx", 0)
-                .attr("cy", 0)
-                .attr("r", 5)
-                .style("fill", "#fff");
-
-            parent.append("circle")
-                .attr("class", "center")
-                .attr("cx", 0)
-                .attr("cy", 0)
-                .attr("r", 4)
-                .style("fill", function(d) {
+            parent.append("path")
+                .attr("d", symbol)
+                .attr("fill", "#fff")
+                .attr("stroke-width", "2px")
+                .attr("stroke", function(d) {
                     return color(d.id);
                 });
         },
