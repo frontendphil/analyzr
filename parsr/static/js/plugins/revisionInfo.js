@@ -226,7 +226,7 @@ ns("plugins");
                     );
 
                     if(revision.rep.message) {
-                        content.append("<div class='message well'>" + revision.rep.message + "</div>");
+                        content.append("<div class='message well'>" + revision.rep.message.replace(/\n/g, "<br />") + "</div>");
                     }
 
                     analyzr.core.data.get(revision.rep.author, {

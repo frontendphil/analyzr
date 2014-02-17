@@ -23,6 +23,10 @@ ns("plugins");
         },
 
         close: function() {
+            if(!this.dom) {
+                return;
+            }
+
             this.dom.remove();
         },
 

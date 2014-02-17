@@ -11,6 +11,16 @@ ns("core");
             this.text = text;
 
             this.render();
+
+            var that = this;
+
+            $(window).resize(function() {
+                if(!that.dom) {
+                    return;
+                }
+
+                that.layout();
+            });
         },
 
         getMinHeight: function(container) {
