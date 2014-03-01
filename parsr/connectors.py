@@ -498,7 +498,17 @@ class SVN(Connector):
         log = log[0]
 
         revision = branch.create_revision(identifier)
-        revision.set_author(log.author)
+
+        try:
+            # Oh those SVN folks... Apparently author is not mandatory...
+            # Why would it be. So that we can track actions, which is one of
+            # the main purposes of scm systems!? As this revision would be
+            # useless for us, we simply ignore it.
+            # http://pysvn.tigris.org/ds/viewMessage.do?dsForumId=1334&dsMessageId=1118716
+            revision.set_author(log.author)
+        except:
+            return
+
         revision.set_date(self.parse_date(log.date, branch.repo.timezone))
         revision.message = log.message
 
