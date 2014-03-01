@@ -4,7 +4,7 @@ import shutil
 import pysvn
 
 from parsr.connectors import Connector
-from parsr.checkers import JHawk, ComplexityReport, CMetrics, Lizard
+from parsr.checkers import JHawk, ComplexityReport, Lizard
 
 from analyzr.settings import RESULT_PATH
 
@@ -177,5 +177,4 @@ class BaseAnalyzer(object):
 Analyzer.register("x-java-source", JHawk)
 Analyzer.register("x-java", JHawk)
 Analyzer.register("javascript", ComplexityReport)
-# Analyzer.register("x-c", CMetrics)
 Analyzer.register("x-c", Lizard)

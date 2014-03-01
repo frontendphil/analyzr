@@ -9,7 +9,7 @@ from email.mime.text import MIMEText
 
 from django.core.urlresolvers import reverse
 
-from analyzr.settings import ADMINS, EMAIL, SEND_EMAILS
+from analyzr.settings import ADMINS, EMAIL, SEND_EMAILS, PROJECT_PATH
 
 
 def send_error(traceback):
@@ -80,3 +80,13 @@ def view(cls, instance_id):
     kwargs["%s_id" % name] = instance_id
 
     return reverse("parsr.views.%s.view" % name, kwargs=kwargs)
+
+
+def get_names():
+    names = []
+
+    with open("%s/list_of_names" % PROJECT_PATH) as list_of_names:
+        for name in list_of_names:
+            names.append(name.strip())
+
+    return names

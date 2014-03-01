@@ -1,3 +1,5 @@
+"use strict";
+
 ns("plugins");
 
 (function() {
@@ -132,6 +134,6 @@ ns("plugins");
             ]
         });
         dialog.show();
-    }
+    };
 
 }());

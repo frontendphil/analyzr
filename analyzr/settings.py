@@ -17,6 +17,8 @@ CONFIG_PATH = '%s/templates/config' % PROJECT_PATH
 
 CONTRIBUTORS_PER_PAGE = 10
 
+ANONYMIZE = True
+
 # defines hardness of the squale aggregation algorithm
 # LOW = 3, MEDIUM = 9, HARD = 30
 LAMBDA = 9.0

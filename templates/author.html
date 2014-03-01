@@ -18,17 +18,17 @@
 {% endblock %}
 
 {% block active%}
-    <li class='active'>{{ author.name }}</li>
+    <li class='active'>{{ author.get_name }}</li>
 {% endblock %}
 
 {% block content %}
     <div class='container'>
     <h1 class='hidden-print'>
-        {% gravatar author.email %}
-        {{ author.name }}
+        {% gravatar author.get_email %}
+        {{ author.get_name }}
 
-        {% if author.email %}
-            <small>({{ author.email }})</small>
+        {% if author.get_email %}
+            <small>({{ author.get_email }})</small>
         {% endif %}
     </h1>
 
@@ -38,7 +38,7 @@
         {% with author as current_author %}
             {% for author in branch.authors|ranked %}
                 {% if not author == current_author %}
-                    <option value="{{ author|href }}">{{ author.name }} ({{ author|rank:branch }})</option>
+                    <option value="{{ author|href }}">{{ author.get_name }} ({{ author|rank:branch }})</option>
                 {% endif %}
             {% endfor %}
         {% endwith %}

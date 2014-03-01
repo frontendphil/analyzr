@@ -41,7 +41,7 @@ def view(request, branch_id):
     branch = get_object_or_404(Branch, pk=branch_id)
 
     if not branch.analyzed:
-        return redirect("parsrs.view.app.index")
+        return redirect("parsr.views.app.index")
 
     return redirect("parsr.views.repo.view", kwargs={
         "branch_id": branch.id,

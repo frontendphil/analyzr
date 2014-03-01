@@ -1,3 +1,5 @@
+"use strict";
+
 ns("plugins");
 
 (function() {
@@ -13,12 +15,6 @@ ns("plugins");
                 width: 900,
                 title: "Revision Info"
             });
-
-            var that = this;
-
-            // this.on("layout", function() {
-            //     that.layoutTable();
-            // });
         },
 
         parseMetrics: function(metrics) {
@@ -130,7 +126,6 @@ ns("plugins");
 
         layoutTable: function() {
             var head = this.dom.find("thead");
-            var body = this.dom.find("tbody");
 
             var that = this;
 

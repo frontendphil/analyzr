@@ -1,7 +1,7 @@
-
 ns("plugins");
 
 (function() {
+    "use strict";
 
     analyzr.plugins.Filter = analyzr.core.Observable.extend({
 

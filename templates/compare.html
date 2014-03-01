@@ -6,7 +6,7 @@
     {{ block.super }}
 
     <li>
-        <a href='{% url "parsr.views.author.view" branch_id=branch.id author_id=left.id %}'>{{ left.name }}</a>
+        <a href='{% url "parsr.views.author.view" branch_id=branch.id author_id=left.id %}'>{{ left.get_name }}</a>
     </li>
 {% endblock %}
 
@@ -19,11 +19,11 @@
         <div class='col-lg-6'>
             {% with left as author %}
                 <h1>
-                    {% gravatar author.email %}
-                    {{ author.name }}
+                    {% gravatar author.get_email %}
+                    {{ author.get_name }}
 
-                    {% if author.email %}
-                        <small>({{ author.email }})</small>
+                    {% if author.get_email %}
+                        <small>({{ author.get_email }})</small>
                     {% endif %}
                 </h1>
 
@@ -33,11 +33,11 @@
         <div class='col-lg-6'>
             {% with right as author %}
                 <h1>
-                    {% gravatar author.email %}
-                    {{ author.name }}
+                    {% gravatar author.get_email %}
+                    {{ author.get_name }}
 
-                    {% if author.email %}
-                        <small>({{ author.email }})</small>
+                    {% if author.get_email %}
+                        <small>({{ author.get_email }})</small>
                     {% endif %}
                 </h1>
 

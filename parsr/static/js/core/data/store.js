@@ -1,3 +1,5 @@
+"use strict";
+
 ns("core.data");
 
 (function (){

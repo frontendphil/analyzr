@@ -22,7 +22,7 @@ from parsr.analyzers import Analyzer
 from parsr.classification import Classify
 from parsr import sql, utils
 
-from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE
+from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE, ANONYMIZE
 
 
 def system_busy():
@@ -1541,14 +1541,25 @@ class File(models.Model):
 
 class Author(models.Model):
 
+    @classmethod
+    def add_fake_name(cls, author, names):
+        index = author.id % len(names)
+
+        author.fake_name = names[index]
+
+        author.save()
+
+
     name = models.CharField(max_length=255)
+    fake_name = models.CharField(max_length=255, null=True)
+
     email = models.EmailField(null=True)
 
     def __unicode__(self):
-        if self.email:
-            return "%s (%s)" % (self.name, self.email)
+        if self.get_email():
+            return "%s (%s)" % (self.get_name(), self.get_email())
 
-        return self.name
+        return self.get_name()
 
     def revision_count(self, branch=None):
         return self.get_revisions().count()
@@ -1557,8 +1568,8 @@ class Author(models.Model):
         size = 40
         mail = ""
 
-        if self.email:
-            mail = md5(self.email.lower()).hexdigest()
+        if self.get_email():
+            mail = md5(self.get_email().lower()).hexdigest()
 
         params = urlencode({
             's': str(size)
@@ -1655,6 +1666,20 @@ class Author(models.Model):
 
         return File.objects.filter(**filters).distinct()
 
+    def get_name(self):
+        if ANONYMIZE:
+            return self.fake_name
+
+        return self.name
+
+    def get_email(self):
+        if ANONYMIZE:
+            first, last = self.fake_name.split(" ")
+
+            return "%s.%s@example.com" % (first.lower(), last.lower())
+
+        return self.email
+
 
     def json(self, branch=None):
         start, end = self.get_age(branch)
@@ -1672,9 +1697,18 @@ class Author(models.Model):
                 "workIndex": float(self.get_work_index(branch)),
                 "icon": self.get_icon(),
                 "revisions": self.revision_count(branch),
-                "primeLanguage": self.get_prime_language(branch),
-                "indicators": {
-                    "complexity": self.get_complexity_index(branch)
-                }
+                "primeLanguage": self.get_prime_language(branch)
             }
         }
+
+
+@receiver(post_save, sender=Author)
+def add_fake_name(sender, **kwargs):
+    instance = kwargs["instance"]
+
+    if instance.fake_name:
+        return
+
+    names = utils.get_names()
+
+    Author.add_fake_name(instance, names)

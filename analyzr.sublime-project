@@ -2,7 +2,7 @@
 	"folders":
 	[
 		{
-			"path": "/Users/phil/Workspace/analyzr",
+			"path": ".",
             "folder_exclude_patterns": [
                 "repos",
                 "results"

@@ -2,7 +2,7 @@ import json
 import traceback
 import sys
 
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -18,6 +18,9 @@ from parsr.forms import RepoForm
 def view(request, repo_id, branch_id=None):
     repo = get_object_or_404(Repo, pk=repo_id)
     branch = get_object_or_404(Branch, pk=branch_id) if branch_id else repo.default_branch()
+
+    if not branch:
+        return redirect("parsr.views.app.index")
 
     return { "repo": repo, "branch": branch }
 

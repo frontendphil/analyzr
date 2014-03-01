@@ -1,3 +1,5 @@
+"use strict";
+
 ns("plugins.graph.metrics");
 
 (function() {
@@ -481,7 +483,7 @@ ns("plugins.graph.metrics");
         createActivityAxis: function() {
             var scale = d3.scale.linear().range([this.getInnerHeight(), 0]);
 
-            this.scales["activity"] = scale;
+            this.scales.activity = scale;
             this.scales["activity-brush"] = d3.scale.linear().range([this.brushHeight, 0]);
 
             scale.domain(d3.extent(this.activity, function(d) {
