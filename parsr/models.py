@@ -762,7 +762,7 @@ class Branch(models.Model):
         return [language["mimetype"] for language in languages]
 
     def get_earliest_revision(self):
-        revisions = self.revisions.order_by("date")[0:1]
+        revisions = self.revisions.filter(date__isnull=False).order_by("date")[0:1]
 
         if not revisions:
             return None
@@ -770,7 +770,7 @@ class Branch(models.Model):
         return revisions[0]
 
     def get_latest_revision(self):
-        revisions = self.revisions.order_by("-date")[0:1]
+        revisions = self.revisions.filter(date__isnull=False).order_by("-date")[0:1]
 
         if not revisions:
             return None
