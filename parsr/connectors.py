@@ -94,6 +94,9 @@ class Connector(object):
         self.info = repo
         self.repo = self.create_repo(repo)
 
+    def __unicode__(self):
+        return "Connector for: %s" % self.repo
+
     def create_repo(self, repo):
         raise NotImplementedError
 
@@ -475,15 +478,18 @@ class SVN(Connector):
             "removed": removed
         }
 
-    def parse(self, branch, identifier):
+    def get_log(self, branch, revision):
         try:
-            log = self.repo.log("%s%s" % (self.info.url, branch.path),
-                revision_start=Revision(revision_kind.number, identifier),
-                revision_end=Revision(revision_kind.number, identifier),
+            return self.repo.log("%s%s" % (self.info.url, branch.path),
+                revision_start=Revision(revision_kind.number, revision),
+                revision_end=Revision(revision_kind.number, revision),
                 discover_changed_paths=True,
                 limit=0)
         except:
-            return
+            return []
+
+    def parse(self, branch, identifier):
+        log = self.get_log(branch, identifier)
 
         if len(log) == 0:
             # Revision does not affect current branch
