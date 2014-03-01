@@ -28,6 +28,16 @@
                         </a>
                     </td>
                 </tr>
+                {% if revision.next %}
+                    <tr>
+                        <th>Next:</th>
+                        <td>
+                            <a href="{% url 'parsr.views.revision.view' revision.next.id %}">
+                                {{ revision.next.identifier }}
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %}
                 <tr>
                     <th>Author:</th>
                     <td>
@@ -45,6 +55,14 @@
                     <td>
                         <a href="{% url 'parsr.views.branch.view' revision.branch.id %}">
                             {{ revision.branch }}
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Repository:</th>
+                    <td>
+                        <a href="{% url 'parsr.views.repo.view' revision.branch.repo.id %}">
+                            {{ revision.branch.repo }}
                         </a>
                     </td>
                 </tr>
