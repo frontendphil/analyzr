@@ -1268,6 +1268,22 @@ class Revision(models.Model):
                                      package__endswith=package,
                                      change_type__in=Action.readable())[0]
 
+    def stats(self):
+        return File.objects.filter(revision=self).aggregate(
+            cyclomatic_complexity=Avg("cyclomatic_complexity"),
+            cyclomatic_complexity_delta=Avg("cyclomatic_complexity_delta"),
+            halstead_volume=Avg("halstead_volume"),
+            halstead_volume_delta=Avg("halstead_volume_delta"),
+            halstead_difficulty=Avg("halstead_difficulty"),
+            halstead_difficulty_delta=Avg("halstead_difficulty_delta"),
+            fan_in=Avg("fan_in"),
+            fan_in_delta=Avg("fan_in_delta"),
+            fan_out=Avg("fan_out"),
+            fan_out_delta=Avg("fan_out_delta"),
+            sloc=Sum("sloc"),
+            sloc_delta=Sum("sloc_delta")
+        )
+
 
 class Package(models.Model):
 

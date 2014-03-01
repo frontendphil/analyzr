@@ -6,6 +6,7 @@ from pygments.formatters import HtmlFormatter
 
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
+from django.views.decorators.gzip import gzip_page
 from django.contrib.auth.decorators import login_required
 
 from annoying.decorators import ajax_request
@@ -128,6 +129,7 @@ def contributors(request, branch_id):
 
 
 @login_required
+@gzip_page
 @ajax_request
 def packages(request, branch_id):
     branch = get_branch(branch_id)
@@ -136,6 +138,7 @@ def packages(request, branch_id):
 
 
 @login_required
+@gzip_page
 @ajax_request
 def metrics(request, branch_id):
     branch = get_branch(branch_id)
@@ -146,6 +149,7 @@ def metrics(request, branch_id):
 
 
 @login_required
+@gzip_page
 @ajax_request
 def churn(request, branch_id):
     branch = get_branch(branch_id)
@@ -184,6 +188,7 @@ def cleanup(request, branch_id):
 
 
 @login_required
+@gzip_page
 @ajax_request
 def experts(request, branch_id):
     branch = get_branch(branch_id)

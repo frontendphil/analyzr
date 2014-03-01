@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load filters %}
+
 {% block breadcrumb %}
     {{ block.super }}
 {% endblock %}
@@ -72,6 +74,31 @@
             </table>
 
             <hr />
+
+            {% with revision.stats as stats %}
+                <table class='table'>
+                    <thead>
+                        <tr>
+                            <th>CC</th>
+                            <th>HSV</th>
+                            <th>HSD</th>
+                            <th>Ce</th>
+                            <th>Ca</th>
+                            <th>SLOC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ stats|get:"cyclomatic_complexity_delta" }}</td>
+                            <td>{{ stats|get:"halstead_volume_delta" }}</td>
+                            <td>{{ stats|get:"halstead_difficulty_delta" }}</td>
+                            <td>{{ stats|get:"fan_out_delta" }}</td>
+                            <td>{{ stats|get:"fan_in_delta" }}</td>
+                            <td>{{ stats|get:"sloc_delta" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            {% endwith %}
 
             {% for file in diff %}
                 <h4>

@@ -58,3 +58,8 @@ def ranked(authors):
 @register.filter
 def rank(author, branch):
     return Revision.objects.filter(author=author, branch=branch).count()
+
+
+@register.filter
+def get(h, key):
+    return h[key]
