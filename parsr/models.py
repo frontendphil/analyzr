@@ -1507,13 +1507,13 @@ class File(models.Model):
             }
         }
 
-    def get_previous(self):
+    def get_previous(self, faulty=False):
         if self.change_type == Action.ADD:
             return None
 
         return utils.previous(File, self, {
             "name": self.name,
-            "faulty": False,
+            "faulty": faulty,
             "pkg": self.pkg
         })
 

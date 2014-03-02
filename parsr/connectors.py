@@ -460,7 +460,7 @@ class SVN(Connector):
         return result
 
     def get_churn(self, revision, f):
-        previous = f.get_previous()
+        previous = f.get_previous(faulty=True)
 
         if not previous:
             return
