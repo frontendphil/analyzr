@@ -370,7 +370,7 @@ class JHawk(Checker):
                     if not self.includes(filename):
                         continue
 
-                    self.processed.append(filename)
+                    processed.append(filename)
 
                     methods = cls.getElementsByTagName("Method")
 
