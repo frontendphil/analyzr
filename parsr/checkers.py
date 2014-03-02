@@ -319,8 +319,29 @@ class JHawk(Checker):
 
         return self.squale(marks)
 
+    def mark_faults(self, processed):
+        for f in self.files:
+            found = False
+
+            for p in processed:
+                if found:
+                    continue
+
+                if p.endswith(f):
+                    found = True
+
+                    continue
+
+            if not found:
+                # All files should have been processed but weren't must contain
+                # some kind of error
+                error = self.revision.get_file(f)
+                error.faulty = True
+                error.save()
 
     def parse(self, connector):
+        processed = []
+
         for result in self.results:
             with open("%s.xml" % result, "r") as f:
                 content = f.read()
@@ -349,6 +370,8 @@ class JHawk(Checker):
                     if not self.includes(filename):
                         continue
 
+                    self.processed.append(filename)
+
                     methods = cls.getElementsByTagName("Method")
 
                     if len(methods) == 0:
@@ -365,6 +388,8 @@ class JHawk(Checker):
 
                     self.set(filename, "fan_in", self.get_fan_in_mark(fan_in))
                     self.set(filename, "fan_out", self.get_fan_out_mark(fan_out))
+
+        self.mark_faults(processed)
 
         return self.measures
 
@@ -410,6 +435,10 @@ class ComplexityReport(Checker):
 
                 # Ignore syntax errors in checked files
                 self.failed.append(f.get_identifier())
+
+                # mark file as faulty
+                f.faulty = True
+                f.save()
 
         return True
 

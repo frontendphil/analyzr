@@ -727,6 +727,7 @@ class Branch(models.Model):
     def files(self, author=None, language=None, package=None, start=None, end=None, actions=Action.checkable(), escaped=False):
         filters = {
             "revision__branch": self,
+            "faulty": False,
             "change_type__in": ['"%s"' % action for action in actions] if escaped else actions
         }
 
@@ -1404,6 +1405,8 @@ class File(models.Model):
     package = models.TextField()
     pkg = models.ForeignKey("Package", related_name="files", null=True)
 
+    faulty = models.BooleanField(default=False)
+
     mimetype = models.CharField(max_length=255, null=True)
 
     change_type = models.CharField(max_length=1, null=True, choices=CHANGE_TYPES)
@@ -1510,6 +1513,7 @@ class File(models.Model):
 
         return utils.previous(File, self, {
             "name": self.name,
+            "faulty": False,
             "pkg": self.pkg
         })
 
@@ -1536,6 +1540,12 @@ class File(models.Model):
             self.fan_out_delta = self.fan_out - previous.fan_out
             self.sloc_delta = self.sloc - previous.sloc
             self.sloc_squale_delta = self.sloc_squale - previous.sloc_squale
+
+
+        # If all priort revisions are faulty we pretend that this was the initial version
+        # in order to minimize peaks in the delta curve for the metrics.
+        if not previous and self.change_type == Action.MODIFY:
+            self.change_type = Action.ADD
 
         self.save()
 
