@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.gzip import gzip_page
 from django.contrib.auth.decorators import login_required
 
-from annoying.decorators import ajax_request
+from annoying.decorators import ajax_request, render_to
 
 from parsr.models import Branch
 from parsr.utils import send_error
@@ -44,10 +44,7 @@ def view(request, branch_id):
     if not branch.analyzed:
         return redirect("parsr.views.app.index")
 
-    return redirect("parsr.views.repo.view", kwargs={
-        "branch_id": branch.id,
-        "repo_id": branch.repo.id
-    })
+    return redirect("repository-view", branch_id=branch.id, repo_id=branch.repo.id)
 
 
 @login_required
@@ -196,3 +193,20 @@ def experts(request, branch_id):
     language, package, start, end = parse_filters(request, branch)
 
     return branch.experts(language=language, package=package, start=start, end=end)
+
+
+@login_required
+@render_to("experts.html")
+def experts_detail(request, branch_id):
+    return { "branch": get_branch(branch_id) }
+
+
+@login_required
+@gzip_page
+@ajax_request
+def uberexperts(request, branch_id):
+    branch = get_branch(branch_id)
+
+    language, package, start, end = parse_filters(request, branch)
+
+    return branch.get_current_top_authors(language, package=package, start=start, end=end)

@@ -327,7 +327,7 @@ class JHawk(Checker):
                 if found:
                     continue
 
-                if p.endswith(f):
+                if f.endswith(p):
                     found = True
 
                     continue

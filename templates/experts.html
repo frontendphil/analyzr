@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% load filters %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+
+    <li>
+        <a href='{% url "parsr.views.branch.view" branch_id=branch.id %}'>
+            {{ branch }}
+        </a>
+    </li>
+{% endblock %}
+
+{% block active %}
+    <li class='active'>Detailed Experts</li>
+{% endblock %}
+
+{% block content %}
+    <div
+        class="detailed-experts"
+        data-branch="{{ branch|href }}">
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".detailed-experts").each(function() {
+                var experts = new analyzr.plugins.DetailedExperts(this);
+                experts.load();
+            });
+        });
+    </script>
+{% endblock %}

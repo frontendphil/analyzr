@@ -8,6 +8,9 @@ ns("plugins.graph");
             attrs.title = "Code Experts";
 
             this._super("experts", target, attrs);
+
+            var title = this.dom.find(".graph-title.hidden-print");
+            title.append("<small><a href='" + this.branch + "/experts/detail'>I want more details!</a></small>");
         },
 
         createDomain: function(svg, data, info) {
@@ -172,7 +175,7 @@ ns("plugins.graph");
             this.allInstances(element).attr("fill", $(element).data("fill"));
         },
 
-        prepareDiagram: function(svg, data, info) {
+        prepareDiagram: function(svg, data) {
             var that = this;
 
             var colors = d3.scale.category20c();
@@ -224,29 +227,6 @@ ns("plugins.graph");
                         .attr("stroke", stroke);
                 });
             });
-
-            // svg.selectAll(".author")
-            //     .data(data.ranges)
-            //     .enter().append("rect")
-            //     .attr("class", "author")
-            //     .attr("x", function(d) {
-            //         return that.scale.x(d.range[0]);
-            //     })
-            //     .attr("width", function(d) {
-            //         var start = that.scale.x(d.range[0]);
-            //         var end = that.scale.x(d.range[1]);
-
-            //         return end - start;
-            //     })
-            //     .attr("y", function(d) {
-            //         return that.scale.y(d.score);
-            //     })
-            //     .attr("height", function(d) {
-            //         return that.getInnerHeight() - that.scale.y(d.score);
-            //     })
-            //     .attr("fill", function(d) {
-            //         return colors(d.author);
-            //     });
 
             svg.selectAll(".author")
                 .on("mouseenter", function() {

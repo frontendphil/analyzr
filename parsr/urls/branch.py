@@ -16,6 +16,8 @@ urlpatterns = patterns('parsr.views.branch',
     url(r'^/impact$', 'impact'),
     url(r'^/cleanup$', 'cleanup'),
     url(r'^/experts$', 'experts'),
+    url(r'^/experts/detail$', 'experts_detail'),
+    url(r'^/uberexperts$', 'uberexperts'),
 
     url(r"^/analyze$", "analyze"),
     url(r"^/analyze/resume$", "resume_analyze"),

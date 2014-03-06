@@ -8,7 +8,7 @@
                 "results"
             ],
             "file_exclude_patterns": [
-                "*.sql"
+                "*.sql*"
             ]
 		}
 	]

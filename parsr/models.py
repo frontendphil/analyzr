@@ -1,4 +1,5 @@
 import numpy
+import math
 
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -809,26 +810,31 @@ class Branch(models.Model):
 
     def get_average_revisions(self, language=None):
         authors = self.authors(language=language, raw=True)\
+                   .distinct()\
                    .values("id")\
                    .annotate(rev_count=Count("revisions"))
 
         return sql.average(str(authors.query), "rev_count")
 
-    def parse_revision_authors(self, files, metrics, language=None):
+    def parse_revision_authors(self, revisions, metrics, language=None):
         data = {}
         dates = []
         authors = {}
+        changes = {}
 
-        average_revisions = self.get_average_revisions(language=language)
-
-        for f in files:
-            author = utils.href(Author, f["author"])
-            date = f["date"]
+        for revision in revisions:
+            author = utils.href(Author, revision["author"])
+            date = revision["date"]
 
             if not date in dates:
                 dates.append(date)
 
             if not author in authors:
+                changes[author] = {
+                    "increases": 0,
+                    "decreases": 0
+                }
+
                 authors[author] = {
                     "href": author,
                     "increases": 0,
@@ -841,26 +847,27 @@ class Branch(models.Model):
             current = authors[author]
 
             current["revisions"] += 1
-            current["loc"] = max(0, current["loc"] + f["sloc_sum"])
+            current["loc"] = max(0, current["loc"] + revision["sloc_sum"])
 
             for metric in metrics:
                 if metric == "sloc_sum":
                     continue
 
-                value = f["%s_sum" % metric]
+                value = revision["%s_sum" % metric]
 
                 if value > 0:
-                    current["increases"] += 1
+                    changes[author]["increases"] += 1
 
                 if value < 0:
-                    current["decreases"] += 1
+                    changes[author]["decreases"] += 1
 
-            if current["decreases"]:
-                current["score"] = Fraction(current["increases"], current["decreases"])
+            if changes[author]["decreases"]:
+                ratio = Fraction(changes[author]["increases"], changes[author]["decreases"])
             else:
-                current["score"] = current["increases"]
+                ratio = 1
 
-            current["score"] = current["score"] + (numpy.log(1 + float((current["revisions"]))) / average_revisions)
+            current["score"] = ratio * numpy.log(1 + float(current["revisions"]))
+            # current["score"] = current["score"] + ratio + numpy.log(1 + float(current["revisions"]))
             # current["score"] = current["score"] + (numpy.log(1 + float(current["loc"])) / average_revisions)
 
             date = date.isoformat()
@@ -886,19 +893,35 @@ class Branch(models.Model):
         for author in inactive:
             del authors[author]
 
-    def get_top_author(self, authors):
-        author = None
+    def get_top_author(self, authors, rank=False):
+        values = authors.values()
+        values = sorted(values, key=lambda author: author["score"])
+        values = values[::-1]
 
-        for href, stat in authors.iteritems():
-            if not author:
-                author = stat
+        if rank:
+            return values
 
-            if author["score"] < stat["score"]:
-                author = stat
+        return values[0] if values else None
 
-        return author
+    def get_current_top_authors(self, language, package=None, start=None, end=None):
+        response = self.response_stub(language=language, package=package, start=None, end=None)
 
-    def experts(self, language=None, package=None, start=None, end=None):
+        experts = self.experts(language=language, package=package, start=start, end=end, rank=True)
+
+        dates = experts["info"]["dates"]
+
+        response["data"] = []
+
+        if not dates:
+            return response
+
+        last_date = dates[-1]
+
+        response["data"] = experts["data"][last_date]
+
+        return response
+
+    def experts(self, rank=False, language=None, package=None, start=None, end=None):
         response = self.response_stub(language=language, package=package, start=start, end=end)
 
         if not language:
@@ -923,9 +946,9 @@ class Branch(models.Model):
             return annotation
 
         files = self.files(language=language, package=package, start=start, end=end)
-        files = files.values("revision", "author", "date").order_by("date").annotate(**get_annotation(metrics))
+        revisions = files.values("revision", "author", "date").order_by("date").annotate(**get_annotation(metrics))
 
-        data, dates = self.parse_revision_authors(files, metrics, language=language)
+        data, dates = self.parse_revision_authors(revisions, metrics, language=language)
 
         response["info"]["dates"] = [date.isoformat() for date in dates]
         response["info"]["options"]["startDate"] = dates[0].isoformat() if dates else None
@@ -942,12 +965,18 @@ class Branch(models.Model):
 
             self.clean_active_authors(active_authors, date, tzinfo)
 
-            top_author = self.get_top_author(active_authors)
+            top_author = self.get_top_author(active_authors, rank=rank)
+
+            if not top_author:
+                continue
+
+            if rank:
+                for author in top_author:
+                    author["score"] = float(author["score"])
+            else:
+                top_author["score"] = float(top_author["score"])
 
             response["data"][date.isoformat()] = top_author
-
-        for date, author in response["data"].iteritems():
-            author["score"] = float(author["score"])
 
         return response
 
@@ -1574,6 +1603,12 @@ class Author(models.Model):
         author.fake_name = names[index]
 
         author.save()
+
+    @classmethod
+    def get(cls, href):
+        pk = href.replace("/author/", "")
+
+        return cls.objects.get(pk=pk)
 
 
     name = models.CharField(max_length=255)

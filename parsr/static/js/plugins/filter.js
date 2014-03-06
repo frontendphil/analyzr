@@ -103,7 +103,9 @@ ns("plugins");
         },
 
         createPicker: function(element, value, clb) {
-            var date = this.formatDate(new Date(value));
+            value = new Date(value);
+
+            var date = this.formatDate(value);
             var that = this;
 
             element.find("input").val(date);
