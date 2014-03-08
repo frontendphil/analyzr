@@ -22,8 +22,8 @@ ns("plugins.graph");
             return this.scale;
         },
 
-        getMinValue: function(d) {
-            return d.count;
+        getMinValue: function() {
+            return 0;
         },
 
         getMaxValue: function(d) {

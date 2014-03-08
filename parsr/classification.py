@@ -2,7 +2,7 @@ class Classify(object):
 
     CLASSES = {
         "frontend": [
-            "x-javascript"
+            "javascript"
         ],
         "backend": [
             "x-java-source",

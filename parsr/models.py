@@ -1,5 +1,4 @@
 import numpy
-import math
 
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -281,6 +280,14 @@ class Branch(models.Model):
             }
         }
 
+    def work_force(self):
+        force = []
+
+        for author in self.authors():
+            force.append((author, author.classify(self)))
+
+        return force
+
     def analyzing_interrupted(self):
         return not self.analyzed and self.revisions.count() > 0
 
@@ -410,40 +417,43 @@ class Branch(models.Model):
         # this value might needs to be normalized using the age of the repository
         # because the longer a repository exists, the more devs come and go
 
-        return round(100 * (self.main_contributors(active=True).count() / (1.0 * self.author_count())), 2)
+        return round(100 * (len(self.main_contributors(active=True)) / (1.0 * self.author_count())), 2)
 
     def main_contributors(self, active=False):
+        revisions = Revision.objects.filter(branch=self)
+
         if active:
-            objects = Author.objects\
-                            .filter(revisions__branch=self)\
-                            .distinct()\
-                            .annotate(revision_count=Count("revisions"), last_revision=Max("revisions__date"))\
-                            .filter(last_revision__gte=datetime.now() - timedelta(days=31))
-        else:
-            objects = Author.objects\
-                            .filter(revisions__branch=self)\
-                            .distinct()\
-                            .annotate(revision_count=Count("revisions"))\
+            # active means during the last month since it has been last analyzed
+            # using the current date here would make no sense
+            revisions = revisions.filter(date__gte=self.analyzed_date - timedelta(days=62))
 
-        average = objects.aggregate(value=Avg("revision_count"))
-        bounds = objects.aggregate(max=Max("revision_count"), min=Min("revision_count"))
+        revision_count = revisions.count()
 
-        pivot = ((bounds["max"] - bounds["min"]) / 2) / average["value"]
+        authored = revisions.values("author").annotate(count=Count("id"))
 
-        return objects.filter(revision_count__gte=pivot).order_by("-revision_count")
+        main_contributors = []
+
+        for revision in authored:
+            if (100.0 * revision["count"]) / revision_count > 5:
+                main_contributors.append(revision)
+
+        # -1 in order to sort descending
+        main_contributors = sorted(main_contributors, key=lambda revision: -1 * revision["count"])
+
+        return [(revision["author"], revision["count"]) for revision in main_contributors]
 
     def impact(self):
-        authors = self.main_contributors()
+        authors = self.main_contributors(active=True)
 
         response = self.response_stub()
 
-        response["info"]["authorCount"] = authors.count()
+        response["info"]["authorCount"] = len(authors)
         response["data"] = []
 
-        for author in authors:
+        for author_id, count in authors:
             response["data"].append({
-                "href": utils.href(Author, author.id),
-                "count": author.revision_count
+                "href": utils.href(Author, author_id),
+                "count": count
             })
 
         return response
@@ -534,6 +544,10 @@ class Branch(models.Model):
             response["info"]["options"][key] = value
 
     def get_package_tree(self, packages, right):
+        """
+        Parse a hierarchy represented as a nested set back into
+        a tree. This is done in one run over the structure.
+        """
         children = []
 
         while packages:
@@ -1687,20 +1701,13 @@ class Author(models.Model):
         return Fraction(all_revisions, revisions_per_day)
 
     def classify(self, branch=None):
-        file_count = self.get_files(branch=branch, mine=False, languages=Classify.all()).count()
-        frontend_count = self.get_files(branch=branch, mime=False, langauges=Classify.frontend()).count()
-        backend_count = self.get_files(branch=branch, mine=False, langauges=Classify.backend()).count()
-
         files = self.get_files(branch=branch).count()
         frontend = self.get_files(branch=branch, languages=Classify.frontend()).count()
         backend = self.get_files(branch=branch, languages=Classify.backend()).count()
 
-        frontend_share = Fraction(frontend_count, file_count)
-        backend_share = Fraction(backend_count, file_count)
-
         return {
-            "frontend": Fraction(frontend, files) * frontend_share,
-            "backend": Fraction(backend, files) * backend_share
+            "frontend": float(Fraction(frontend, files)) if files else 0,
+            "backend": float(Fraction(backend, files)) if files else 0
         }
 
     def get_revisions(self, branch=None):

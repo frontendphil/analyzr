@@ -59,7 +59,7 @@ ns("plugins");
 
             var container = $("<ol />");
 
-            this.grab(data, container);
+            this.grab(data.slice(), container);
 
             this.dom.find(".authors").append(container);
         },
