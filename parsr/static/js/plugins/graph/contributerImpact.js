@@ -48,7 +48,21 @@ ns("plugins.graph");
                     text: function(event, api) {
                         analyzr.core.data.get(author.href + "?branch=" + that.dom.data("branch"), {
                             success: function(data) {
-                                api.set("content.text", data.rep.name + "<br />" + data.rep.revisions + " commits");
+                                var content = data.rep.name +
+                                    "<table>" +
+                                        "<tbody>" +
+                                            "<tr>" +
+                                                "<td>" + data.rep.revisions.all + "</td>" +
+                                                "<td>Overall commits</td>" +
+                                            "</tr>" +
+                                            "<tr>" +
+                                                "<td>" + data.rep.revisions.currentPeriod + "</td>" +
+                                                "<td>Commits in current period</td>" +
+                                            "</tr>" +
+                                        "</tbody>" +
+                                    "</table>";
+
+                                api.set("content.text", content);
                             }
                         });
 

@@ -42,7 +42,7 @@ ns("plugins");
                 success: function(author) {
                     container.append(
                         "<li>" +
-                            "<a href='" + that.branch + author.href + "'>" +
+                            "<a href='" + that.branch + author.view + "'>" +
                                 author.rep.name +
                             "</a>" +
                             "<span class='score'>(" + item.score + ")</span>" +
