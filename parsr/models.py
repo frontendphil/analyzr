@@ -25,6 +25,10 @@ from parsr import sql, utils
 from analyzr.settings import TIME_ZONE, CONTRIBUTORS_PER_PAGE, ANONYMIZE
 
 
+# in days
+IMPACT_TIME_PERIOD = 62
+
+
 def system_busy():
     return Branch.objects.filter(Q(analyzing=True) | Q(measuring=True)).count() > 0
 
@@ -425,7 +429,7 @@ class Branch(models.Model):
         if active:
             # active means during the last month since it has been last analyzed
             # using the current date here would make no sense
-            revisions = revisions.filter(date__gte=self.analyzed_date - timedelta(days=62))
+            revisions = revisions.filter(date__gte=self.analyzed_date - timedelta(days=IMPACT_TIME_PERIOD))
 
         revision_count = revisions.count()
 
@@ -1636,8 +1640,8 @@ class Author(models.Model):
 
         return self.get_name()
 
-    def revision_count(self, branch=None):
-        return self.get_revisions().count()
+    def revision_count(self, branch=None, active=False):
+        return self.get_revisions(branch=branch, active=active).count()
 
     def get_icon(self):
         size = 40
@@ -1710,13 +1714,16 @@ class Author(models.Model):
             "backend": float(Fraction(backend, files)) if files else 0
         }
 
-    def get_revisions(self, branch=None):
+    def get_revisions(self, branch=None, active=False):
         filters = {
             "author": self
         }
 
         if branch:
             filters["branch"] = branch
+
+        if branch and active:
+            filters["date__gte"] = branch.analyzed_date - timedelta(days=IMPACT_TIME_PERIOD)
 
         return Revision.objects.filter(**filters).distinct()
 
@@ -1764,7 +1771,10 @@ class Author(models.Model):
                 "lastAction": end.isoformat() if end else None,
                 "workIndex": float(self.get_work_index(branch)),
                 "icon": self.get_icon(),
-                "revisions": self.revision_count(branch),
+                "revisions": {
+                    "all": self.revision_count(branch),
+                    "currentPeriod": self.revision_count(branch, active=True)
+                },
                 "primeLanguage": self.get_prime_language(branch)
             }
         }
