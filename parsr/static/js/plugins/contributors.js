@@ -173,7 +173,7 @@ ns("plugins");
                         "<td>" + format(new Date(this.rep.firstAction)) + "</td>" +
                         "<td>" + format(new Date(this.rep.lastAction)) + "</td>" +
                         "<td>" + this.rep.age + "</td>" +
-                        "<td>" + this.rep.revisions + "</td>" +
+                        "<td>" + this.rep.revisions.all + "</td>" +
                         "<td>" + this.rep.workIndex.toFixed(2) + "</td>" +
                     "</tr>"
                 );
