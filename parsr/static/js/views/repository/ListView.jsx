@@ -1,13 +1,9 @@
 define([
     "react",
 
-    "views/mixins/BackboneMixin",
-
     "jsx!views/repository/ListItem"
 ], function(
     React,
-
-    BackboneMixin,
 
     ListItem
 ) {

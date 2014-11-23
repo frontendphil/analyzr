@@ -1,17 +1,17 @@
 @import "const";
 
+@import "components";
 @import "views";
 
 body {
     font-family: "Roboto", sans-serif;
     font-weight: 300;
+
+    > .content {
+        padding-bottom: 50px;
+        margin: 20px;
+    }
 }
-
-.dropdown-menu>li>a {
-    font-weight: 300;
-}
-
-
 
 .detailed-experts {
     .authors {
@@ -234,32 +234,6 @@ body {
     }
 }
 
-body > .content {
-    padding-bottom: 50px;
-    margin: 20px;
-}
-
-.footer {
-    position: fixed;
-    bottom: 0;
-
-    width: 100%;
-
-    background-color: #efefef;
-    @color: rgba(0, 0, 0, 0.5);
-
-    .container {
-        color: @color;
-        padding: 20px;
-
-        text-shadow: 1px 1px 0 #fff;
-        text-align: center;
-
-        a {
-            color: @color;
-        }
-    }
-}
 
 .score {
     margin-top: 20px;
@@ -677,38 +651,7 @@ table {
     }
 }
 
-.icons-ul {
-    padding-left: 2.142857142857143em;
-    margin-left: 0;
-}
 
-.dropdown-menu.icons-ul {
-    & > li {
-        & > a {
-            padding: 3px 20px 3px 0;
-
-            &:hover {
-                & > i {
-                    top: 0;
-
-                    padding: 3px 0 3px 5px;
-
-                    background-color: #428bca;
-
-                    &.icon-blank {
-                        color: #428bca;
-                    }
-                }
-            }
-
-            & > i {
-                &.icon-blank {
-                    color: #fff;
-                }
-            }
-        }
-    }
-}
 
 .contributors {
     text-align: center;

@@ -50,6 +50,23 @@ define([
                     collection: new RepositoryCollection()
                 });
             }.bind(this));
+        },
+
+        repository: function(id) {
+            require([
+                "models/Repository",
+
+                "jsx!views/repository/View"
+            ], function(
+                Repository,
+
+                View
+            ) {
+
+                this.render(View, {
+                    model: new Repository({ id: id })
+                });
+            }.bind(this));
         }
     });
 

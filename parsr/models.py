@@ -255,28 +255,23 @@ class Branch(models.Model):
             info["count"] = self.revisions.all().count()
 
         return {
-            "href": utils.href(Branch, self.id),
-            "view": utils.view(Branch, self.id),
-            "rel": "branch",
-            "rep": {
-                "id": self.id,
-                "name": self.name,
-                "path": self.path,
-                "repo": utils.href(Repo, self.repo_id),
-                "analyze": {
-                    "running": self.analyzing,
-                    "finished": self.analyzed,
-                    "interrupted": self.analyzing_interrupted(),
-                    "lastError": self.last_analyze_error
-                },
-                "measure": {
-                    "running": self.measuring,
-                    "finished": self.measured,
-                    "interrupted": self.measuring_interrupted(),
-                    "lastError": self.last_measure_error
-                },
-                "activity": info
-            }
+            "id": self.id,
+            "name": self.name,
+            "path": self.path,
+            "repository": self.repo_id,
+            "analyze": {
+                "running": self.analyzing,
+                "finished": self.analyzed,
+                "interrupted": self.analyzing_interrupted(),
+                "lastError": self.last_analyze_error
+            },
+            "measure": {
+                "running": self.measuring,
+                "finished": self.measured,
+                "interrupted": self.measuring_interrupted(),
+                "lastError": self.last_measure_error
+            },
+            "activity": info
         }
 
     def work_force(self):

@@ -16,6 +16,7 @@ require.config({
         "backbone": "../vendor/bower/backbone/backbone",
         "backbone-ext": "extensions/backbone",
         "backbone-uniquemodel": "../vendor/bower/backbone.uniquemodel/backbone.uniquemodel",
+        "backbone-relational": "../vendor/bower/backbone-relational/backbone-relational",
         "backbone-react": "../vendor/bower/backbone-react-component/lib/component",
 
         "jquery": "../vendor/bower/jquery/dist/jquery.min"

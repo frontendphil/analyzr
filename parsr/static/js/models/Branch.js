@@ -3,7 +3,9 @@ define([
 ], function(
     Backbone
 ) {
-    return Backbone.UniqueModel(Backbone.Model.extend({
+
+    return Backbone.UniqueModel(Backbone.RelationalModel.extend({
 
     }));
+
 });

@@ -41,10 +41,10 @@ def list(request):
     return [repo.json() for repo in repos]
 
 
-@login_required
+# @login_required
 @ajax_request
-def branches(request, repo_id):
-    repo = get_object_or_404(Repo, pk=repo_id)
+def branches(request, repository_id):
+    repo = get_object_or_404(Repo, pk=repository_id)
 
     return [branch.json() for branch in repo.branches.all()]
 
