@@ -1,4 +1,6 @@
-@printFontSize: 7pt;
+@import "const";
+
+@import "views";
 
 body {
     font-family: "Roboto", sans-serif;
@@ -9,46 +11,7 @@ body {
     font-weight: 300;
 }
 
-.repos {
-    .btn-group {
-        margin-right: 5px;
-    }
 
-    table {
-        tr {
-            .status {
-                text-align: center;
-            }
-
-            td {
-                vertical-align: middle;
-
-                .progress-bar {
-                    height: 15px;
-                    padding-right: 5px;
-                    padding-left: 5px;
-
-                    min-width: 25px;
-
-                    font-size: 10px;
-
-                    text-align: right;
-                    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
-
-                    border-radius: 2px;
-                }
-
-                &.actions {
-                    width: 150px;
-
-                    .btn {
-                        margin-right: 5px;
-                    }
-                }
-            }
-        }
-    }
-}
 
 .detailed-experts {
     .authors {
@@ -58,12 +21,6 @@ body {
         }
     }
 }
-
-@color-removed: #e04c4c;
-@background-removed: #e8b7b7;
-
-@color-added: #5fbd4f;
-@background-added: #ccecc7;
 
 .diff {
     border-bottom: 1px solid rgba(0, 0, 0, 0.2);
