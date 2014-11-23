@@ -5,7 +5,7 @@ from django.shortcuts import redirect
 from annoying.decorators import render_to
 
 
-@login_required
+# @login_required
 @render_to("index.html")
 def index(request):
     return {}

@@ -2,14 +2,27 @@
 	"folders":
 	[
 		{
-			"path": ".",
-            "folder_exclude_patterns": [
-                "repos",
-                "results"
-            ],
-            "file_exclude_patterns": [
-                "*.sql*"
-            ]
+			"file_exclude_patterns":
+			[
+				".bowerrc",
+				".classpath",
+				".project",
+				".gitignore",
+				"*.sublime-project",
+				"*.log"
+			],
+			"folder_exclude_patterns":
+			[
+				".metadata",
+				".settings",
+				"target",
+				"node_modules",
+				"docs",
+				"repos",
+				"results"
+			],
+			"follow_symlinks": true,
+			"path": "."
 		}
 	]
 }

@@ -33,7 +33,7 @@ def info(request, repo_id):
     return repo.json()
 
 
-@login_required
+# @login_required
 @ajax_request
 def list(request):
     repos = Repo.objects.all().order_by("-url")

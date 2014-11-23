@@ -152,26 +152,21 @@ class Repo(models.Model):
             error = e
 
         return {
-            "href": utils.href(Repo, self.id),
-            "view": utils.view(Repo, self.id),
-            "rel": "repo",
-            "rep": {
-                "id": self.id,
-                "name": self.url,
-                "kind": self.kind,
-                "busy": self.busy(),
-                "checkedOut": checked_out,
-                "status": self.get_status(),
-                "anonymous": self.anonymous,
-                "analyzed": self.analyzed(),
-                "analyzing": self.analyzing(),
-                "measurable": self.measurable(),
-                "measured": self.measured(),
-                "measuring": self.measuring(),
-                "branchCount": self.branch_count(),
-                "authorCount": self.author_count(),
-                "error": str(error) if error else None
-            }
+            "id": self.id,
+            "name": self.url,
+            "kind": self.kind,
+            "busy": self.busy(),
+            "checkedOut": checked_out,
+            "status": self.get_status(),
+            "anonymous": self.anonymous,
+            "analyzed": self.analyzed(),
+            "analyzing": self.analyzing(),
+            "measurable": self.measurable(),
+            "measured": self.measured(),
+            "measuring": self.measuring(),
+            "branchCount": self.branch_count(),
+            "authorCount": self.author_count(),
+            "error": str(error) if error else None
         }
 
 

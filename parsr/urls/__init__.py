@@ -14,7 +14,7 @@ urlpatterns = patterns('',
     url(r'^login$', "parsr.views.app.login"),
     url(r'^logout$', "parsr.views.app.logout"),
 
-    url(r"^repositories$", "parsr.views.repo.list"),
+    url(r"^api/repositories$", "parsr.views.repo.list"),
 
     url(r"^repo/create$", "parsr.views.repo.create"),
     url(r"^repo/create/save$", "parsr.views.repo.save"),

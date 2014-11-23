@@ -10,8 +10,8 @@
     <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery-2.0.3.min.js"></script>
 
     {% compress css %}
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/bootstrap.min.css" charset="utf-8" />
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/font-awesome.min.css" charset="utf-8" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}vendor/bower/bootstrap/dist/css/bootstrap.min.css" charset="utf-8" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}vendor/bower/font-awesome/css/font-awesome.min.css" charset="utf-8" />
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/datepicker.css" />
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stylesheets/lib/jquery.qtip.min.css" />
 
@@ -21,7 +21,10 @@
 <body>
     {% csrf_token %}
 
+    <script data-main="{{ STATIC_URL }}js/main" src="{{ STATIC_URL }}vendor/bower/requirejs/require.js"></script>
+<!--
     <div class="content">
+
         <ul class='nav nav-pills'>
             <li>
                 <ol class='breadcrumb'>
@@ -49,6 +52,7 @@
             </li>
         </ul>
 
+
         <hr />
 
         {% block content %}
@@ -61,14 +65,17 @@
         </div>
     </div>
 
+
     <div class='footer hidden-print'>
         <div class='container'>
             <i class='icon-github'></i>
             <a href='https://github.com/pxlplnt/analyzr'>analyzr</a>
         </div>
     </div>
+-->
 
     {% compress js %}
+    <!--
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery.cookie.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/bootstrap.min.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/lib/d3.v3.js"></script>
@@ -107,9 +114,8 @@
         <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/contributerImpact.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/experts.js"></script>
         <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/detailed_experts.js"></script>
+        -->
     {% endcompress %}
 
-    {% block specific %}{% endblock %}
-    {% block script %}{% endblock %}
 </body>
 </html>
