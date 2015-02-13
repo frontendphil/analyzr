@@ -1,0 +1,39 @@
+.quirks(@property, @value) {
+    -webkit-@{property}: @value;
+    -khtml-@{property}: @value;
+    -moz-@{property}: @value;
+    -ms-@{property}: @value;
+    -o-@{property}: @value;
+    @{property}: @value;
+}
+
+.quirks-append(@property, @value) {
+    -webkit-@{property}+: @value;
+    -khtml-@{property}+: @value;
+    -moz-@{property}+: @value;
+    -ms-@{property}+: @value;
+    -o-@{property}+: @value;
+    @{property}+: @value;
+}
+
+.quirks-append-space(@property, @value) {
+    -webkit-@{property}+_: @value;
+    -khtml-@{property}+_: @value;
+    -moz-@{property}+_: @value;
+    -ms-@{property}+_: @value;
+    -o-@{property}+_: @value;
+    @{property}+_: @value;
+}
+
+.animation(@value) {
+    .quirks(animation, @value);
+}
+
+.keyframes(@name, @rules) {
+    @-webkit-keyframes @name { @rules(); }
+    @-khtml-keyframes @name { @rules(); }
+    @-moz-keyframes @name { @rules(); }
+    @-ms-keyframes @name { @rules(); }
+    @-o-keyframes @name { @rules(); }
+    @keyframes @name { @rules(); }
+}

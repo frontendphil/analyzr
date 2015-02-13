@@ -166,6 +166,7 @@ class Repo(models.Model):
             "measuring": self.measuring(),
             "branchCount": self.branch_count(),
             "authorCount": self.author_count(),
+            "branchIds": [int(value) for value in self.branches.values_list("id", flat=True).distinct()],
             "error": str(error) if error else None
         }
 
@@ -241,43 +242,60 @@ class Branch(models.Model):
     def __unicode__(self):
         return "%s at %s" % (self.name, self.path)
 
-    def json(self):
-        info = {}
-
-        if self.analyzing:
-            info["action"] = "analyzing"
-            info["count"] = self.revision_count,
-            info["progress"] = self.revisions.all().count()
-
-        if self.measuring:
-            info["action"] = "measuring"
-            info["progress"] = self.revisions.filter(measured=True).count()
-            info["count"] = self.revisions.all().count()
-
-        return {
+    def json(self, short=False):
+        base = {
             "id": self.id,
             "name": self.name,
             "path": self.path,
             "repositoryId": self.repo_id,
+            "activity": self.get_info(),
+            "analyze": self.get_analyze_state(),
+            "measure": self.get_measure_state()
+        }
+
+        if short or not self.analyzed:
+            return base
+
+        return base.update({
             "age": self.age(),
             "authorCount": self.author_count(),
-            "authorRatio": self.author_ratio(),
-            "analyze": {
-                "date": self.analyzed_date,
-                "running": self.analyzing,
-                "finished": self.analyzed,
-                "interrupted": self.analyzing_interrupted(),
-                "lastError": self.last_analyze_error
-            },
-            "measure": {
-                "date": self.measured_date,
-                "running": self.measuring,
-                "finished": self.measured,
-                "interrupted": self.measuring_interrupted(),
-                "lastError": self.last_measure_error
-            },
-            "activity": info
+            "authorRatio": self.author_ratio()
+        })
+
+    def get_measure_state(self):
+        return {
+            "date": self.measured_date.isoformat() if self.measured_date else None,
+            "running": self.measuring,
+            "finished": self.measured,
+            "interrupted": self.measuring_interrupted(),
+            "lastError": self.last_measure_error
         }
+
+    def get_analyze_state(self):
+        return {
+            "date": self.analyzed_date.isoformat() if self.analyzed_date else None,
+            "running": self.analyzing,
+            "finished": self.analyzed,
+            "interrupted": self.analyzing_interrupted(),
+            "lastError": self.last_analyze_error
+        }
+
+    def get_info(self):
+        if self.analyzing:
+            return {
+                "action": "analyzing",
+                "count": self.revision_count,
+                "progress": self.revisions.all().count()
+            }
+
+        if self.measuring:
+            return {
+                "action": "measuring",
+                "progress": self.revisions.filter(measured=True).count(),
+                "count": self.revisions.all().count()
+            }
+
+        return {}
 
     def work_force(self):
         force = []
@@ -409,6 +427,9 @@ class Branch(models.Model):
 
         start = self.revisions.order_by("date")[0:1][0]
         end = self.revisions.order_by("-date")[0:1][0]
+
+        if not end.date or not start.date:
+            import pdb; pdb.set_trace()
 
         return end.date - start.date
 

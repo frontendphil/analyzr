@@ -10,7 +10,7 @@ define([
 
         render: function() {
             return (
-                <ul class='nav nav-pills'>
+                <ul className='nav nav-pills'>
                     <li>
                         { this.renderBreadcrumb() }
                     </li>
@@ -23,10 +23,10 @@ define([
 
         renderBreadcrumb: function() {
             return (
-                <ol class='breadcrumb'>
+                <ol className='breadcrumb'>
                     <li>
-                        <a href='{% url "parsr.views.app.index" %}'>
-                            <i class='icon-code'></i>
+                        <a href='/'>
+                            <i className='fa fa-code'></i>
                             Analyzr
                         </a>
                     </li>
@@ -36,9 +36,9 @@ define([
 
         renderLogout: function() {
             return (
-                <li class='pull-right'>
+                <li className='pull-right'>
                     <a href='/logout'>
-                        <i class='icon icon-signout'></i>
+                        <i className='fa fa-power-off'></i>
                         Logout
                     </a>
                 </li>
@@ -47,7 +47,7 @@ define([
 
         renderBrachInfo: function() {
             return (
-                <li class='pull-right branch-info'>
+                <li className='pull-right branch-info'>
 
                 </li>
             );

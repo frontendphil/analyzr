@@ -12,9 +12,7 @@ define([
 
     return Backbone.Collection.extend({
 
-        url: function() {
-            return "/branches";
-        },
+        urlSuffix: "/branches",
 
         model: Branch,
 
@@ -24,7 +22,7 @@ define([
                     return "analyzed";
                 }
 
-                if(branch.isMeasures()) {
+                if(branch.isMeasured()) {
                     return "measured";
                 }
 
@@ -38,6 +36,8 @@ define([
             if(groups.analyzed) {
                 return groups.analyzed[0];
             }
+
+            return this.at(0);
         },
 
     });

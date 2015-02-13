@@ -2,11 +2,15 @@ require([
     "config"
 ], function() {
     require([
-        // Backbone init
-        "backbone",
-        "backbone-uniquemodel",
-        "backbone-relations"
-    ], function() {
+        "jquery"
+    ], function(
+        $
+    ) {
+        $.ajaxSetup({
+            contentType:"application/json; charset=utf-8",
+            cache: false
+        });
+
         require([
             "singleton/Router"
         ], function(

@@ -37,7 +37,7 @@ define([
 
         render: function() {
             return (
-                <div className="analyzr">
+                <div className="analyzr content">
                     <div className="content">
                         <Header />
 

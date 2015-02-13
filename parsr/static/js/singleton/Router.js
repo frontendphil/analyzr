@@ -10,9 +10,9 @@ define([
     var Router = Backbone.Router.extend({
         routes: {
             "repository/:id": "repository",
-            "repository/create": "repository_create",
+            "repository/:id/branch/:bid": "repository",
 
-            "branch/:id": "branch",
+            "repository/create": "repository_create",
 
             "author/:id": "author",
             "revision/:id": "revision",
@@ -55,17 +55,17 @@ define([
 
         repository: function(id, bid) {
             require([
-                "models/Repository"
-            ], function(
-                Repository
-            ) {
-                var repository = new Repository({ id: id });
-                debugger;
-                var branch = repository.get("branches").lastUpdated();
+                "models/Repository",
 
-                this.navigate("/branch/" + branch.id, {
-                    trigger: true,
-                    replace: true
+                "jsx!views/Repository"
+            ], function(
+                Repository,
+
+                View
+            ) {
+                this.render(View, {
+                    model: new Repository({ id: id }),
+                    branchId: bid
                 });
             }.bind(this));
         },

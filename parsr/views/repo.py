@@ -25,10 +25,10 @@ def view(request, repo_id, branch_id=None):
     return { "repo": repo, "branch": branch }
 
 
-@login_required
+# @login_required
 @ajax_request
-def info(request, repo_id):
-    repo = get_object_or_404(Repo, pk=repo_id)
+def info(request, repository_id):
+    repo = get_object_or_404(Repo, pk=repository_id)
 
     return repo.json()
 

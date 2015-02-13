@@ -8,24 +8,24 @@ require.config({
 
         "underscore": "../vendor/bower/lodash/dist/lodash.min",
 
-        "react": "../vendor/bower/react/react-with-addons.min",
+        "react": "../vendor/bower/react/react-with-addons",
         "jsx": "../vendor/bower/requirejs-jsx-plugin/js/jsx",
         "JSXTransformer": "../vendor/bower/requirejs-jsx-plugin/js/JSXTransformer",
         "react-bootstrap": "../vendor/bower/react-bootstrap",
 
-        "backbone": "../vendor/bower/backbone/backbone",
-        "backbone-uniquemodel": "../vendor/bower/backbone.uniquemodel/backbone.uniquemodel",
+        "backbone-base": "../vendor/bower/backbone/backbone",
         "backbone-relations": "../vendor/bower/backbone-relations/backbone-relations",
+        "backbone": "../vendor/bower/backbone.uniquemodel/backbone.uniquemodel",
 
         "jquery": "../vendor/bower/jquery/dist/jquery.min"
     },
 
     map: {
-        "models": {
-            "backbone": "backbone-uniquemodel"
+        "backbone-relations": {
+            "backbone": "backbone-base"
         },
 
-        "backbone-uniquemodel": {
+        "backbone": {
             "backbone": "backbone-relations"
         }
     },

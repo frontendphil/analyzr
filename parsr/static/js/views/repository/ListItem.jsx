@@ -36,8 +36,7 @@ define([
                     </td>
 
                     { this.renderRepoLink() }
-                    { this.renderDropdown("Analyze") }
-                    { this.renderDropdown("Measure") }
+                    { this.renderRepoActions() }
                     { this.renderActions() }
 
                     { this.renderErrorModal() }
@@ -51,7 +50,7 @@ define([
             }
 
             return (
-                <td>
+                <td className="actions">
                     { this.renderEdit() }
                     { this.renderPurge() }
                     { this.renderRemove() }
@@ -94,19 +93,30 @@ define([
             this.props.model.destroy();
         },
 
+        renderRepoActions: function() {
+            return (
+                <td>
+                    <div className="btn-group">
+                        { this.renderDropdown("Analyze") }
+                    </div>
+                    <div className="btn-group">
+                        { this.renderDropdown("Measure") }
+                    </div>
+                </td>
+            );
+        },
+
         renderDropdown: function(category) {
             if(this.props.model.get("busy")) {
                 return this.renderWorkingInfo();
             }
 
             return (
-                <td>
-                    <Dropdown
-                        title={ category }
-                        collection={ this.props.model.get("branches") }
-                        renderItem={ this.renderBranch.bind(null, category.toLowerCase()) }
-                        onSelect={ this.handleSelect.bind(null, category.toLowerCase()) } />
-                </td>
+                <Dropdown
+                    title={ category }
+                    collection={ this.props.model.get("branches") }
+                    renderItem={ this.renderBranch.bind(null, category.toLowerCase()) }
+                    onSelect={ this.handleSelect.bind(null, category.toLowerCase()) } />
             );
         },
 
@@ -286,7 +296,7 @@ define([
         icon: function(cls) {
             cls = cls || "fa-code fa-blank";
 
-            return <i className={"fa fa-li " + cls }></i>;
+            return <i className={"fa " + cls }></i>;
         },
     });
 
