@@ -258,14 +258,19 @@ class Branch(models.Model):
             "id": self.id,
             "name": self.name,
             "path": self.path,
-            "repository": self.repo_id,
+            "repositoryId": self.repo_id,
+            "age": self.age(),
+            "authorCount": self.author_count(),
+            "authorRatio": self.author_ratio(),
             "analyze": {
+                "date": self.analyzed_date,
                 "running": self.analyzing,
                 "finished": self.analyzed,
                 "interrupted": self.analyzing_interrupted(),
                 "lastError": self.last_analyze_error
             },
             "measure": {
+                "date": self.measured_date,
                 "running": self.measuring,
                 "finished": self.measured,
                 "interrupted": self.measuring_interrupted(),

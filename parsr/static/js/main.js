@@ -5,7 +5,7 @@ require([
         // Backbone init
         "backbone",
         "backbone-uniquemodel",
-        "backbone-relational"
+        "backbone-relations"
     ], function() {
         require([
             "singleton/Router"

@@ -14,14 +14,23 @@ module.exports = function(grunt) {
         watch: {
             less: {
                 files: "parsr/static/stylesheets/less/**/*.less",
-                tasks: ["less"],
+                tasks: ["less"]
+            }
+        },
+
+        "django-manage": {
+            options: {
+                app: "parsr"
+            },
+            default: {
                 options: {
-                    spawn: false
+                    command: "runserver"
                 }
             }
         }
     });
 
-    grunt.loadNpmTasks('grunt-contrib-less');
-    grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks("grunt-contrib-less");
+    grunt.loadNpmTasks("grunt-contrib-watch");
+    grunt.loadNpmTasks("grunt-contrib-django");
 };

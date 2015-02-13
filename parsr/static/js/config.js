@@ -10,16 +10,24 @@ require.config({
 
         "react": "../vendor/bower/react/react-with-addons.min",
         "jsx": "../vendor/bower/requirejs-jsx-plugin/js/jsx",
-        "JSXTransformer": "../vendor/bower/requirejs-jsx-plugin/js/JSXTransformer-0.10.0",
+        "JSXTransformer": "../vendor/bower/requirejs-jsx-plugin/js/JSXTransformer",
         "react-bootstrap": "../vendor/bower/react-bootstrap",
 
         "backbone": "../vendor/bower/backbone/backbone",
-        "backbone-ext": "extensions/backbone",
         "backbone-uniquemodel": "../vendor/bower/backbone.uniquemodel/backbone.uniquemodel",
-        "backbone-relational": "../vendor/bower/backbone-relational/backbone-relational",
-        "backbone-react": "../vendor/bower/backbone-react-component/lib/component",
+        "backbone-relations": "../vendor/bower/backbone-relations/backbone-relations",
 
         "jquery": "../vendor/bower/jquery/dist/jquery.min"
+    },
+
+    map: {
+        "models": {
+            "backbone": "backbone-uniquemodel"
+        },
+
+        "backbone-uniquemodel": {
+            "backbone": "backbone-relations"
+        }
     },
 
     jsx: {

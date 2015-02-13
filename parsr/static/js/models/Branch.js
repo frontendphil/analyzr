@@ -4,8 +4,8 @@ define([
     Backbone
 ) {
 
-    return Backbone.UniqueModel(Backbone.RelationalModel.extend({
+    return Backbone.UniqueModel(Backbone.Model.extend({
 
-    }));
+    }), "Branch");
 
 });

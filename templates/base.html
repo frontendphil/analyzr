@@ -7,8 +7,6 @@
 
     <link href='http://fonts.googleapis.com/css?family=Roboto:400,100,700,300' rel='stylesheet' type='text/css'>
 
-    <!--<script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery-2.0.3.min.js"></script>-->
-
     {% compress css %}
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}vendor/bower/bootstrap/dist/css/bootstrap.min.css" charset="utf-8" />
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}vendor/bower/font-awesome/css/font-awesome.min.css" charset="utf-8" />
@@ -22,100 +20,6 @@
     {% csrf_token %}
 
     <script data-main="{{ STATIC_URL }}js/main" src="{{ STATIC_URL }}vendor/bower/requirejs/require.js"></script>
-<!--
-    <div class="content">
-
-        <ul class='nav nav-pills'>
-            <li>
-                <ol class='breadcrumb'>
-                    {% block breadcrumb %}
-                        <li>
-                            <a href='{% url "parsr.views.app.index" %}'>
-                                <i class='icon-code'></i>
-                                Analyzr
-                            </a>
-                        </li>
-                    {% endblock %}
-                    {% block active %}{% endblock %}
-                </ol>
-            </li>
-            {% block logout %}
-                <li class='pull-right'>
-                    <a href='{% url "parsr.views.app.logout" %}'>
-                        <i class='icon icon-signout'></i>
-                        Logout
-                    </a>
-                </li>
-            {% endblock %}
-            <li class='pull-right branch-info'>
-                {% block branch %}{% endblock %}
-            </li>
-        </ul>
-
-
-        <hr />
-
-        {% block content %}
-        {% endblock %}
-
-        <div class='row main-actions'>
-            <div class='col-lg-12'>
-                {% block actions %}{% endblock %}
-            </div>
-        </div>
-    </div>
-
-
-    <div class='footer hidden-print'>
-        <div class='container'>
-            <i class='icon-github'></i>
-            <a href='https://github.com/pxlplnt/analyzr'>analyzr</a>
-        </div>
-    </div>
--->
-
-    {% compress js %}
-    <!--
-        <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery.cookie.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/lib/bootstrap.min.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/lib/d3.v3.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/lib/bootstrap-datepicker.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/lib/imagesloaded.pkg.min.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/lib/jquery.qtip.min.js"></script>
-
-        <script type="text/javascript" src="{{ STATIC_URL }}js/utils.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/core/data/store.js"></script>
-
-        <script type="text/javascript" src="{{ STATIC_URL }}js/core/class.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/core/observable.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/core/component.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/core/mask.js"></script>
-
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/dialog.js"></script>
-
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/columnBrowser.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/filter.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/legend.js"></script>
-
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/punchcard.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/repositories.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/contributors.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/add.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/fileStatistics.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/revisionInfo.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/score.js"></script>
-
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/graph.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/commits.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/metrics.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/complexity.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/structure.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/churn.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/contributerImpact.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/graph/experts.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/detailed_experts.js"></script>
-        -->
-    {% endcompress %}
 
 </body>
 </html>

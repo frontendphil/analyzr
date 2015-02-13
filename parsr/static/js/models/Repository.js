@@ -11,19 +11,11 @@ define([
 
     BranchCollection
 ) {
-    return Backbone.UniqueModel(Backbone.RelationalModel.extend({
+    return Backbone.UniqueModel(Backbone.Model.extend({
 
-        relations: [
-            {
-                type: Backbone.HasMany,
-                key: "branches",
-                relatedModel: Branch,
-                collectionType: BranchCollection,
-                reverseRelation: {
-                    key: "repository"
-                }
-            }
-        ]
+        references: {
+            branch: Branch
+        }
 
-    }));
+    }), "Repository");
 });

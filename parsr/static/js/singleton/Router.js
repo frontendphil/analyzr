@@ -13,6 +13,7 @@ define([
             "repository/create": "repository_create",
 
             "branch/:id": "branch",
+
             "author/:id": "author",
             "revision/:id": "revision",
             "file/:id": "file",
@@ -52,19 +53,36 @@ define([
             }.bind(this));
         },
 
-        repository: function(id) {
+        repository: function(id, bid) {
             require([
-                "models/Repository",
-
-                "jsx!views/repository/View"
+                "models/Repository"
             ], function(
-                Repository,
+                Repository
+            ) {
+                var repository = new Repository({ id: id });
+                debugger;
+                var branch = repository.get("branches").lastUpdated();
+
+                this.navigate("/branch/" + branch.id, {
+                    trigger: true,
+                    replace: true
+                });
+            }.bind(this));
+        },
+
+        branch: function(id) {
+            require([
+                "models/Branch",
+
+                "jsx!views/branch/View"
+            ], function(
+                Branch,
 
                 View
             ) {
 
                 this.render(View, {
-                    model: new Repository({ id: id })
+                    model: new Branch({ id: id })
                 });
             }.bind(this));
         }
