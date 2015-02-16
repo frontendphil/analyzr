@@ -253,14 +253,14 @@ class Branch(models.Model):
             "measure": self.get_measure_state()
         }
 
-        if short or not self.analyzed:
-            return base
+        if not short and self.analyzed:
+            base.update({
+                "age": str(self.age()),
+                "authorCount": self.author_count(),
+                "authorRatio": self.author_ratio()
+            })
 
-        return base.update({
-            "age": self.age(),
-            "authorCount": self.author_count(),
-            "authorRatio": self.author_ratio()
-        })
+        return base
 
     def get_measure_state(self):
         return {

@@ -1,12 +1,16 @@
 define([
-    "react"
+    "react",
+    "backbone-react-mixin"
 ], function(
-    React
+    React,
+    BackboneMixin
 ) {
 
     return React.createClass({
 
         displayName: "Branch",
+
+        mixins: [ BackboneMixin ],
 
         render: function() {
             return (

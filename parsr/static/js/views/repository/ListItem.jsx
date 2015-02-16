@@ -1,5 +1,6 @@
 define([
     "react",
+    "backbone-react-mixin",
 
     "singleton/Router",
 
@@ -7,6 +8,7 @@ define([
     "jsx!views/components/Dropdown"
 ], function(
     React,
+    BackboneMixin,
 
     Router,
 
@@ -17,6 +19,8 @@ define([
     return React.createClass({
 
         displayName: "Repository",
+
+        mixins: [ BackboneMixin ],
 
         getInitialState: function() {
             return {
@@ -253,10 +257,10 @@ define([
 
         renderRepoStatusIcon: function() {
             if(!this.props.model.get("anonymous")) {
-                return <i className="fa fa-unlock-alt"></i>;
+                return <i className="fa fa-lock"></i>;
             }
 
-            return <i className="fa fa-lock"></i>;
+            return <i className="fa fa-unlock-alt"></i>;
         },
 
         renderMeasureState: function() {

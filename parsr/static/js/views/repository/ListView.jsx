@@ -1,16 +1,24 @@
 define([
     "react",
+    "backbone-react-mixin",
 
-    "jsx!views/repository/ListItem"
+    "jsx!views/repository/ListItem",
+
+    "jsx!views/components/Hint"
 ], function(
     React,
+    BackboneMixin,
 
-    ListItem
+    ListItem,
+
+    Hint
 ) {
 
     return React.createClass({
 
         displayName: "Repositories",
+
+        mixins: [ BackboneMixin ],
 
         getInitialState: function() {
             return {
@@ -59,7 +67,11 @@ define([
 
         renderRepository: function(repository) {
             if(this.state.loading) {
-                return "Loading repositories...";
+                return (
+                    <Hint loading={ true }>
+                        Loading repositories...
+                    </Hint>
+                );
             }
 
             return (

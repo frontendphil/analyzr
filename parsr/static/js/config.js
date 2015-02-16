@@ -1,36 +1,46 @@
-require.config({
+(function() {
 
-    baseUrl: "/static/js",
+    var vendor = function(path) {
+        return "../vendor/bower/" + path;
+    };
 
-    paths: {
-        "requireLib": "../vendor/bower/requirejs/require",
-        "text": "../vendor/bower/requirejs-text/text",
+    require.config({
 
-        "underscore": "../vendor/bower/lodash/dist/lodash.min",
+        baseUrl: "/static/js",
 
-        "react": "../vendor/bower/react/react-with-addons",
-        "jsx": "../vendor/bower/requirejs-jsx-plugin/js/jsx",
-        "JSXTransformer": "../vendor/bower/requirejs-jsx-plugin/js/JSXTransformer",
-        "react-bootstrap": "../vendor/bower/react-bootstrap",
+        paths: {
+            "requireLib": vendor("requirejs/require"),
+            "text": vendor("requirejs-text/text"),
 
-        "backbone-base": "../vendor/bower/backbone/backbone",
-        "backbone-relations": "../vendor/bower/backbone-relations/backbone-relations",
-        "backbone": "../vendor/bower/backbone.uniquemodel/backbone.uniquemodel",
+            "underscore": vendor("lodash/dist/lodash.min"),
 
-        "jquery": "../vendor/bower/jquery/dist/jquery.min"
-    },
+            "react": vendor("react/react-with-addons"),
+            "jsx": vendor("requirejs-jsx-plugin/js/jsx"),
+            "JSXTransformer": vendor("requirejs-jsx-plugin/js/JSXTransformer"),
+            "react-bootstrap": vendor("react-bootstrap"),
 
-    map: {
-        "backbone-relations": {
-            "backbone": "backbone-base"
+            "backbone-base": vendor("backbone/backbone"),
+            "backbone-relations": vendor("backbone-relations/backbone-relations"),
+            "backbone-react-mixin": vendor("backbone-relations/react-mixin"),
+            "backbone": vendor("backbone.uniquemodel/backbone.uniquemodel"),
+
+            "jquery": vendor("jquery/dist/jquery.min")
         },
 
-        "backbone": {
-            "backbone": "backbone-relations"
-        }
-    },
+        map: {
+            "backbone-relations": {
+                "backbone": "backbone-base"
+            },
 
-    jsx: {
-        fileExtension: ".jsx"
-    }
-});
+            "backbone": {
+                "backbone": "backbone-relations"
+            }
+        },
+
+        jsx: {
+            fileExtension: ".jsx"
+        }
+    });
+
+
+}());

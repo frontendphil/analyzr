@@ -1,7 +1,13 @@
 define([
-    "react"
+    "react",
+    "jquery",
+
+    "jsx!views/components/Hint"
 ], function(
-    React
+    React,
+    $,
+
+    Hint
 ) {
 
     return React.createClass({
@@ -13,6 +19,14 @@ define([
                 loading: false,
                 open: false
             };
+        },
+
+        componentDidMount: function() {
+            $(document).on("click", this.handleDocumentClick);
+        },
+
+        componentWillUnmount: function() {
+            $(document).off("click", this.handleDocumentClick);
         },
 
         componentDidUpdate: function(prevProps, prevState) {
@@ -37,6 +51,24 @@ define([
             this.props.collection.fetch();
         },
 
+        handleDocumentClick: function(event) {
+            if(!this.state.open) {
+                return;
+            }
+
+            if(event.target === this.getDOMNode()) {
+                return;
+            }
+
+            var target = $(event.target);
+
+            if(target.parents(".dropdown") === this.getDOMNode()) {
+                return;
+            }
+
+            this.close();
+        },
+
         render: function() {
             return (
                 <div className={ "dropdown " + (this.state.open ? "open" : "") }>
@@ -56,6 +88,12 @@ define([
 
             this.setState({
                 open: !this.state.open
+            });
+        },
+
+        close: function() {
+            this.setState({
+                open: false
             });
         },
 
@@ -91,10 +129,9 @@ define([
             if(this.state.loading) {
                 return (
                     <li className="loading disabled fa-li">
-                        <a>
-                            <i className="fa fa-icon-spinner fa-spin"></i>
+                        <Hint loading={ true }>
                             Loading...
-                        </a>
+                        </Hint>
                     </li>
                 );
             }

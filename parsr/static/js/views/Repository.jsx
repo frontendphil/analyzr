@@ -1,5 +1,6 @@
 define([
     "react",
+    "backbone-react-mixin",
 
     "singleton/Router",
 
@@ -8,6 +9,7 @@ define([
     "jsx!views/components/Hint"
 ], function(
     React,
+    BackboneMixin,
 
     Router,
 
@@ -19,6 +21,8 @@ define([
     return React.createClass({
 
         displayName: "Repository",
+
+        mixins: [ BackboneMixin ],
 
         getInitialState: function() {
             return {
