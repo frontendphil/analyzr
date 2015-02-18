@@ -9,7 +9,7 @@ define([
 ) {
     var Router = Backbone.Router.extend({
         routes: {
-            "repositories/:id": "repository",
+            "repository/:id": "repository",
             "repository/:id/branch/:bid": "repository",
 
             "repository/create": "repository_create",

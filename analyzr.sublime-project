@@ -1,0 +1,15 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": "/Users/phil/Workspace/analyzr",
+
+            "folder_exclude_patterns": [
+                "node_modules",
+                "repos",
+                "results"
+            ]
+		}
+	]
+}

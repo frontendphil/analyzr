@@ -24,7 +24,8 @@
             "backbone-react-mixin": vendor("backbone-relations/react-mixin"),
             "backbone": vendor("backbone.uniquemodel/backbone.uniquemodel"),
 
-            "jquery": vendor("jquery/dist/jquery.min")
+            "jquery": vendor("jquery/dist/jquery.min"),
+            "d3": vendor("d3/d3.min")
         },
 
         map: {

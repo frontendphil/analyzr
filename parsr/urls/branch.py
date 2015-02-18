@@ -5,7 +5,6 @@ urlpatterns = patterns('parsr.views.branch',
     url(r"^$", "info"),
 
     url(r"^/view$", "view"),
-    url(r'^/contributors$', 'contributors'),
     url(r'^/commits$', "commits"),
     url(r'^/stats$', "file_stats"),
     url(r'^/punchcard$', "punchcard"),

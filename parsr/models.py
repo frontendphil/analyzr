@@ -611,6 +611,8 @@ class Branch(models.Model):
             page = paginator.num_pages
             authors = paginator.page(paginator.num_pages)
 
+        return [author.json(self) for author in authors]
+
         response["data"] = [author.json(self) for author in authors]
 
         self.set_options(response, {
@@ -1776,23 +1778,18 @@ class Author(models.Model):
         start, end = self.get_age(branch)
 
         return {
-            "href": utils.href(Author, self.id),
-            "view": utils.view(Author, self.id),
-            "rel": "author",
-            "rep": {
-                "id": self.id,
-                "name": str(self),
-                "age": str(end - start) if start and end else None,
-                "firstAction": start.isoformat() if start else None,
-                "lastAction": end.isoformat() if end else None,
-                "workIndex": float(self.get_work_index(branch)),
-                "icon": self.get_icon(),
-                "revisions": {
-                    "all": self.revision_count(branch),
-                    "currentPeriod": self.revision_count(branch, active=True)
-                },
-                "primeLanguage": self.get_prime_language(branch)
-            }
+            "id": self.id,
+            "name": str(self),
+            "age": str(end - start) if start and end else None,
+            "firstAction": start.isoformat() if start else None,
+            "lastAction": end.isoformat() if end else None,
+            "workIndex": float(self.get_work_index(branch)),
+            "icon": self.get_icon(),
+            "revisions": {
+                "all": self.revision_count(branch),
+                "currentPeriod": self.revision_count(branch, active=True)
+            },
+            "primeLanguage": self.get_prime_language(branch)
         }
 
 

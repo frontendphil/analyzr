@@ -14,8 +14,7 @@ urlpatterns = patterns('',
     # url(r'^login$', "parsr.views.app.login"),
     # url(r'^logout$', "parsr.views.app.logout"),
 
-    url(r"^api/repositories$", "parsr.views.repo.list"),
-    url(r"^api/repositories/(?P<repository_id>\d+)", include("parsr.urls.repo")),
+    url(r"^api", include("parsr.urls.api")),
 
     # url(r"^repo/create$", "parsr.views.repo.create"),
     # url(r"^repo/create/save$", "parsr.views.repo.save"),
