@@ -115,7 +115,6 @@ def file_stats(request, branch_id):
     return branch.file_statistics()
 
 
-@login_required
 @ajax_request
 def contributors(request, branch_id):
     branch = get_branch(branch_id)

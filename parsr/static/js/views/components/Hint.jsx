@@ -17,7 +17,9 @@ define([
 
             return (
                 <div className={ cls }>
-                    { this.props.children }
+                    <span className="message">
+                        { this.props.children }
+                    </span>
                 </div>
             );
         }

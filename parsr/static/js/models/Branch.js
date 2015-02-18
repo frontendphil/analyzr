@@ -1,13 +1,21 @@
 define([
-    "backbone"
+    "backbone",
+
+    "collections/ContributorCollection"
 ], function(
-    Backbone
+    Backbone,
+
+    ContributorCollection
 ) {
 
     return Backbone.UniqueModel(Backbone.Model.extend({
 
-        url: function() {
-            return "api/branch";
+        embeddings: {
+            contributors: ContributorCollection
+        },
+
+        defaults: {
+            contributors: []
         },
 
         isAnalyzed: function() {

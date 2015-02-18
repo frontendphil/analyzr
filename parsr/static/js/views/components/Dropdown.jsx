@@ -62,7 +62,7 @@ define([
 
             var target = $(event.target);
 
-            if(target.parents(".dropdown") === this.getDOMNode()) {
+            if(target.parents(".dropdown").get(0) === this.getDOMNode()) {
                 return;
             }
 
@@ -85,6 +85,7 @@ define([
 
         toggle: function(event) {
             event.preventDefault();
+            event.stopPropagation();
 
             this.setState({
                 open: !this.state.open

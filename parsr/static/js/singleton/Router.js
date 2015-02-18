@@ -9,15 +9,12 @@ define([
 ) {
     var Router = Backbone.Router.extend({
         routes: {
-            "repository/:id": "repository",
+            "repositories/:id": "repository",
             "repository/:id/branch/:bid": "repository",
 
             "repository/create": "repository_create",
 
-            "author/:id": "author",
-            "revision/:id": "revision",
-            "file/:id": "file",
-            "package/:id": "package",
+            "login(?*next)": "login",
 
             "*default": "repositories"
         },
@@ -84,6 +81,16 @@ define([
                 this.render(View, {
                     model: new Branch({ id: id })
                 });
+            }.bind(this));
+        },
+
+        login: function(next) {
+            require([
+                "jsx!views/Login"
+            ], function(
+                Login
+            ) {
+                this.render(Login);
             }.bind(this));
         }
     });

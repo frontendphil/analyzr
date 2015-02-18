@@ -37,6 +37,14 @@ define([
         },
 
         render: function() {
+            if(this.state.loading) {
+                return (
+                    <Hint loading={ true }>
+                        Loading repositories...
+                    </Hint>
+                );
+            }
+
             return (
                 <div className="repositories">
                     <table className='table table-hover'>
@@ -66,14 +74,6 @@ define([
         },
 
         renderRepository: function(repository) {
-            if(this.state.loading) {
-                return (
-                    <Hint loading={ true }>
-                        Loading repositories...
-                    </Hint>
-                );
-            }
-
             return (
                 <ListItem
                     key={ repository.cid }

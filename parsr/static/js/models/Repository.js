@@ -9,7 +9,7 @@ define([
 ) {
     return Backbone.UniqueModel(Backbone.Model.extend({
 
-        urlRoot: "/api/repository",
+        urlRoot: "/api/repositories",
 
         embeddings: {
             branches: BranchCollection

@@ -36,6 +36,8 @@ define([
                 this.setState({
                     loading: false
                 });
+
+                this.props.model.get("branches").fetch();
             }, this);
 
             this.props.model.get("branches").once("sync", function() {
@@ -50,7 +52,8 @@ define([
                 var branch = this.props.model.getMostInterestingBranch();
 
                 Router.navigate("/repository/" + this.props.model.id + "/branch/" + branch.id, {
-                    trigger: true
+                    trigger: true,
+                    replace: true
                 });
             }, this);
 
