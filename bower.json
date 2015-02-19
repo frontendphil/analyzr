@@ -1,0 +1,20 @@
+{
+    "name": "analyzr",
+    "version": "0.1.0",
+    "dependencies": {
+        "requirejs": "~2.1.14",
+        "bootstrap": "~3.2.0",
+        "jquery.cookie": "1.4.1",
+        "qTip2": "2.2.1",
+        "d3": "3.4.13",
+        "react": "~0.12.1",
+        "react-bootstrap": "~0.13.0",
+        "requirejs-jsx-plugin": "https://github.com/jfschwarz/jsx-requirejs-plugin.git#1556c465eb9eb8425e451e5fa31b87bc97f4c5c0",
+        "requirejs-text": "2.0.12",
+        "backbone": "~1.1.2",
+        "backbone.uniquemodel": "https://github.com/jfschwarz/backbone.uniquemodel.git#6de27bb1228df1da2d6bc4d14bc810dd54d8e759",
+        "backbone-relations": "https://github.com/effektif/backbone-relations.git#a0c7d5efc0fd0533d36cca625cc9cdcf3eef7b2f",
+        "lodash": "~2.4.1",
+        "font-awesome": "~4.2.0"
+    }
+}

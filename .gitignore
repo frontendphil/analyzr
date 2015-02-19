@@ -1,7 +1,6 @@
 *.save
 *.sql
 *.csv
-*.json
 *.pyc
 *.sublime-workspace
 *.DS_Store
