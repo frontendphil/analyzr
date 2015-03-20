@@ -1,9 +1,13 @@
 define([
     "backbone",
 
+    "models/Activity",
+
     "collections/ContributorCollection"
 ], function(
     Backbone,
+
+    Activity,
 
     ContributorCollection
 ) {
@@ -11,11 +15,14 @@ define([
     return Backbone.UniqueModel(Backbone.Model.extend({
 
         embeddings: {
-            contributors: ContributorCollection
+            contributors: ContributorCollection,
+            activity: Activity
         },
 
         defaults: {
-            contributors: []
+            contributors: [],
+
+            activity: {}
         },
 
         isAnalyzed: function() {

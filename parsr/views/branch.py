@@ -101,14 +101,6 @@ def commits(request, branch_id):
 
 @login_required
 @ajax_request
-def punchcard(request, branch_id):
-    branch = get_branch(branch_id)
-
-    return branch.punchcard()
-
-
-@login_required
-@ajax_request
 def file_stats(request, branch_id):
     branch= get_branch(branch_id)
 

@@ -613,18 +613,6 @@ class Branch(models.Model):
 
         return [author.json(self) for author in authors]
 
-        response["data"] = [author.json(self) for author in authors]
-
-        self.set_options(response, {
-            "hasNext": not page == paginator.num_pages,
-            "hasPrevious": not page == 1,
-            "page": int(page),
-            "pages": paginator.num_pages,
-            "perPage": CONTRIBUTORS_PER_PAGE
-        })
-
-        return response
-
     def punchcard(self, author=None, language=None, start=None, end=None):
         filters = {
             "branch": self
@@ -650,6 +638,8 @@ class Branch(models.Model):
                 response["data"][weekday] = {}
 
             response["data"][weekday][hour] = count
+
+        return response["data"]
 
         self.set_options(response, {
             "max": hour_max

@@ -2,12 +2,14 @@ define([
     "react",
     "backbone-react-mixin",
 
-    "jsx!views/branch/Contributors"
+    "jsx!views/branch/Contributors",
+    "jsx!views/branch/Punchcard"
 ], function(
     React,
     BackboneMixin,
 
-    Contributors
+    Contributors,
+    Punchcard
 ) {
 
     return React.createClass({
@@ -22,6 +24,7 @@ define([
                     { this.renderHeader() }
 
                     <Contributors collection={ this.props.model.get("contributors") } />
+                    <Punchcard  model={ this.props.model.get("activity") } />
                 </div>
             );
         },
@@ -32,7 +35,7 @@ define([
                     <table className="table">
                         <thead>
                             <tr>
-                                <th colSpan='2'>Repository</th>
+                                <th>Repository</th>
                                 <th colSpan='6' className='split'>Branch</th>
                             </tr>
                             <tr>

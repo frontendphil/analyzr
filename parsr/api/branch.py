@@ -14,7 +14,8 @@ def get_branch(branch_id):
 def list(request, repository_id):
     return [branch.json() for branch in Branch.objects.filter(repo=repository_id)]
 
-@login_required
+
+# @login_required
 @ajax_request
 def info(request, branch_id):
     branch = get_branch(branch_id)
@@ -22,6 +23,7 @@ def info(request, branch_id):
     return branch.json()
 
 
+# @login_required
 @ajax_request
 def contributors(request, repository_id, branch_id):
     branch = get_branch(branch_id)
@@ -29,3 +31,11 @@ def contributors(request, repository_id, branch_id):
     page = request.GET.get("page")
 
     return branch.contributors(page=page)
+
+
+# @login_required
+@ajax_request
+def punchcard(request, repository_id, branch_id):
+    branch = get_branch(branch_id)
+
+    return branch.punchcard()
