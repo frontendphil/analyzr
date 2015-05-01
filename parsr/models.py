@@ -166,7 +166,7 @@ class Repo(models.Model):
             "measuring": self.measuring(),
             "branchCount": self.branch_count(),
             "authorCount": self.author_count(),
-            "branchIds": [int(value) for value in self.branches.values_list("id", flat=True).distinct()],
+            "branches": [{ "id": branch.id, "name": branch.name } for branch in self.branches.distinct()],
             "error": str(error) if error else None
         }
 
@@ -257,7 +257,10 @@ class Branch(models.Model):
             base.update({
                 "age": str(self.age()),
                 "authorCount": self.author_count(),
-                "authorRatio": self.author_ratio()
+                "authorRatio": self.author_ratio(),
+                "languages": self.get_languages(),
+                "minDate": self.get_earliest_revision().date.isoformat(),
+                "maxDate": self.get_latest_revision().date.isoformat()
             })
 
         return base
@@ -1122,39 +1125,43 @@ class Branch(models.Model):
         return result
 
     def churn(self, author=None, language=None, package=None, start=None, end=None):
-        response = self.response_stub(language=language, package=package, start=start, end=end)
+        # response = self.response_stub(language=language, package=package, start=start, end=end)
 
         if not language:
-            self.set_options(response, {
-                "upperBound": 1,
-                "lowerBound": -1
-            })
+            return []
+            # self.set_options(response, {
+            #     "upperBound": 1,
+            #     "lowerBound": -1
+            # })
 
-            return response
+            # return response
 
-        max_added = 0
-        max_removed = 0
+        response = []
+
+        # max_added = 0
+        # max_removed = 0
 
         files = self.files(author=author, actions=Action.readable(), language=language, package=package, start=start, end=end)
         revisions = files.values("date").annotate(added=Sum("lines_added"), removed=Sum("lines_removed"))
 
         for revision in revisions:
-            response["info"]["dates"].append(revision["date"].isoformat())
+            # response["info"]["dates"].append(revision["date"].isoformat())
 
-            max_added = max(max_added, revision["added"])
-            max_removed = max(max_removed, revision["removed"])
+            # max_added = max(max_added, revision["added"])
+            # max_removed = max(max_removed, revision["removed"])
 
-            response["data"][revision["date"].isoformat()] = {
+            response.append({
+                "date": revision["date"].isoformat(),
                 "added": revision["added"],
                 "removed": revision["removed"]
-            }
+            })
 
-        self.set_options(response, {
-            "startDate": revisions[0]["date"].isoformat(),
-            "endDate": revisions[len(revisions) - 1]["date"].isoformat(),
-            "upperBound": max_added,
-            "lowerBound": -1 * max_removed
-        })
+        # self.set_options(response, {
+        #     "startDate": revisions[0]["date"].isoformat(),
+        #     "endDate": revisions[len(revisions) - 1]["date"].isoformat(),
+        #     "upperBound": max_added,
+        #     "lowerBound": -1 * max_removed
+        # })
 
         return response
 

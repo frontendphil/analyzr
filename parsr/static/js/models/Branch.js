@@ -3,24 +3,28 @@ define([
 
     "models/Activity",
 
-    "collections/ContributorCollection"
+    "collections/ContributorCollection",
+    "collections/ChurnCollection"
 ], function(
     Backbone,
 
     Activity,
 
-    ContributorCollection
+    ContributorCollection,
+    ChurnCollection
 ) {
 
     return Backbone.UniqueModel(Backbone.Model.extend({
 
         embeddings: {
             contributors: ContributorCollection,
+            churn: ChurnCollection,
             activity: Activity
         },
 
         defaults: {
             contributors: [],
+            churn: [],
 
             activity: {}
         },
@@ -30,7 +34,7 @@ define([
         },
 
         isMeasured: function() {
-            return this.get("measre") && this.get("measure").finished;
+            return this.get("measure") && this.get("measure").finished;
         }
 
     }), "Branch");

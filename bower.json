@@ -6,14 +6,14 @@
         "bootstrap": "~3.2.0",
         "jquery.cookie": "1.4.1",
         "d3": "3.4.13",
-        "react": "~0.12.1",
+        "react": "~0.13.1",
         "react-bootstrap": "~0.13.0",
         "requirejs-jsx-plugin": "https://github.com/jfschwarz/jsx-requirejs-plugin.git#1556c465eb9eb8425e451e5fa31b87bc97f4c5c0",
         "requirejs-text": "2.0.12",
         "backbone": "~1.1.2",
         "backbone.uniquemodel": "https://github.com/jfschwarz/backbone.uniquemodel.git#6de27bb1228df1da2d6bc4d14bc810dd54d8e759",
-        "backbone-rel": "~0.9.0",
-        "lodash": "~2.4.1",
+        "backbone-rel": "~0.10.0",
+        "lodash": "~3.4.0",
         "font-awesome": "~4.2.0"
     }
 }

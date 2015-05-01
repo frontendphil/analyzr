@@ -36,12 +36,13 @@ define([
         },
 
         render: function() {
+            var View = this.props.currentView;
             return (
                 <div className="analyzr content">
                     <div className="content">
                         <Header />
 
-                        { this.props.currentView(this.props) }
+                        <View { ...this.props } />
                     </div>
                     <Footer />
                 </div>

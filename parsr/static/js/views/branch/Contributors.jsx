@@ -30,7 +30,7 @@ define([
             };
         },
 
-        componentDidMount: function() {
+        componentWillMount: function() {
             this.props.collection.once("sync", function() {
                 this.setState({
                     loading: false
@@ -38,6 +38,10 @@ define([
             }, this);
 
             this.props.collection.fetch();
+        },
+
+        componentWillUnmount: function() {
+            this.props.collection.off(null, null, this);
         },
 
         render: function() {

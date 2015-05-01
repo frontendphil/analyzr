@@ -2,14 +2,22 @@
 	"folders":
 	[
 		{
-			"follow_symlinks": true,
-			"path": ".",
-
-            "folder_exclude_patterns": [
-                "node_modules",
+			"folder_exclude_patterns":
+			[
+				"node_modules",
+				"target",
+                "results",
                 "repos",
-                "results"
-            ]
+				".metadata",
+				".settings"
+			],
+			"follow_symlinks": true,
+			"path": "."
 		}
-	]
+	],
+	"settings":
+	{
+		"tab_size": 4,
+		"translate_tabs_to_spaces": true
+	}
 }

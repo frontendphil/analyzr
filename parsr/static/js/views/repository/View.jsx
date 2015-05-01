@@ -4,6 +4,8 @@ define([
 
     "singleton/Router",
 
+    "jsx!views/repository/BranchSelect",
+
     "jsx!views/branch/View",
 
     "jsx!views/components/Hint"
@@ -12,6 +14,8 @@ define([
     BackboneMixin,
 
     Router,
+
+    BranchSelect,
 
     Branch,
 
@@ -36,28 +40,13 @@ define([
                 this.setState({
                     loading: false
                 });
-
-                this.props.model.get("branches").fetch();
-            }, this);
-
-            this.props.model.get("branches").once("sync", function() {
-                this.setState({
-                    loadingBranches: false
-                });
-
-                if(this.props.branchId) {
-                    return;
-                }
-
-                var branch = this.props.model.getMostInterestingBranch();
-
-                Router.navigate("/repository/" + this.props.model.id + "/branch/" + branch.id, {
-                    trigger: true,
-                    replace: true
-                });
             }, this);
 
             this.props.model.fetch();
+        },
+
+        componentWillUnmount: function() {
+            this.props.model.off(null, null, this);
         },
 
         render: function() {
@@ -65,16 +54,8 @@ define([
                 return (
                     <Hint loading={ true } view={ true }>
                         <span className="message">
-                            Loading...
+                            Loading Repository...
                         </span>
-                    </Hint>
-                );
-            }
-
-            if(this.state.loadingBranches) {
-                return (
-                    <Hint loading={ true } view={ true }>
-                        Loading Branches...
                     </Hint>
                 );
             }
@@ -90,28 +71,52 @@ define([
         renderHeader: function() {
             return (
                 <div className="view-header">
-                    <h1>{ this.props.model.get("name") }</h1>
+                    <table className="table">
+                        <tbody>
+                            <tr>
+                                <th>Repository</th>
+                                <td>{ this.props.model.get("name") }</td>
+                            </tr>
+                            <tr>
+                                <th>Authors</th>
+                                <td>{ this.props.model.get("authorCount") }</td>
+                            </tr>
+                            <tr>
+                                <th>Current branch</th>
+                                <td>{ this.renderBranchSelect() }</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             );
         },
 
-        getBranch: function() {
-            return this.props.model.get("branches").get(this.props.branchId);
+        renderBranchSelect: function() {
+            return (
+                <BranchSelect
+                    onSelect={ this.handleBranchSelect }
+                    value={ this.props.branch }
+                    model={ this.props.model } />
+            );
+        },
+
+        handleBranchSelect: function(branch) {
+            var url = "repository/" + this.props.model.id + "/branch/" + branch.id;
+
+            Router.navigate(url, { trigger: true });
         },
 
         renderBranch: function() {
-            var branch = this.getBranch();
-
-            if(!branch) {
+            if(!this.props.branch) {
                 return (
                     <Hint>
-                        No branches have been analyzed or measured.
+                        Please select a branch
                     </Hint>
                 );
             }
 
             return (
-                <Branch model={ branch } />
+                <Branch model={ this.props.branch } />
             );
         }
     });

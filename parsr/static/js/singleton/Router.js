@@ -28,7 +28,7 @@ define([
                 });
 
                 React.render(
-                    Main(props),
+                    React.createElement(Main, props),
                     $("body").get(0)
                 );
             });
@@ -53,33 +53,24 @@ define([
         repository: function(id, bid) {
             require([
                 "models/Repository",
-
-                "jsx!views/Repository"
-            ], function(
-                Repository,
-
-                View
-            ) {
-                this.render(View, {
-                    model: new Repository({ id: id }),
-                    branchId: bid
-                });
-            }.bind(this));
-        },
-
-        branch: function(id) {
-            require([
                 "models/Branch",
 
-                "jsx!views/branch/View"
+                "jsx!views/repository/View"
             ], function(
+                Repository,
                 Branch,
 
                 View
             ) {
+                var branch;
+
+                if(bid) {
+                    branch = new Branch({ id: bid });
+                }
 
                 this.render(View, {
-                    model: new Branch({ id: id })
+                    model: new Repository({ id: id }),
+                    branch: branch
                 });
             }.bind(this));
         },
