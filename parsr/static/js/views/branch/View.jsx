@@ -2,20 +2,26 @@ define([
     "react",
     "backbone-react-mixin",
 
+    "singleton/Router",
+
     "jsx!views/branch/Contributors",
     "jsx!views/branch/Punchcard",
     "jsx!views/branch/Churn",
 
-    "jsx!views/components/Hint"
+    "jsx!views/components/Hint",
+    "jsx!views/components/LanguageSelect"
 ], function(
     React,
     BackboneMixin,
+
+    Router,
 
     Contributors,
     Punchcard,
     Churn,
 
-    Hint
+    Hint,
+    LanguageSelect
 ) {
 
     return React.createClass({
@@ -79,6 +85,36 @@ define([
             );
         },
 
+        renderOptions: function() {
+            return (
+                <div className="branch-options">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Language</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <LanguageSelect
+                                        value={ this.props.language }
+                                        onSelect={ this.handleLanguageChange }
+                                        collection={ this.props.model.get("languages") } />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            );
+        },
+
+        handleLanguageChange: function(language) {
+            var url = "/repository/" + this.props.model.get("repositoryId") + "/branch/" + this.props.model.id + "/" + language;
+
+            Router.navigate(url, { trigger: true });
+        },
+
         renderHeader: function() {
             return (
                 <div className='hidden-print'>
@@ -112,6 +148,7 @@ define([
             return (
                 <div className="branch-details">
                     { this.renderAnalyzeResults() }
+                    { this.renderOptions() }
                     { this.renderMeasurementResults() }
                 </div>
             );
@@ -145,7 +182,9 @@ define([
 
             return (
                 <div className="measure-results">
-                    <Churn collection={ this.props.model.get("churn") } />
+                    <Churn
+                        language={ this.props.language }
+                        collection={ this.props.model.get("churn") } />
                 </div>
             );
         }

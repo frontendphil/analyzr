@@ -115,8 +115,10 @@ define([
                 );
             }
 
+            var { branch, ...rest } = this.props;
+
             return (
-                <Branch model={ this.props.branch } />
+                <Branch { ...rest } model={ branch } />
             );
         }
     });

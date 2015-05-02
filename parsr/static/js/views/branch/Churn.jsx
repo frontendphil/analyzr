@@ -1,9 +1,11 @@
 define([
     "react",
+    "react-d3",
 
     "jsx!views/components/Hint"
 ], function(
     React,
+    D3,
 
     Hint
 ) {
@@ -25,7 +27,11 @@ define([
                 });
             }, this);
 
-            this.props.collection.fetch();
+            this.props.collection.fetch({
+                data: {
+                    language: this.props.language
+                }
+            });
         },
 
         componentWillUnmount: function() {
@@ -41,10 +47,33 @@ define([
                 );
             }
 
+            if(!this.props.language) {
+                return (
+                    <Hint>
+                        Please select a language to show the churn
+                    </Hint>
+                );
+            }
+
             return (
                 <div className="churn">
+                    <D3.AreaChart data={ this.getData() } />
                 </div>
             );
+        },
+
+        getData: function() {
+            var additions = {
+                label: "Additions",
+                values: this.props.collection.getAdditions()
+            };
+
+            var deletions = {
+                label: "Deletions",
+                values: this.props.collection.getDeletions()
+            };
+
+            return [additions, deletions];
         }
     });
 

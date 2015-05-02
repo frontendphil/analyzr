@@ -10,7 +10,15 @@ define([
 
     return Backbone.Collection.extend({
 
-        model: Churn
+        model: Churn,
+
+        getAdditions: function() {
+            return [];
+        },
+
+        getDeletions: function() {
+            return [];
+        }
 
     });
 

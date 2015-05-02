@@ -18,6 +18,7 @@
             "jsx": vendor("requirejs-jsx-plugin/js/jsx"),
             "JSXTransformer": vendor("requirejs-jsx-plugin/js/JSXTransformer"),
             "react-bootstrap": vendor("react-bootstrap"),
+            "react-d3": vendor("react-d3-components/dist/react-d3-components"),
 
             "backbone-base": vendor("backbone/backbone"),
             "backbone-rel": vendor("backbone-rel/backbone-rel"),

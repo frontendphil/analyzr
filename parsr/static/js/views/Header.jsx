@@ -25,8 +25,8 @@ define([
             return (
                 <ol className='breadcrumb'>
                     <li>
-                        <a href='/'>
-                            <i className='fa fa-code'></i>
+                        <a href='/' className="btn">
+                            <i className='icon icon-layers'></i>
                             Analyzr
                         </a>
                     </li>
@@ -37,8 +37,8 @@ define([
         renderLogout: function() {
             return (
                 <li className='pull-right'>
-                    <a href='/logout'>
-                        <i className='fa fa-power-off'></i>
+                    <a href='/logout' className="btn">
+                        <i className='icon icon-power'></i>
                         Logout
                     </a>
                 </li>

@@ -11,6 +11,7 @@ define([
         routes: {
             "repository/:id": "repository",
             "repository/:id/branch/:bid": "repository",
+            "repository/:id/branch/:bid/:lang": "repository",
 
             "repository/create": "repository_create",
 
@@ -50,7 +51,7 @@ define([
             }.bind(this));
         },
 
-        repository: function(id, bid) {
+        repository: function(id, bid, lang) {
             require([
                 "models/Repository",
                 "models/Branch",
@@ -70,7 +71,8 @@ define([
 
                 this.render(View, {
                     model: new Repository({ id: id }),
-                    branch: branch
+                    branch: branch,
+                    language: lang
                 });
             }.bind(this));
         },
